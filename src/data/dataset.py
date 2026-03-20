@@ -29,23 +29,6 @@ def load_dataset():
     
     return df
 
-# def extract_failure_label(failure_label):
-#     try:
-#         if isinstance(failure_label, np.ndarray):
-#             val = failure_label.flatten()[0]
-#             if isinstance(val, (str, np.str_, bytes)):
-#                 return val.decode('latin1').strip() if isinstance(val, bytes) else str(val)
-
-#         if isinstance(failure_label, list) and len(failure_label) > 0:
-#             val = failure_label[0]
-#             if isinstance(val, (list, np.ndarray)) and len(val) > 0:
-#                 return val[0].decode('latin1').strip() if isinstance(val, bytes) else str(val)
-#             else:
-#                 return val.decode('latin1').strip() if isinstance(val, bytes) else str(val)
-#     except Exception as e:
-#         print(f"Error occurred while extracting failure label: {e}")
-#         return 'Unknown'
-
 def extract_failure_label(failure_label):
     try:
         if isinstance(failure_label, np.ndarray):
