@@ -1,1 +1,121 @@
+# Dataset & Large Files
 *.pkl
+*.pickle
+*.csv
+data/*.pkl
+data/*.pickle
+data/*.csv
+
+# Model Checkpoints & Weights
+checkpoints/
+*.pth
+*.pt
+*.onnx
+models/
+weights/
+
+# Python & Virtual Environment
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+ENV/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*_checkpoint.ipynb
+.jupyter/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-*
+.project
+.pydevproject
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Temporary Files
+*.tmp
+*.log
+*.swp
+*~
+.tmp/
+
+# ML Experiment Tracking
+wandb/
+mlruns/
+.mlflow/
+
+# Colab Artifacts
+drive/
+.google/
+
+# Sensitive Files
+.env
+.env.local
+secrets.json
+credentials.json
+*.key
+*.pem
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+
+# PyCharm
+.idea/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Derived Files (except main code)
+*.pdf
+!docs/wafer_defect_detection_report.pdf
+!docs/presentation.pdf
+
+# Keep source files
+!**/*.py
+!**/*.ipynb
+!**/*.tex
+!requirements.txt
+!README.md
+!CLAUDE.md
+!COLAB_SETUP.md
+!BRANCH_GUIDE.md
+!IMPROVEMENTS.md
