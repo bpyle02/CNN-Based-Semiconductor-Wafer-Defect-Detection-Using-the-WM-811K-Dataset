@@ -39,6 +39,7 @@ from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, 
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model, TrainConfig
 from src.analysis import evaluate_model, count_params, count_trainable
+from src.config import Config, load_config
 
 
 KNOWN_CLASSES = [
@@ -63,6 +64,7 @@ def load_and_preprocess(
     test_size: float = 0.15,
     val_size: float = 0.15,
     seed: int = SEED,
+    batch_size: int = 64,
 ) -> Tuple[Dict[str, Any], Dict[str, DataLoader], LabelEncoder]:
     """
     Load dataset, preprocess, and create train/val/test splits.
@@ -143,7 +145,6 @@ def load_and_preprocess(
     test_dataset_pre = WaferMapDataset(test_maps, y_test, transform=val_transform_pre)
 
     # DataLoaders
-    batch_size = 64
     train_loader_cnn = DataLoader(train_dataset_cnn, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader_cnn = DataLoader(val_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0)
     test_loader_cnn = DataLoader(test_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0)
@@ -173,39 +174,68 @@ def load_and_preprocess(
 
 def main():
     """Main CLI entry point."""
+    # Load config
+    config = load_config("config.yaml")
+
     parser = argparse.ArgumentParser(
         description='Train CNN models for semiconductor wafer defect detection'
     )
     parser.add_argument(
         '--model',
         choices=['cnn', 'resnet', 'effnet', 'all'],
-        default='all',
-        help='Model to train (default: all)'
+        default=config.training.default_model,
+        help=f'Model to train (default: {config.training.default_model})'
     )
-    parser.add_argument('--epochs', type=int, default=5, help='Training epochs (default: 5)')
-    parser.add_argument('--batch-size', type=int, default=64, help='Batch size (default: 64)')
+    parser.add_argument('--epochs', type=int, default=config.training.epochs,
+                        help=f'Training epochs (default: {config.training.epochs})')
+    parser.add_argument('--batch-size', type=int, default=config.training.batch_size,
+                        help=f'Batch size (default: {config.training.batch_size})')
     parser.add_argument('--lr', type=float, default=None, help='Learning rate (auto per model)')
-    parser.add_argument('--device', choices=['cuda', 'cpu'], default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--seed', type=int, default=SEED)
+    parser.add_argument('--device', choices=['cuda', 'cpu'], default=config.device,
+                        help=f'Device (default: {config.device})')
+    parser.add_argument('--seed', type=int, default=config.seed,
+                        help=f'Random seed (default: {config.seed})')
     parser.add_argument('--data-path', type=Path, default=None, help='Path to dataset pickle')
+    parser.add_argument('--config', type=str, default=None, help='Path to config file')
+    parser.add_argument('--save-config', type=str, default=None,
+                        help='Save final config to file after applying CLI overrides')
 
     args = parser.parse_args()
 
+    # Reload config if custom path provided
+    if args.config:
+        config = load_config(args.config)
+
+    # Override config with CLI args
+    config.training.default_model = args.model
+    config.training.epochs = args.epochs
+    config.training.batch_size = args.batch_size
+    config.device = args.device
+    config.seed = args.seed
+
     # Setup
-    set_seed(args.seed)
-    device = torch.device(args.device)
-    print(f"\nDevice: {device}")
+    set_seed(config.seed)
+    device = torch.device(config.device)
+    print(f"\nDevice: {config.device}")
+    print(f"Config loaded from: config.yaml (default_model={config.training.default_model}, "
+          f"epochs={config.training.epochs}, batch_size={config.training.batch_size})")
 
     # Load data
     if args.data_path is None:
-        args.data_path = Path(__file__).parent / "data" / "LSWMD_new.pkl"
+        args.data_path = Path(config.data.dataset_path)
+        if not args.data_path.is_absolute():
+            args.data_path = Path(__file__).parent / args.data_path
 
-    data, loaders, le = load_and_preprocess(args.data_path, seed=args.seed)
+    data, loaders, le = load_and_preprocess(args.data_path,
+                                            test_size=config.data.test_size,
+                                            val_size=config.data.val_size,
+                                            seed=config.seed,
+                                            batch_size=config.training.batch_size)
     class_names = data['class_names']
     loss_weights = data['loss_weights'].to(device)
     criterion = nn.CrossEntropyLoss(weight=loss_weights)
 
-    models_to_train = ['cnn', 'resnet', 'effnet'] if args.model == 'all' else [args.model]
+    models_to_train = ['cnn', 'resnet', 'effnet'] if config.training.default_model == 'all' else [config.training.default_model]
     results = {}
 
     for model_type in models_to_train:
@@ -216,21 +246,21 @@ def main():
         # Create model
         if model_type == 'cnn':
             model = WaferCNN(num_classes=len(class_names)).to(device)
-            lr = args.lr or 1e-3
+            lr = args.lr or config.training.learning_rate.get('cnn', 1e-3)
             model_name = "Custom CNN"
         elif model_type == 'resnet':
             model = get_resnet18(num_classes=len(class_names)).to(device)
-            lr = args.lr or 1e-4
+            lr = args.lr or config.training.learning_rate.get('resnet', 1e-4)
             model_name = "ResNet-18"
         else:  # effnet
             model = get_efficientnet_b0(num_classes=len(class_names)).to(device)
-            lr = args.lr or 1e-4
+            lr = args.lr or config.training.learning_rate.get('efficientnet', 1e-4)
             model_name = "EfficientNet-B0"
 
         # Training setup
         optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()),
-            lr=lr, weight_decay=1e-4
+            lr=lr, weight_decay=config.training.weight_decay
         )
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode='min', factor=0.5, patience=3
@@ -240,8 +270,8 @@ def main():
         train_loader, val_loader, test_loader = loaders[model_type]
         model, history = train_model(
             model, train_loader, val_loader, criterion, optimizer,
-            scheduler=scheduler, epochs=args.epochs, model_name=model_name,
-            device=str(device)
+            scheduler=scheduler, epochs=config.training.epochs, model_name=model_name,
+            device=config.device
         )
 
         # Evaluate
@@ -275,6 +305,11 @@ def main():
         print(f"  Macro F1:    {metrics['macro_f1']:.4f}")
         print(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
         print(f"  Time:        {res['history']['total_time']:.1f}s")
+
+    # Save config if requested
+    if args.save_config:
+        config.to_yaml(args.save_config)
+        print(f"\nConfig saved to: {args.save_config}")
 
     return 0
 

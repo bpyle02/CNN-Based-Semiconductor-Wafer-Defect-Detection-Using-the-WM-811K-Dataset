@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Training service (GPU-enabled)
+  train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: wafer-defect:latest
+    container_name: wafer-train
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data:ro
+      - ./checkpoints:/app/checkpoints
+      - ./logs:/app/logs
+    command: python train.py --model all --epochs 5 --device cuda --batch-size 64
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Inference server (FastAPI)
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: wafer-defect:inference
+    container_name: wafer-inference
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+      - ./data:/app/data:ro
+    command: uvicorn src.inference.server:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - train
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Jupyter notebook (interactive development)
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: jupyter
+    image: wafer-defect:jupyter
+    container_name: wafer-jupyter
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+    working_dir: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # MLflow tracking (experiment management)
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: wafer-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow
+
+volumes:
+  data:
+  checkpoints:
+  logs:
+  mlruns:

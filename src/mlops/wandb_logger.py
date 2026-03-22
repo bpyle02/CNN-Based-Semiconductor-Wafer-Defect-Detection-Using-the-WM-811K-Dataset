@@ -1,0 +1,145 @@
+"""
+Weights & Biases integration for experiment tracking.
+
+Logs training metrics, hyperparameters, model checkpoints, and evaluation results.
+"""
+
+from pathlib import Path
+from typing import Dict, Any, Optional
+import torch
+
+try:
+    import wandb
+    HAS_WANDB = True
+except ImportError:
+    HAS_WANDB = False
+
+
+class WandBLogger:
+    """Weights & Biases experiment logger."""
+
+    def __init__(
+        self,
+        project: str = "wafer-defect-detection",
+        entity: Optional[str] = None,
+        name: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
+        enabled: bool = True,
+    ):
+        """
+        Initialize W&B logger.
+
+        Args:
+            project: W&B project name
+            entity: W&B entity/team name
+            name: Experiment name
+            config: Hyperparameter dictionary
+            enabled: Enable logging
+        """
+        self.enabled = enabled and HAS_WANDB
+        self.project = project
+        self.entity = entity
+        self.name = name
+        self.config = config or {}
+
+        if self.enabled:
+            wandb.init(
+                project=project,
+                entity=entity,
+                name=name,
+                config=config,
+                tags=["wafer-defect", "production"],
+            )
+            print(f"W&B initialized: {project}/{entity or 'default'}")
+        else:
+            if enabled and not HAS_WANDB:
+                print("Warning: wandb not installed, logging disabled")
+
+    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
+        """Log metrics."""
+        if self.enabled:
+            wandb.log(metrics, step=step)
+
+    def log_model(self, model: torch.nn.Module, checkpoint_path: str):
+        """Log model artifact."""
+        if self.enabled:
+            artifact = wandb.Artifact(
+                name=f"model-{wandb.run.id}",
+                type="model",
+                description=f"Model checkpoint from step {wandb.run.step}"
+            )
+            artifact.add_file(checkpoint_path)
+            wandb.log_artifact(artifact)
+
+    def log_confusion_matrix(self, y_true, y_pred, class_names):
+        """Log confusion matrix."""
+        if self.enabled:
+            from sklearn.metrics import confusion_matrix as cm
+            conf_matrix = cm(y_true, y_pred)
+            wandb.log({
+                "confusion_matrix": wandb.plot.confusion_matrix(
+                    y_true=y_true,
+                    preds=y_pred,
+                    class_names=class_names
+                )
+            })
+
+    def finish(self):
+        """Finish logging run."""
+        if self.enabled:
+            wandb.finish()
+
+
+class MLFlowLogger:
+    """MLflow experiment logger."""
+
+    def __init__(
+        self,
+        experiment_name: str = "wafer-defect-detection",
+        tracking_uri: str = "http://localhost:5000",
+        enabled: bool = True,
+    ):
+        """
+        Initialize MLFlow logger.
+
+        Args:
+            experiment_name: Experiment name
+            tracking_uri: MLflow tracking server URI
+            enabled: Enable logging
+        """
+        self.enabled = enabled
+        self.experiment_name = experiment_name
+        self.tracking_uri = tracking_uri
+
+        try:
+            import mlflow
+            self.mlflow = mlflow
+            self.mlflow.set_tracking_uri(tracking_uri)
+            self.mlflow.set_experiment(experiment_name)
+            print(f"MLflow initialized: {experiment_name}")
+        except ImportError:
+            if enabled:
+                print("Warning: mlflow not installed, logging disabled")
+            self.enabled = False
+
+    def log_params(self, params: Dict[str, Any]):
+        """Log parameters."""
+        if self.enabled:
+            for key, value in params.items():
+                self.mlflow.log_param(key, value)
+
+    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
+        """Log metrics."""
+        if self.enabled:
+            for key, value in metrics.items():
+                self.mlflow.log_metric(key, value, step=step)
+
+    def log_model(self, model: torch.nn.Module, artifact_path: str = "model"):
+        """Log model."""
+        if self.enabled:
+            self.mlflow.pytorch.log_model(model, artifact_path)
+
+    def finish(self):
+        """End logging run."""
+        if self.enabled:
+            self.mlflow.end_run()
