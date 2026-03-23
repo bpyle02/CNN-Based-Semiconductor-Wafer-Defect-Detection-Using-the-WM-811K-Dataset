@@ -10,6 +10,8 @@ from typing import Optional
 import pandas as pd
 import numpy as np
 
+from src.exceptions import DataLoadError
+
 
 KNOWN_CLASSES = [
     'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
@@ -28,16 +30,22 @@ def load_dataset(path: Optional[Path] = None) -> pd.DataFrame:
         DataFrame with columns: waferMap, failureType, failureClass, etc.
 
     Raises:
-        FileNotFoundError: If dataset file not found at specified path.
+        DataLoadError: If dataset file cannot be found or loaded.
     """
     if path is None:
         base_dir = Path(__file__).parents[2]
         path = base_dir / "data" / "LSWMD_new.pkl"
+    else:
+        path = Path(path)
 
     if not path.exists():
-        raise FileNotFoundError(f"Dataset not found at {path}")
+        raise DataLoadError(f"Dataset not found at {path}")
 
-    df = pd.read_pickle(path)
+    try:
+        df = pd.read_pickle(path)
+    except Exception as e:
+        raise DataLoadError(f"Failed to load dataset from {path}: {e}") from e
+
     df['failureClass'] = df['failureType'].apply(extract_failure_label)
 
     print("\n--- Dataset Info ---")
