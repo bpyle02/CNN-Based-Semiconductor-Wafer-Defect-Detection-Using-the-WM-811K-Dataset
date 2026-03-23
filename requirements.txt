@@ -47,9 +47,9 @@ wandb>=0.13.0
 mlflow>=1.20.0
 
 # Inference server
-fastapi>=0.95.0
+fastapi>=0.110.0
 uvicorn>=0.21.0
-pydantic>=1.8.0
+pydantic>=2.6.0
 
 # Web dashboards
 streamlit>=1.10.0

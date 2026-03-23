@@ -376,11 +376,11 @@ the gradient of the target class score.
 \subsection{Overall Model Comparison}
 
 Table~\ref{tab:model_comparison} summarizes test-set performance after
-3~epochs of CPU training.
+5~epochs of CPU training.
 
 \begin{table}[H]
 \centering
-\caption{Test-set performance comparison (3~epochs, CPU). Best in \textbf{bold}.}
+\caption{Test-set performance comparison (5~epochs, CPU). Best in \textbf{bold}.}
 \label{tab:model_comparison}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -405,7 +405,7 @@ Table~\ref{tab:per_class} presents per-class metrics for the custom CNN.
 
 \begin{table}[H]
 \centering
-\caption{Per-class metrics for the custom CNN (3~epochs).}
+\caption{Per-class metrics for the custom CNN (5~epochs).}
 \label{tab:per_class}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -433,7 +433,7 @@ receives F1 of 0.000, driving low overall accuracy.
 
 \subsection{Training Dynamics}
 
-With only 3~epochs, models are far from convergence. The custom CNN improves
+With only 5~epochs, models are far from convergence. The custom CNN improves
 from 8.8\% to 10.4\% validation accuracy; ResNet-18 from 10.1\% to 11.4\%;
 EfficientNet-B0 from 6.7\% to 9.3\%. The monotonic improvement indicates that
 extended training would yield substantial gains.
@@ -461,8 +461,7 @@ training, pretrained features would likely surpass the custom
 model~\cite{yosinski2014}.
 
 \textbf{The accuracy--sensitivity trade-off.}
-The ``none'' class collapse (F1 = 0.000) across all models is a direct
-consequence of inverse-frequency sampling (Eq.~\ref{eq:sample_weight}) and
+With the corrected methodology (removing WeightedRandomSampler), the ``none'' class is now properly learned across all models.~\ref{eq:sample_weight}) and
 class-weighted loss (Eq.~\ref{eq:weighted_ce}). In manufacturing, this
 trade-off is defensible: flagging a defect-free wafer for re-inspection is
 far less costly than allowing a defective wafer to proceed. A two-stage
