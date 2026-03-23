@@ -4,13 +4,12 @@ Pretrained model architectures for transfer learning on wafer defect classificat
 Implements ResNet-18 and EfficientNet-B0 with proper layer-boundary freezing strategy.
 """
 
-import torch
 import torch.nn as nn
 import torchvision.models as models
 from typing import Tuple
 
 
-def get_resnet18(num_classes: int = 9) -> nn.Module:
+def get_resnet18(num_classes: int = 9, pretrained: bool = True) -> nn.Module:
     """
     ResNet-18 pretrained on ImageNet with fine-tuning on final residual block.
 
@@ -30,7 +29,8 @@ def get_resnet18(num_classes: int = 9) -> nn.Module:
     Returns:
         ResNet-18 model with unfrozen layer4 and custom fc
     """
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    weights = models.ResNet18_Weights.DEFAULT if pretrained else None
+    model = models.resnet18(weights=weights)
 
     # Freeze early layers at block boundaries
     for name, param in model.named_parameters():
@@ -47,7 +47,7 @@ def get_resnet18(num_classes: int = 9) -> nn.Module:
     return model
 
 
-def get_efficientnet_b0(num_classes: int = 9) -> nn.Module:
+def get_efficientnet_b0(num_classes: int = 9, pretrained: bool = True) -> nn.Module:
     """
     EfficientNet-B0 pretrained on ImageNet with fine-tuning on final feature blocks.
 
@@ -65,7 +65,8 @@ def get_efficientnet_b0(num_classes: int = 9) -> nn.Module:
     Returns:
         EfficientNet-B0 model with unfrozen features.7-8 and custom classifier
     """
-    model = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.DEFAULT)
+    weights = models.EfficientNet_B0_Weights.DEFAULT if pretrained else None
+    model = models.efficientnet_b0(weights=weights)
 
     # Freeze early feature blocks at architectural boundaries
     for name, param in model.named_parameters():

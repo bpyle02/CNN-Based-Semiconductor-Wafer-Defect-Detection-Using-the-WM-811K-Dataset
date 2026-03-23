@@ -44,8 +44,17 @@ class SEBlock(nn.Module):
         >>> out = se(x)  # Shape: (4, 64, 32, 32)
     """
 
-    def __init__(self, channels: int, reduction: int = 16) -> None:
+    def __init__(
+        self,
+        channels: Optional[int] = None,
+        reduction: int = 16,
+        in_channels: Optional[int] = None,
+    ) -> None:
         super().__init__()
+        if channels is None:
+            channels = in_channels
+        if channels is None:
+            raise ValueError("SEBlock requires 'channels' or 'in_channels'")
         self.channels = channels
         self.reduction = reduction
 

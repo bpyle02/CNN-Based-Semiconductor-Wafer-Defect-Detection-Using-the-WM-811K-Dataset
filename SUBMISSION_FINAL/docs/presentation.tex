@@ -1,0 +1,206 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{dove}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{CNN-Based Semiconductor Wafer Defect Detection}
+\subtitle{Defense Readiness Review of the Repository Artifact}
+\author{Anindita Paul \and Brandon Pyle \and Anand Rajan \and Brett Rettura}
+\institute{Verified Software Artifact Summary}
+\date{March 22, 2026}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+  \frametitle{Defense Framing}
+  This repository is best defended as a research software artifact for wafer-defect analysis.
+
+  \vspace{0.4cm}
+  The strongest claim supported directly by the checked-in code is:
+
+  \begin{itemize}
+    \item a modular platform for classification, inference, uncertainty, anomaly detection, and federated experimentation
+    \item a verified testable artifact with a reproducible local validation workflow
+    \item an inference path that now includes explainability through Grad-CAM
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Repository Scope}
+  Implemented capability areas:
+
+  \begin{itemize}
+    \item Wafer data loading and preprocessing
+    \item Baseline modeling: custom CNN, ResNet-18, EfficientNet-B0
+    \item Inference API with checkpoint loading and prediction
+    \item Explainability with Grad-CAM
+    \item Monte Carlo dropout uncertainty estimation
+    \item OOD and anomaly detection
+    \item Federated learning and robust aggregation utilities
+    \item Synthetic augmentation and model registry support
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Architecture View}
+  \begin{center}
+    \begin{tabular}{ll}
+      \toprule
+      \textbf{Module} & \textbf{Role} \\
+      \midrule
+      \texttt{src/data} & dataset loading, transforms, preprocessing \\
+      \texttt{src/models} & baseline and transfer-learning models \\
+      \texttt{src/inference} & serving, Grad-CAM, uncertainty \\
+      \texttt{src/analysis} & anomaly and OOD analysis \\
+      \texttt{src/federated} & client/server and aggregation logic \\
+      \texttt{src/augmentation} & synthetic data generation \\
+      \texttt{src/training} & trainer/config abstractions \\
+      \texttt{tests} & unit and integration verification \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Committee-Relevant Validation}
+  Current local validation result:
+
+  \vspace{0.3cm}
+  \begin{center}
+    \Large{\texttt{pytest -q} $\rightarrow$ 45 passed, 6 skipped}
+  \end{center}
+
+  \vspace{0.4cm}
+  What this confirms:
+
+  \begin{itemize}
+    \item imports and test discovery are stable
+    \item config parsing and trainer initialization work
+    \item uncertainty and OOD utilities are validated
+    \item federated aggregation utilities pass their tests
+    \item inference server paths remain functional under current constraints
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Defense-Prep Corrections}
+  The defense-readiness pass focused on closing the gap between claims and reality.
+
+  \begin{itemize}
+    \item Repaired config parsing for scalar YAML values and direct device/checkpoint fields
+    \item Fixed \texttt{BaseTrainer} to use the typed config object correctly
+    \item Stabilized predictive entropy to respect theoretical bounds
+    \item Made OOD thresholding deterministic and data-fit rather than query-fit
+    \item Added real Grad-CAM support to the inference API
+    \item Began integrating the custom exception hierarchy into runtime code
+    \item Reworked the pytest harness to avoid inaccessible temp-directory failures
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inference and Explainability Path}
+  The inference stack now supports:
+
+  \begin{itemize}
+    \item checkpoint loading through the FastAPI model server
+    \item base64 image prediction
+    \item file-upload prediction
+    \item active-model validation through \texttt{model\_name}
+    \item Grad-CAM overlays returned directly in prediction responses
+  \end{itemize}
+
+  \vspace{0.4cm}
+  Defense demo entry point:
+
+  \begin{center}
+    \texttt{python scripts/defense\_smoke\_demo.py}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Research Extensions Beyond Baselines}
+  The artifact goes beyond a single CNN classifier:
+
+  \begin{itemize}
+    \item uncertainty estimation for reliability and active-learning workflows
+    \item OOD and anomaly-detection tooling for abnormal wafer behavior
+    \item federated-learning components for distributed experimentation
+    \item synthetic augmentation utilities for minority-pattern generation
+    \item model registry support for versioned checkpoint tracking
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What Is Not Yet a Strong Claim}
+  The repository alone does \textbf{not} justify these claims without separately versioned experiments:
+
+  \begin{itemize}
+    \item final committee-grade benchmark tables
+    \item production-readiness certification
+    \item deployment security guarantees
+    \item reproducible quantitative performance without pinned checkpoints and dataset snapshots
+  \end{itemize}
+
+  \vspace{0.4cm}
+  This matters because a defense should separate software validity from experimental claims.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Known Limitations}
+  Remaining limitations after the defense pass:
+
+  \begin{itemize}
+    \item no canonical trained checkpoint is shipped with the repo
+    \item serving remains single-active-model semantics
+    \item exception integration is partial rather than universal
+    \item historical course-era documents remain in \texttt{docs/} and should not be treated as authoritative
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Recommended Submission Bundle}
+  Committee-facing materials should prioritize the updated artifacts:
+
+  \begin{enumerate}
+    \item \texttt{docs/DEFENSE\_PACKET.md}
+    \item \texttt{docs/presentation.tex} and compiled PDF
+    \item \texttt{docs/FINAL\_STATUS\_REPORT.md}
+    \item repository snapshot with the validation result
+    \item separately archived experiment logs or checkpoints, if quantitative claims are defended
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Live Demo Sequence}
+  Minimal defense sequence:
+
+  \begin{enumerate}
+    \item Run \texttt{pytest -q}
+    \item Run \texttt{python scripts/defense\_smoke\_demo.py}
+    \item Show generated Grad-CAM overlay artifact
+    \item Walk through the key modules and validated subsystems
+    \item Discuss limitations explicitly rather than overstating deployment maturity
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+  The repository is now in a defensible state for committee presentation as a verified software artifact.
+
+  \vspace{0.4cm}
+  The defense-preparation work improved:
+
+  \begin{itemize}
+    \item truthfulness of the artifact narrative
+    \item explainability support in the live inference path
+    \item reproducibility of the validation workflow
+    \item alignment between documentation and the actual repository state
+  \end{itemize}
+\end{frame}
+
+\end{document}
