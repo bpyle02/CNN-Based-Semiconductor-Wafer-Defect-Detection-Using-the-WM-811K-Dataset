@@ -361,7 +361,7 @@ class TestEnsembling:
             get_resnet18(num_classes=9).to(device),
         ]
 
-        ensemble = EnsembleModel(models, method='average').to(device)
+        ensemble = EnsembleModel(models, aggregation='averaging').to(device)
         assert len(ensemble.models) == 2
 
     def test_ensemble_inference(self, device, sample_data):
@@ -377,7 +377,7 @@ class TestEnsembling:
             get_resnet18(num_classes=9).to(device),
         ]
 
-        ensemble = EnsembleModel(models, method='average').to(device)
+        ensemble = EnsembleModel(models, aggregation='averaging').to(device)
         ensemble.eval()
 
         with torch.no_grad():

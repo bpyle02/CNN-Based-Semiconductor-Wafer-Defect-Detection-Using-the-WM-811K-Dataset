@@ -333,12 +333,12 @@ class DomainAdaptationTrainer:
 
                 coral_loss = coral_loss_fn(source_feats, target_feats)
 
-                total_loss = class_loss + coral_loss
+                batch_loss = class_loss + coral_loss
 
-                total_loss.backward()
+                batch_loss.backward()
                 optimizer.step()
 
-                total_loss += total_loss.item()
+                total_loss += batch_loss.item()
                 total_coral_loss += coral_loss.item()
                 num_batches += 1
 
