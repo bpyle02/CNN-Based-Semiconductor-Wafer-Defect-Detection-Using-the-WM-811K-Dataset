@@ -408,6 +408,50 @@ python test_federated.py
 6. Non-IID data partitioning
 7. Checkpoint save/load
 
+## Byzantine-Robust Aggregation
+
+In addition to standard FedAvg weighted averaging, the implementation supports **Byzantine-robust aggregation** methods that defend against poisoned or corrupted client updates:
+
+### Aggregation Methods
+
+| Method | Description |
+|--------|-------------|
+| `weighted_avg` | Standard FedAvg weighted averaging (default) |
+| `median` | Coordinate-wise median — robust to up to 50% Byzantine clients |
+| `trimmed_mean` | Trimmed mean — removes extreme values before averaging |
+| `krum` | Multi-Krum — selects updates closest to the majority |
+
+### Configuration
+
+Set the aggregation method in `config.yaml` or when instantiating `FedAvgConfig`:
+
+```yaml
+federated:
+  num_rounds: 10
+  clients_per_round: 5
+  local_epochs: 2
+  learning_rate: 0.01
+  aggregation_method: "median"  # options: weighted_avg, median, trimmed_mean, krum
+```
+
+Or programmatically:
+
+```python
+from src.federated.fed_avg import create_federated_setup, FedAvgConfig
+
+config = FedAvgConfig(num_rounds=5, aggregation_method='trimmed_mean')
+
+server, clients = create_federated_setup(
+    model_class=get_resnet18,
+    client_loaders=[train_loader_1, train_loader_2],
+    test_loader=test_loader,
+    config=config
+)
+
+results = server.train()
+print("Final Accuracy:", results['test_acc'][-1])
+```
+
 ## Architecture Decision Rationale
 
 ### Weighted Averaging
@@ -465,8 +509,7 @@ From McMahan et al. (ICML 2017):
 2. **Differential Privacy**: Add DP-SGD for formal privacy guarantees
 3. **Model personalization**: Allow clients to fine-tune local heads
 4. **Clustering**: Group similar clients; federate within clusters
-5. **Byzantine-Robust Aggregation**: Handle malicious/corrupted updates
-6. **Communication Compression**: Quantize/sparsify model updates
+5. **Communication Compression**: Quantize/sparsify model updates
 
 ## References
 

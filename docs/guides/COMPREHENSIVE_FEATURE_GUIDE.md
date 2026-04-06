@@ -416,21 +416,41 @@ trainer = SimCLRTrainer(model, batch_size=256, temperature=0.07)
 representations = trainer.pretrain(unlabeled_loader, epochs=100)
 ```
 
-### 21. Anomaly Detection
+### 21. Anomaly Detection & Out-of-Distribution (OOD) Detection
 
-**What it does**: Identify out-of-distribution or anomalous wafer maps.
+**What it does**: Identify out-of-distribution or anomalous wafer maps. Semiconductor fabrication frequently produces novel defect patterns that the model has never seen during training. OOD detection flags these anomalies rather than confidently assigning them to an incorrect known class.
 
 **Methods**:
 - **Isolation Forest**: Unsupervised anomaly detection
 - **One-Class SVM**: Learns normal class boundary
 - **Autoencoder**: Reconstruction-based detection
-- **Mahalanobis**: Distance-based anomaly scoring
+- **Mahalanobis Distance**: Fits a Gaussian distribution to the normal feature space and calculates standard deviations from the mean for new samples
+- **ODIN (Out-of-DIstribution Network)**: Uses temperature scaling on logits to expose unseen distributions via softmax confidence depression
 
-**Usage**:
+**Usage (Anomaly Detection)**:
 ```python
 from src.analysis.anomaly import AnomalyDetector
 detector = AnomalyDetector(method='isolation_forest')
 anomaly_scores = detector.fit_predict(X_train, X_test)
+```
+
+**Usage (OOD Detection)**:
+```python
+from src.analysis.anomaly import OODDetector
+
+# 1. Instantiate the detector
+detector = OODDetector(method='mahalanobis', threshold=0.95)
+
+# 2. Fit on known 'normal' training features
+# features shape: (N_samples, feature_dim)
+detector.fit(train_features)
+
+# 3. Detect anomalies in production
+predictions = detector.detect_ood(new_production_features)
+
+for is_ood in predictions:
+    if is_ood:
+        print("Alert: Novel Defect Pattern Detected!")
 ```
 
 ### 22. Domain Adaptation

@@ -8,6 +8,136 @@ This implementation provides **Bayesian uncertainty estimation** for deep learni
 
 By enabling dropout during inference and running multiple forward passes, we approximate the posterior distribution over model predictions. This is equivalent to sampling from a Bayesian neural network, enabling principled uncertainty quantification.
 
+## Quick Start (5 Minutes)
+
+### 1. Load Model and Enable MC Dropout
+
+```python
+import torch
+from src.models import get_resnet18
+from src.inference.uncertainty import MCDropoutModel, UncertaintyEstimator
+
+# Load pretrained model
+model = get_resnet18()
+model.load_state_dict(torch.load('checkpoints/best_resnet.pth'))
+
+# Initialize MC Dropout wrapper
+mc_model = MCDropoutModel(model, num_iterations=50, device='cuda')
+estimator = UncertaintyEstimator(model, num_iterations=50, device='cuda')
+```
+
+### 2. Get Predictions with Uncertainty
+
+```python
+# Single sample
+x = torch.randn(1, 3, 96, 96).cuda()
+probs, uncertainty = mc_model.predict_with_uncertainty(x)
+
+print(f"Predicted class: {probs.argmax()}")
+print(f"Confidence: {probs.max():.4f}")
+print(f"Uncertainty: {uncertainty[0]:.4f}")
+```
+
+### 3. Analyze Full Dataset
+
+```python
+results = estimator.estimate_dataset_uncertainty(test_loader)
+
+print(f"Mean uncertainty: {results['uncertainty'].mean():.4f}")
+print(f"Mean entropy: {results['entropy'].mean():.4f}")
+print(f"Accuracy: {(results['predictions'] == results['true_labels']).mean():.4f}")
+```
+
+### 4. Check Calibration
+
+```python
+metrics = estimator.uncertainty_calibration(test_loader)
+
+print(f"Brier Score: {metrics['brier_score']:.4f}  (< 0.3 is good)")
+print(f"ECE: {metrics['ece']:.4f}  (< 0.1 is well-calibrated)")
+print(f"Corr(Uncertainty, Correctness): {metrics['uncertainty_accuracy_correlation']:.4f}")
+```
+
+### 5. Active Learning: Select Uncertain Samples
+
+```python
+uncertain = estimator.get_uncertain_samples(
+    unlabeled_loader, k=100, metric='entropy'
+)
+indices_to_label = uncertain['indices']
+entropies = uncertain['uncertainties']
+```
+
+### 6. Visualize Uncertainty
+
+```python
+from src.inference.uncertainty import plot_uncertainty_distribution
+
+plot_uncertainty_distribution(
+    uncertainties=results['uncertainty'],
+    predictions=results['mean_probs'],
+    true_labels=results['true_labels'],
+    class_names=class_names
+)
+```
+
+### Common Patterns
+
+**Confident vs. Uncertain Predictions:**
+```python
+probs, entropy = mc_model.predict_proba_with_uncertainty(x)
+confident_mask = entropy < entropy.quantile(0.25)
+uncertain_mask = entropy > entropy.quantile(0.75)
+```
+
+**Confidence Intervals:**
+```python
+median, lower, upper = mc_model.confidence_intervals(x)
+for c in range(num_classes):
+    print(f"Class {c}: {median[0, c]:.3f} [{lower[0, c]:.3f}, {upper[0, c]:.3f}]")
+```
+
+**Find Mislabeled or OOD Samples:**
+```python
+results = estimator.estimate_dataset_uncertainty(test_loader)
+wrong = results['predictions'] != results['true_labels']
+uncertain = results['entropy'] > results['entropy'].mean()
+suspicious = wrong & uncertain
+print(f"Potentially mislabeled: {suspicious.sum()} samples")
+```
+
+**Per-Class Uncertainty:**
+```python
+for c, class_name in enumerate(class_names):
+    mask = results['predictions'] == c
+    if mask.sum() > 0:
+        class_unc = results['uncertainty'][mask]
+        print(f"{class_name}: mean_unc={class_unc.mean():.4f}, std={class_unc.std():.4f}")
+```
+
+### API Cheat Sheet
+
+| Task | Code |
+|---|---|
+| **Single prediction** | `probs, unc = mc_model.predict_with_uncertainty(x)` |
+| **Per-class uncertainty** | `mean_p, std_p, entropy = mc_model.predict_proba_with_uncertainty(x)` |
+| **Confidence intervals** | `median, lower, upper = mc_model.confidence_intervals(x)` |
+| **Dataset analysis** | `results = estimator.estimate_dataset_uncertainty(loader)` |
+| **Uncertain samples** | `uncertain = estimator.get_uncertain_samples(loader, k=100)` |
+| **Calibration check** | `metrics = estimator.uncertainty_calibration(loader)` |
+| **Plot** | `plot_uncertainty_distribution(uncertainties, predictions, true_labels, class_names)` |
+
+### Quick Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Uncertainty always very high | Check model has Dropout layers with p > 0 |
+| Uncertainty doesn't vary | Increase T (num_iterations) to 100+ |
+| Runtime is slow | Reduce T, use smaller batch, or use GPU |
+| Anticorrelated with correctness | Retrain with higher dropout (0.5-0.7) or use ensemble |
+
+---
+
 ## Mathematical Foundation
 
 ### Bayesian Approximation via Dropout

@@ -12,7 +12,116 @@ Production-ready FastAPI server for wafer defect classification with TorchServe 
 - **Async endpoints**: High-concurrency inference
 - **Production-ready**: Logging, health checks, model introspection
 
-## Quick Start
+## Quick Start (30 Seconds)
+
+### 1. Install and Start
+
+```bash
+# Install dependencies (if not already done)
+pip install fastapi uvicorn python-multipart torch torchvision
+
+# Start server
+python inference_server.py --port 8000
+
+# Open API docs in browser: http://localhost:8000/docs
+```
+
+### 2. Load Model and Predict
+
+**Option A: cURL**
+
+```bash
+# Load model
+curl -X POST http://localhost:8000/load_model \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_type": "cnn",
+    "checkpoint_path": "checkpoints/best_cnn.pth"
+  }'
+
+# Predict on file
+curl -X POST http://localhost:8000/predict_file \
+  -F "file=@path/to/wafer_image.png"
+```
+
+**Option B: Python**
+
+```python
+import requests
+
+# Load model
+requests.post('http://localhost:8000/load_model', json={
+    'model_type': 'cnn',
+    'checkpoint_path': 'checkpoints/best_cnn.pth'
+})
+
+# Predict on file
+with open('wafer_image.png', 'rb') as f:
+    response = requests.post(
+        'http://localhost:8000/predict_file',
+        files={'file': f}
+    )
+
+prediction = response.json()
+print(f"Predicted: {prediction['class_name']}")
+print(f"Confidence: {prediction['confidence']:.2%}")
+```
+
+**Option C: Web UI**
+
+1. Open http://localhost:8000/docs
+2. Click "Try it out" on `/predict_file` endpoint
+3. Upload your image file
+4. See results in response body
+
+### Endpoint Summary
+
+| Endpoint | Purpose |
+|----------|---------|
+| GET /health | Check server status |
+| GET /models | List available architectures |
+| GET /model_info | Get loaded model details |
+| POST /load_model | Load checkpoint |
+| POST /predict | Predict on base64 image |
+| POST /predict_file | Predict on uploaded file |
+
+### Class Names (Predicted Values)
+
+```
+0: Center    3: Edge-Ring    6: Random
+1: Donut     4: Loc          7: Scratch
+2: Edge-Loc  5: Near-full    8: none
+```
+
+### Common Commands
+
+```bash
+# Start with GPU
+python inference_server.py --device cuda --port 8000
+
+# Start and load model immediately
+python inference_server.py \
+  --model checkpoints/best_cnn.pth \
+  --model-type cnn
+
+# Start on external IP (for remote access)
+python inference_server.py --host 0.0.0.0 --port 8000
+
+# Run tests
+python test_inference_server.py
+```
+
+### Typical Latency
+
+| Scenario | CPU | GPU |
+|----------|-----|-----|
+| Load model | 1-2s | 1-2s |
+| Single image | 30-100ms | 5-15ms |
+| Throughput (1 worker) | ~10 img/s | ~100+ img/s |
+
+---
+
+## Detailed Setup
 
 ### Installation
 
