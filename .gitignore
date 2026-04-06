@@ -11,7 +11,7 @@ checkpoints/
 *.pth
 *.pt
 *.onnx
-models/
+*.sha256
 weights/
 
 # Python & Virtual Environment
@@ -96,6 +96,18 @@ credentials.json
 docs/_build/
 docs/.doctrees/
 
+# LaTeX Build Artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.nav
+*.snm
+*.synctex.gz
+*.toc
+!docs/*.pdf
+
 # PyCharm
 .idea/
 
@@ -118,4 +130,15 @@ dmypy.json
 !CLAUDE.md
 !COLAB_SETUP.md
 !BRANCH_GUIDE.md
-!IMPROVEMENTS.md
+
+# MiKTeX local install
+.miktex/
+
+# Generated documentation artifacts
+docs/generated/
+
+# Reference PDFs (large binaries)
+references/*.pdf
+
+# Dataset general files
+docs/General/Dataset/

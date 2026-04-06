@@ -1,3 +1,5 @@
+> **Note:** Historical status as of 2026-03-22. See CLAUDE.md for current project guide.
+
 # 23 Improvements Implementation Status
 
 **Last Updated**: 2026-03-22
