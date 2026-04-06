@@ -4,6 +4,7 @@ from typing import Any
 
 from .cnn import WaferCNN
 from .vit import ViT, get_vit_small, get_vit_tiny
+from .ensemble import EnsembleModel
 from .attention import (
     SEBlock,
     SpatialAttention,
@@ -37,6 +38,7 @@ __all__ = [
     'ViT',
     'get_vit_small',
     'get_vit_tiny',
+    'EnsembleModel',
     'SEBlock',
     'SpatialAttention',
     'CBAMBlock',

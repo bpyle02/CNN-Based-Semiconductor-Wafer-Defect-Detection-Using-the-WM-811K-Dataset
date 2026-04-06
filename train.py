@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.model_registry import save_checkpoint_with_hash
 
+from src.config import load_config
 from src.data import load_dataset, preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.analysis import evaluate_model
@@ -174,18 +175,58 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, e
 def main():
     """Main training entry point."""
     parser = argparse.ArgumentParser(description='Train wafer defect detection models')
-    parser.add_argument('--model', choices=['cnn', 'resnet', 'effnet', 'all'], default='cnn')
-    parser.add_argument('--epochs', type=int, default=5)
-    parser.add_argument('--batch-size', type=int, default=64)
+    parser.add_argument('--model', choices=['cnn', 'resnet', 'effnet', 'all'], default=None)
+    parser.add_argument('--epochs', type=int, default=None)
+    parser.add_argument('--batch-size', type=int, default=None)
     parser.add_argument('--lr', type=float, default=None)
-    parser.add_argument('--device', choices=['cuda', 'cpu'], default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--seed', type=int, default=SEED)
-    parser.add_argument('--data-path', type=Path, default=Path('data/LSWMD_new.pkl'))
+    parser.add_argument('--device', choices=['cuda', 'cpu'], default=None)
+    parser.add_argument('--seed', type=int, default=None)
+    parser.add_argument('--data-path', type=Path, default=None)
+    parser.add_argument('--config', type=Path, default=Path('config.yaml'),
+                        help='Path to config.yaml (default: config.yaml)')
     args = parser.parse_args()
+
+    # Load config.yaml defaults if available
+    config = None
+    if args.config and args.config.exists():
+        config = load_config(str(args.config))
+        logger.info(f"Loaded defaults from {args.config}")
+    else:
+        logger.info("No config.yaml found, using hardcoded defaults")
+
+    # Resolve parameters: CLI > config.yaml > hardcoded defaults
+    hw_default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    model_choice = args.model if args.model is not None else (
+        config.training.default_model if config else 'cnn')
+    # Map config's "efficientnet" to CLI's "effnet" if needed
+    if model_choice == 'efficientnet':
+        model_choice = 'effnet'
+
+    epochs = args.epochs if args.epochs is not None else (
+        config.training.epochs if config else 5)
+    batch_size = args.batch_size if args.batch_size is not None else (
+        config.training.batch_size if config else 64)
+    device = args.device if args.device is not None else (
+        config.device if config else hw_default_device)
+    seed = args.seed if args.seed is not None else (
+        config.seed if config else SEED)
+    data_path = args.data_path if args.data_path is not None else (
+        Path(config.data.dataset_path) if config else Path('data/LSWMD_new.pkl'))
+
+    # Store resolved values back into args for downstream use
+    args.model = model_choice
+    args.epochs = epochs
+    args.batch_size = batch_size
+    args.device = device
+    args.seed = seed
+    args.data_path = data_path
 
     set_seed(args.seed)
     device = args.device
     logger.info(f"Device: {device}")
+    logger.info(f"Config: epochs={args.epochs}, batch_size={args.batch_size}, "
+                f"model={args.model}, seed={args.seed}")
 
     # Load data
     data = load_and_preprocess_data(args.data_path, seed=args.seed)
@@ -229,6 +270,16 @@ def main():
     models_to_train = ['cnn', 'resnet', 'effnet'] if args.model == 'all' else [args.model]
     results = {}
 
+    # Resolve learning rate: CLI --lr > config.yaml per-model > hardcoded default
+    def _resolve_lr(model_key: str, hardcoded: float) -> float:
+        if args.lr is not None:
+            return args.lr
+        if config and isinstance(config.training.learning_rate, dict):
+            return config.training.learning_rate.get(model_key, hardcoded)
+        if config and isinstance(config.training.learning_rate, (int, float)):
+            return float(config.training.learning_rate)
+        return hardcoded
+
     for model_name in models_to_train:
         logger.info(f"\n{'='*70}")
         logger.info(f"TRAINING {model_name.upper()}")
@@ -238,19 +289,19 @@ def main():
         if model_name == 'cnn':
             model = WaferCNN(num_classes=len(class_names)).to(device)
             display_name = "Custom CNN"
-            lr = args.lr or 1e-3
+            lr = _resolve_lr('cnn', 1e-3)
             transforms_train = train_aug         # augmentation only
             transforms_val = None                # raw [0,1] images
         elif model_name == 'resnet':
             model = get_resnet18(num_classes=len(class_names)).to(device)
             display_name = "ResNet-18"
-            lr = args.lr or 1e-4
+            lr = _resolve_lr('resnet', 1e-4)
             transforms_train = pretrained_train_transform  # augmentation + ImageNet norm
             transforms_val = pretrained_val_transform      # ImageNet norm only
         else:
             model = get_efficientnet_b0(num_classes=len(class_names)).to(device)
             display_name = "EfficientNet-B0"
-            lr = args.lr or 1e-4
+            lr = _resolve_lr('efficientnet', 1e-4)
             transforms_train = pretrained_train_transform  # augmentation + ImageNet norm
             transforms_val = pretrained_val_transform      # ImageNet norm only
 

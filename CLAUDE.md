@@ -502,5 +502,5 @@ All code in this repository must be complete, correct, and functional. The follo
 
 ---
 
-**Last Updated**: 2026-04-05 (All 23 improvements complete, 51 tests passing)
-**Version**: 3.1
+**Last Updated**: 2026-04-06 (Comprehensive audit and remediation; all 23 improvements complete, 51 tests passing)
+**Version**: 4.0

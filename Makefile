@@ -1,6 +1,6 @@
 # Makefile for CNN-Based Semiconductor Wafer Defect Detection
 
-.PHONY: install train dashboard test defense demo federated active_learn compress ood docs
+.PHONY: install train dashboard test defense demo federated active_learn compress progressive ood docs
 
 # 1. Installation
 install:
@@ -8,7 +8,7 @@ install:
 
 # 2. Main Training Pipeline (Refactored)
 train:
-	python scripts/train.py --model all --epochs 5 --batch-size 64
+	python train.py --model all --epochs 5
 
 # 3. Interactive Dashboard (Streamlit)
 dashboard:
@@ -30,6 +30,9 @@ progressive:
 # 5. Testing & Validation
 test:
 	pytest -q
+
+ood:
+	pytest tests/test_improvements.py::test_ood_detection -v
 
 demo:
 	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_defense_demo.ps1

@@ -162,7 +162,10 @@ def preprocess_wafer_maps(
         arr = skimage_resize(
             arr, target_size, anti_aliasing=True, preserve_range=True
         ).astype(np.float32)
-        arr = arr / 2.0  # Normalize to [0, 1]
+        # WM-811K wafer maps use pixel values {0, 1, 2} representing
+        # background, normal die, and defective die respectively.
+        # Dividing by 2.0 normalizes to [0.0, 1.0] range.
+        arr = arr / 2.0
         preprocessed.append(arr)
 
         if (i + 1) % 25000 == 0:
