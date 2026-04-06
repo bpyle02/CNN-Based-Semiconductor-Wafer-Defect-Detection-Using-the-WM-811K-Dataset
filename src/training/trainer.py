@@ -2,7 +2,8 @@
 Training loop for wafer defect classification models.
 
 Implements a standard supervised learning loop with validation, learning rate
-scheduling, and history tracking.
+scheduling, and history tracking. Optionally integrates MetricsTracker for
+moving average analysis and trend detection.
 """
 
 import time
@@ -14,6 +15,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import logging
+
+from .metrics_tracker import MetricsTracker
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,8 @@ def train_model(
     model_name: str = "Model",
     device: str = "cpu",
     gradient_clip: Optional[float] = None,
+    metrics_tracker: Optional[MetricsTracker] = None,
+    metrics_output_path: Optional[str] = None,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Train a model and return best checkpoint by validation accuracy.
@@ -40,6 +45,7 @@ def train_model(
         5. Validation at end of each epoch
         6. Learning rate scheduling based on val loss
         7. Save best checkpoint (by val accuracy)
+        8. (Optional) Update MetricsTracker with epoch metrics
 
     Args:
         model: PyTorch model to train
@@ -52,6 +58,10 @@ def train_model(
         model_name: Name for logging
         device: Compute device ('cuda' or 'cpu')
         gradient_clip: Optional gradient norm clipping value
+        metrics_tracker: Optional MetricsTracker for moving average tracking
+            and trend detection. If None, training proceeds without tracking.
+        metrics_output_path: Optional path to save metrics JSON at end of
+            training. Only used if metrics_tracker is provided.
 
     Returns:
         Tuple of (best_model, history_dict) where history_dict contains:
@@ -138,6 +148,14 @@ def train_model(
         history['val_loss'].append(val_loss)
         history['val_acc'].append(val_acc)
 
+        # Update metrics tracker if provided
+        if metrics_tracker is not None:
+            current_lr = optimizer.param_groups[0]['lr']
+            metrics_tracker.update('train_loss', train_loss, step=epoch)
+            metrics_tracker.update('val_loss', val_loss, step=epoch)
+            metrics_tracker.update('val_accuracy', val_acc, step=epoch)
+            metrics_tracker.update('learning_rate', current_lr, step=epoch)
+
         # Learning rate scheduling
         if scheduler is not None:
             scheduler.step(val_loss)
@@ -155,6 +173,15 @@ def train_model(
             f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}"
         )
 
+        # Check for degrading trend and warn
+        if metrics_tracker is not None and epoch >= 3:
+            trend = metrics_tracker.get_trend('val_loss', lookback=min(epoch, 10))
+            if trend == 'degrading':
+                logger.warning(
+                    f"[{model_name}] Validation loss trend is DEGRADING "
+                    f"at epoch {epoch}. Consider early stopping or LR reduction."
+                )
+
     # Load best model
     model.load_state_dict(best_model_wts)
     elapsed = time.time() - start_time
@@ -165,6 +192,20 @@ def train_model(
         f"\n{model_name} training complete in {elapsed:.1f}s "
         f"(best val acc: {best_val_acc:.4f} at epoch {best_epoch})\n"
     )
+
+    # Export metrics tracker data if path provided
+    if metrics_tracker is not None and metrics_output_path is not None:
+        metrics_tracker.to_json(metrics_output_path)
+
+    # Log final summary from tracker
+    if metrics_tracker is not None:
+        summary = metrics_tracker.get_summary()
+        for name, info in summary.items():
+            logger.info(
+                f"[{model_name}] {name}: last={info['last']:.4f}, "
+                f"best={info['best']:.4f} (step {info['best_step']}), "
+                f"MA={info['moving_avg']:.4f}, trend={info['trend']}"
+            )
 
     return model, history
 
