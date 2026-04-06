@@ -212,6 +212,34 @@ class MCDropoutModel:
         return np.exp(x) / np.exp(x).sum(axis=axis, keepdims=True)
 
 
+class TemperatureScaler(nn.Module):
+    """
+    Temperature scaling for probability calibration.
+    Learns a single scalar parameter T to scale logits before softmax.
+    """
+    def __init__(self):
+        super().__init__()
+        self.temperature = nn.Parameter(torch.ones(1) * 1.5)
+
+    def forward(self, logits: torch.Tensor) -> torch.Tensor:
+        return logits / self.temperature
+
+    def fit(self, logits: torch.Tensor, labels: torch.Tensor, lr: float = 0.01, max_iter: int = 100):
+        """Fit temperature T on a validation set using NLL loss."""
+        self.train()
+        optimizer = torch.optim.LBFGS([self.temperature], lr=lr, max_iter=max_iter)
+        
+        def eval():
+            optimizer.zero_grad()
+            loss = F.cross_entropy(self.forward(logits), labels)
+            loss.backward()
+            return loss
+        
+        optimizer.step(eval)
+        self.eval()
+        return self.temperature.item()
+
+
 class UncertaintyEstimator:
     """
     High-level API for uncertainty analysis on datasets.
@@ -221,6 +249,7 @@ class UncertaintyEstimator:
     - Identifying most uncertain predictions (active learning)
     - Calibration analysis (uncertainty vs. correctness)
     - Confidence intervals and reliability metrics
+    - Temperature scaling for calibration
     """
 
     def __init__(
@@ -239,11 +268,39 @@ class UncertaintyEstimator:
         """
         self.mc_model = MCDropoutModel(model, num_iterations, device)
         self.device = device
+        self.temp_scaler: Optional[TemperatureScaler] = None
+
+    def calibrate(self, dataloader: DataLoader):
+        """
+        Fit temperature scaling on a validation/calibration set.
+        
+        Args:
+            dataloader: DataLoader with (images, labels) for calibration.
+        """
+        self.mc_model.model.eval()
+        all_logits = []
+        all_labels = []
+        
+        with torch.no_grad():
+            for x, y in dataloader:
+                x = x.to(self.device)
+                logits = self.mc_model.model(x)
+                all_logits.append(logits.cpu())
+                all_labels.append(y)
+        
+        logits = torch.cat(all_logits)
+        labels = torch.cat(all_labels)
+        
+        self.temp_scaler = TemperatureScaler().to(self.device)
+        temp = self.temp_scaler.fit(logits.to(self.device), labels.to(self.device))
+        logger.info(f"Temperature scaling fitted: T = {temp:.4f}")
+        return temp
 
     def estimate_dataset_uncertainty(
         self,
         dataloader: DataLoader,
         return_predictions: bool = False,
+        use_temp_scaling: bool = True,
     ) -> Dict[str, np.ndarray]:
         """
         Estimate uncertainty for all samples in a dataset.
@@ -251,6 +308,7 @@ class UncertaintyEstimator:
         Args:
             dataloader: PyTorch DataLoader
             return_predictions: If True, also return class predictions
+            use_temp_scaling: If True and calibrated, apply temperature scaling
 
         Returns:
             Dictionary with keys:
@@ -279,7 +337,7 @@ class UncertaintyEstimator:
 
             # Get MC estimates
             mean_p, std_p, entropy = (
-                self.mc_model.predict_proba_with_uncertainty(x)
+                self.predict_with_maybe_temp(x, use_temp_scaling)
             )
 
             # Epistemic uncertainty from variance
@@ -301,6 +359,40 @@ class UncertaintyEstimator:
             result['true_labels'] = np.array(true_labels)
 
         return result
+
+    def predict_with_maybe_temp(self, x: torch.Tensor, use_temp_scaling: bool = True):
+        """Internal helper to apply temperature scaling if available."""
+        if not use_temp_scaling or self.temp_scaler is None:
+            return self.mc_model.predict_proba_with_uncertainty(x)
+        
+        # We need to manually do MC dropout to apply temperature scaling before softmax
+        self.mc_model.model.eval()
+        self.mc_model._enable_dropout()
+        
+        logits_dist = []
+        with torch.no_grad():
+            for _ in range(self.mc_model.num_iterations):
+                logits = self.mc_model.model(x)
+                # Apply temperature scaling
+                scaled_logits = self.temp_scaler(logits)
+                logits_dist.append(scaled_logits.cpu().numpy())
+        
+        logits_dist = np.array(logits_dist)  # (T, B, C)
+        logits_dist = np.transpose(logits_dist, (1, 0, 2))  # (B, T, C)
+        
+        probs_dist = self.mc_model._softmax_numpy(logits_dist)
+        mean_probs = probs_dist.mean(axis=1)
+        std_probs = probs_dist.std(axis=1)
+        
+        # Entropy
+        mean_probs64 = mean_probs.astype(np.float64, copy=False)
+        entropy = -np.sum(
+            mean_probs64 * np.log(np.clip(mean_probs64, 1e-12, 1.0)),
+            axis=1,
+        )
+        
+        self.mc_model._disable_dropout()
+        return mean_probs, std_probs, entropy
 
     def get_uncertain_samples(
         self,

@@ -1,10 +1,16 @@
 # Makefile for CNN-Based Semiconductor Wafer Defect Detection
 
-.PHONY: install train dashboard test defense demo federated active_learn compress progressive ood docs
+.PHONY: install bootstrap doctor train dashboard test test-cov defense demo federated active_learn compress progressive ood docs
 
 # 1. Installation
 install:
-	pip install -r requirements.txt
+	python -m pip install -e ".[dev]"
+
+bootstrap:
+	python scripts/bootstrap_env.py
+
+doctor:
+	python scripts/doctor.py
 
 # 2. Main Training Pipeline (Refactored)
 train:
@@ -30,6 +36,9 @@ progressive:
 # 5. Testing & Validation
 test:
 	pytest -q
+
+test-cov:
+	pytest --cov=src --cov-report=term-missing
 
 ood:
 	pytest tests/test_improvements.py::test_ood_detection -v

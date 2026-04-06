@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import shutil
 import subprocess
 import sys
@@ -13,6 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
 import logging
+
+from src.analysis.artifacts import (
+    build_experiment_manifest,
+    detect_latest_checkpoint,
+    write_manifest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +43,12 @@ class Artifact:
     required: bool = True
 
 
-def build_artifacts() -> list[Artifact]:
+def build_artifacts(
+    config_path: Path,
+    checkpoint_path: Path | None,
+) -> list[Artifact]:
     """Return the curated artifact list for the committee bundle."""
-    return [
+    artifacts = [
         Artifact(PROJECT_ROOT / "README.md", Path("README.md"), "Repository overview"),
         Artifact(
             PROJECT_ROOT / "DEFENSE_SUBMISSION.md",
@@ -48,9 +56,20 @@ def build_artifacts() -> list[Artifact]:
             "Operational submission guide",
         ),
         Artifact(
+            PROJECT_ROOT / "pyproject.toml",
+            Path("pyproject.toml"),
+            "Package metadata and dependency groups",
+        ),
+        Artifact(
+            config_path,
+            Path("config.yaml"),
+            "Canonical experiment configuration",
+        ),
+        Artifact(
             PROJECT_ROOT / "requirements.txt",
             Path("requirements.txt"),
             "Dependency manifest",
+            required=False,
         ),
         Artifact(PROJECT_ROOT / "pytest.ini", Path("pytest.ini"), "Pytest configuration"),
         Artifact(
@@ -106,6 +125,12 @@ def build_artifacts() -> list[Artifact]:
             "Inference smoke demo",
         ),
         Artifact(
+            PROJECT_ROOT / "scripts" / "bootstrap_env.py",
+            Path("scripts/bootstrap_env.py"),
+            "Editable-install bootstrap helper",
+            required=False,
+        ),
+        Artifact(
             PROJECT_ROOT / "scripts" / "finalize_submission.py",
             Path("scripts/finalize_submission.py"),
             "Submission packager",
@@ -135,6 +160,18 @@ def build_artifacts() -> list[Artifact]:
             required=False,
         ),
     ]
+
+    if checkpoint_path is not None:
+        artifacts.append(
+            Artifact(
+                checkpoint_path,
+                Path("artifacts/checkpoints") / checkpoint_path.name,
+                "Reference model checkpoint",
+                required=False,
+            )
+        )
+
+    return artifacts
 
 
 def run_command(command: Sequence[str], cwd: Path | None = None) -> tuple[int, str]:
@@ -240,7 +277,7 @@ def run_demo(skip_demo: bool) -> dict[str, str | int]:
         status = "failed"
 
     if "fastapi is not installed" in lowered:
-        summary = "fastapi is not installed. Install requirements.txt to run the demo."
+        summary = 'fastapi is not installed. Install with `python -m pip install -e ".[dev]"` to run the demo.'
     else:
         summary = output.splitlines()[-1].strip() if output.strip() else "Demo output unavailable"
     return {
@@ -263,10 +300,14 @@ def copy_artifact(artifact: Artifact) -> dict[str, str | bool | int]:
     """Copy one artifact into the submission directory."""
     destination = SUBMISSION_DIR / artifact.destination
     source = artifact.source
+    try:
+        source_label = str(source.relative_to(PROJECT_ROOT))
+    except ValueError:
+        source_label = str(source.resolve())
 
     if not source.exists():
         return {
-            "source": str(source.relative_to(PROJECT_ROOT)),
+            "source": source_label,
             "destination": str(artifact.destination),
             "description": artifact.description,
             "required": artifact.required,
@@ -284,7 +325,7 @@ def copy_artifact(artifact: Artifact) -> dict[str, str | bool | int]:
         size_bytes = destination.stat().st_size
 
     return {
-        "source": str(source.relative_to(PROJECT_ROOT)),
+        "source": source_label,
         "destination": str(artifact.destination),
         "description": artifact.description,
         "required": artifact.required,
@@ -344,21 +385,24 @@ def write_validation_summary(
     (SUBMISSION_DIR / "VALIDATION_SUMMARY.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def write_manifest(
+def write_manifest_file(
     validation: dict[str, str | int],
     demo: dict[str, str | int],
     records: list[dict[str, str | bool | int]],
+    config_path: Path,
+    checkpoint_path: Path | None,
 ) -> None:
     """Write a machine-readable manifest for the bundle."""
-    manifest = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "project_root": str(PROJECT_ROOT),
-        "validation": validation,
-        "demo": demo,
-        "artifacts": records,
-    }
-    manifest_path = SUBMISSION_DIR / "MANIFEST.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest = build_experiment_manifest(
+        project_root=PROJECT_ROOT,
+        submission_dir=SUBMISSION_DIR,
+        records=records,
+        validation=validation,
+        demo=demo,
+        config_path=config_path if config_path.exists() else None,
+        checkpoint_path=checkpoint_path if checkpoint_path is not None and checkpoint_path.exists() else None,
+    )
+    write_manifest(manifest, SUBMISSION_DIR / "MANIFEST.json")
 
 
 def create_archive() -> Path:
@@ -399,6 +443,18 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line flags."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--config-path",
+        type=Path,
+        default=PROJECT_ROOT / "config.yaml",
+        help="Path to the canonical experiment configuration to package and hash.",
+    )
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        default=None,
+        help="Optional model checkpoint to include and hash. Defaults to the newest checkpoint under checkpoints/ if present.",
+    )
+    parser.add_argument(
         "--skip-tests",
         action="store_true",
         help="Do not run pytest before packaging.",
@@ -414,7 +470,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """Run validation and create the submission bundle."""
     args = parse_args()
-    artifacts = build_artifacts()
+    checkpoint_path = args.checkpoint_path
+    if checkpoint_path is None:
+        checkpoint_path = detect_latest_checkpoint(PROJECT_ROOT / "checkpoints")
+
+    artifacts = build_artifacts(args.config_path, checkpoint_path)
 
     validation = run_validation(skip_tests=args.skip_tests)
     demo = run_demo(skip_demo=args.skip_demo)
@@ -422,7 +482,7 @@ def main() -> int:
     reset_submission_dir()
     records = collect_artifacts(artifacts)
     write_validation_summary(validation, demo, records)
-    write_manifest(validation, demo, records)
+    write_manifest_file(validation, demo, records, args.config_path, checkpoint_path)
     archive_path = create_archive()
     print_summary(validation, demo, records, archive_path)
 

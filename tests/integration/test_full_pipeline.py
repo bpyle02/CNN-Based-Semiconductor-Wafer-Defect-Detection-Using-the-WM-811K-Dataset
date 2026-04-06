@@ -36,23 +36,26 @@ def config_dict():
         'device': 'cuda' if torch.cuda.is_available() else 'cpu',
         'seed': 42,
         'data': {
-            'batch_size': 8,
             'dataset_path': 'data/LSWMD_new.pkl',
             'test_size': 0.15,
             'val_size': 0.15,
+            'train_size': 0.70,
         },
         'training': {
             'epochs': 2,  # Short for testing
+            'batch_size': 8,
             'learning_rate': 1e-3,
             'weight_decay': 1e-4,
             'optimizer': 'adam',
-            'scheduler': 'plateau',
+            'scheduler': {
+                'type': 'ReduceLROnPlateau',
+            },
             'default_model': 'cnn',
         },
         'models': {
-            'cnn': {'dropout': 0.5},
-            'resnet': {'dropout': 0.5},
-            'effnet': {'dropout': 0.5},
+            'cnn': {'name': 'Custom CNN', 'architecture': 'custom', 'dropout_rate': 0.5},
+            'resnet': {'name': 'ResNet-18', 'architecture': 'resnet18', 'dropout_rate': 0.5},
+            'efficientnet': {'name': 'EfficientNet-B0', 'architecture': 'efficientnet_b0', 'dropout_rate': 0.5},
         },
         'checkpoint_dir': 'checkpoints',
     }
@@ -313,10 +316,13 @@ seed: 42
 checkpoint_dir: {checkpoint_dir}
 training:
   epochs: 5
+  batch_size: 64
   learning_rate: 1e-4
   weight_decay: 1e-4
 data:
-  batch_size: 64
+  train_size: 0.70
+  val_size: 0.15
+  test_size: 0.15
 """)
         trainer = BaseTrainer(str(config_path))
         assert trainer.device.type == 'cpu'
@@ -333,6 +339,11 @@ seed: 123
 checkpoint_dir: {checkpoint_dir}
 training:
   epochs: 5
+  batch_size: 64
+data:
+  train_size: 0.70
+  val_size: 0.15
+  test_size: 0.15
 """)
         trainer = BaseTrainer(str(config_path))
 

@@ -20,44 +20,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-try:
-    import torchvision.transforms as transforms
-except ImportError:
-    class _Compose:
-        def __init__(self, transform_list: Sequence[Any]) -> None:
-            self.transforms = list(transform_list)
-
-        def __call__(self, x: torch.Tensor) -> torch.Tensor:
-            for transform in self.transforms:
-                x = transform(x)
-            return x
-
-    class _IdentityTransform:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            pass
-
-        def __call__(self, x: torch.Tensor) -> torch.Tensor:
-            return x
-
-    class _Normalize:
-        def __init__(self, mean: List[float], std: List[float]) -> None:
-            self.mean = torch.tensor(mean, dtype=torch.float32).view(-1, 1, 1)
-            self.std = torch.tensor(std, dtype=torch.float32).view(-1, 1, 1)
-
-        def __call__(self, x: torch.Tensor) -> torch.Tensor:
-            mean = self.mean.to(device=x.device, dtype=x.dtype)
-            std = self.std.to(device=x.device, dtype=x.dtype)
-            return (x - mean) / std
-
-    class _FallbackTransforms:
-        Compose = _Compose
-        RandomHorizontalFlip = _IdentityTransform
-        RandomVerticalFlip = _IdentityTransform
-        RandomRotation = _IdentityTransform
-        RandomAffine = _IdentityTransform
-        Normalize = _Normalize
-
-    transforms = _FallbackTransforms()
+import torchvision.transforms as transforms
 
 from .dataset import load_dataset, KNOWN_CLASSES
 
@@ -80,32 +43,36 @@ class WaferMapDataset(Dataset):
     """
     PyTorch Dataset for WM-811K semiconductor wafer maps.
 
-    Expects pre-resized and normalized wafer maps. Stacks grayscale maps into
-    3-channel format for compatibility with pretrained models.
+    Expects raw wafer maps. Resizes, normalizes, and stacks grayscale maps into
+    3-channel format during __getitem__ for lazy loading.
 
     Attributes:
-        maps: List of preprocessed (H, W) numpy arrays
+        maps: List of raw numpy arrays
         labels: List of integer class labels
         transform: Optional torchvision transforms to apply
+        target_size: Target (height, width) after resizing
     """
 
     def __init__(
         self,
-        preprocessed_maps: List[np.ndarray],
+        raw_maps: List[np.ndarray],
         labels: np.ndarray,
-        transform: Optional[transforms.Compose] = None
+        transform: Optional[transforms.Compose] = None,
+        target_size: Tuple[int, int] = TARGET_SIZE
     ) -> None:
         """
         Initialize dataset.
 
         Args:
-            preprocessed_maps: List of resized, normalized (H, W) float32 arrays
+            raw_maps: List of raw numpy arrays
             labels: 1D array of integer class labels
             transform: Optional torchvision transform pipeline
+            target_size: Target (height, width) for resizing
         """
-        self.maps = preprocessed_maps
+        self.maps = raw_maps
         self.labels = labels
         self.transform = transform
+        self.target_size = target_size
 
         if len(self.maps) != len(self.labels):
             raise ValueError(
@@ -127,9 +94,16 @@ class WaferMapDataset(Dataset):
             Tuple of (image tensor [C, H, W], label tensor)
         """
         wm = self.maps[idx]
+        
+        # Preprocess lazily
+        arr = wm.astype(np.float32)
+        arr = skimage_resize(
+            arr, self.target_size, anti_aliasing=True, preserve_range=True
+        ).astype(np.float32)
+        arr = arr / 2.0
 
         # Stack to 3 channels: (H, W) -> (3, H, W)
-        img = np.stack([wm] * 3, axis=0)
+        img = np.stack([arr] * 3, axis=0)
         img = torch.tensor(img, dtype=torch.float32)
 
         if self.transform:
@@ -139,15 +113,62 @@ class WaferMapDataset(Dataset):
         return img, label
 
 
+class PatchWaferDataset(Dataset):
+    """
+    Dataset for high-resolution wafers that yields patches instead of resizing.
+    Useful for preserving resolution-dependent defect signatures.
+    """
+    def __init__(
+        self,
+        raw_maps: List[np.ndarray],
+        labels: np.ndarray,
+        patch_size: int = 32,
+        patches_per_wafer: int = 1,
+        transform: Optional[transforms.Compose] = None
+    ) -> None:
+        self.maps = raw_maps
+        self.labels = labels
+        self.patch_size = patch_size
+        self.patches_per_wafer = patches_per_wafer
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.labels) * self.patches_per_wafer
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        wafer_idx = idx // self.patches_per_wafer
+        wm = self.maps[wafer_idx]
+        h, w = wm.shape
+        
+        # Randomly sample a patch if wafer is larger than patch_size
+        if h > self.patch_size and w > self.patch_size:
+            top = np.random.randint(0, h - self.patch_size)
+            left = np.random.randint(0, w - self.patch_size)
+            patch = wm[top:top+self.patch_size, left:left+self.patch_size]
+        else:
+            # Pad or resize if smaller
+            patch = skimage_resize(wm, (self.patch_size, self.patch_size), anti_aliasing=True)
+
+        arr = patch.astype(np.float32) / 2.0
+        img = np.stack([arr] * 3, axis=0)
+        img = torch.tensor(img, dtype=torch.float32)
+
+        if self.transform:
+            img = self.transform(img)
+
+        label = torch.tensor(self.labels[wafer_idx], dtype=torch.long)
+        return img, label
+
+
 def preprocess_wafer_maps(
     wafer_maps: List[np.ndarray],
     target_size: Tuple[int, int] = TARGET_SIZE
 ) -> List[np.ndarray]:
     """
     Resize all wafer maps to uniform size and normalize to [0, 1].
-
-    Preprocessing is done once upfront rather than per-batch, which dramatically
-    speeds up training, especially on CPU.
+    
+    DEPRECATED: Preprocessing is now done lazily in WaferMapDataset.
+    This function is kept for backward compatibility or one-off conversions.
 
     Args:
         wafer_maps: List of (H, W) numpy arrays
@@ -237,7 +258,7 @@ def get_image_transforms(augment: bool = True) -> transforms.Compose:
         "Augmentations: "
         + ("HFlip, VFlip, Rotation(+/-15), Translate(5%)" if augment else "disabled")
     )
-    logger.info(f"Preprocessing: All maps resized ONCE upfront (not per-batch)")
+    logger.info(f"Preprocessing: Maps resized dynamically per-batch (lazy loading)")
 
     return train_transform
 

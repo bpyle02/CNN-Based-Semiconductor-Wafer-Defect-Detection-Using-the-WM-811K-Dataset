@@ -31,18 +31,18 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent))
 
 from torchvision import transforms as tv_transforms
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
+from src.data import (
+    load_dataset, preprocess_wafer_maps, get_image_transforms,
+    get_imagenet_normalize, WaferMapDataset, seed_worker, KNOWN_CLASSES
+)
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model
 from src.config import load_config
 
 
-KNOWN_CLASSES = [
-    'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
-    'Loc', 'Near-full', 'Random', 'Scratch', 'none'
-]
 SEED = 42
+
 
 
 def set_seed(seed: int) -> None:

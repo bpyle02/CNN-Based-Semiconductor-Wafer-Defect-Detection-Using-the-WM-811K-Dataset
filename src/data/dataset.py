@@ -114,7 +114,7 @@ def extract_failure_label(failure_label: Any) -> str:
         if isinstance(failure_label, str):
             return failure_label.strip()
 
-    except Exception as e:
+    except (IndexError, TypeError, AttributeError, UnicodeDecodeError) as e:
         logger.debug(f"Could not parse failure label: {e}")
 
     return 'unknown'

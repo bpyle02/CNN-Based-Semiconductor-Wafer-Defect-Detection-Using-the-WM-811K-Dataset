@@ -5,9 +5,9 @@ This repository contains a modular wafer-defect detection codebase built around 
 ## Verified Status
 
 - Repository validation date: `2026-04-05`
-- Test suite: 51 test functions across 5 files (static count verified via `grep -c "def test_"`)
+- The default local verification command is `pytest -q`.
 - The inference API now supports Grad-CAM overlays in prediction responses.
-- The test harness is stable inside the repo workspace and no longer depends on inaccessible temp directories.
+- Editable packaging is now defined in `pyproject.toml`, with optional dependency groups for dev, server, tuning, docs, dashboards, and export tooling.
 
 The authoritative defense-facing artifacts are:
 
@@ -22,29 +22,54 @@ The codebase is organized as a research software artifact rather than a single-s
 
 - Wafer-map loading and preprocessing
 - A custom CNN and pretrained transfer-learning baselines
-- A FastAPI inference server with model loading, prediction, and Grad-CAM overlays
+- A FastAPI inference server with trusted checkpoint loading, single-image prediction, batch prediction, and Grad-CAM overlays
 - Monte Carlo dropout uncertainty estimation
 - OOD and anomaly detection utilities
 - Federated averaging with improved robust aggregation options
 - Synthetic augmentation and generator training utilities
-- Model registry and version metadata
+- Model registry, version metadata, and experiment-artifact manifests
 - Integration and unit tests for core functionality
 
 ## Quick Start
 
 ### 1. Install dependencies
 
+Use Python `3.10` to `3.12`. The project metadata now declares that supported range explicitly.
+
 ```bash
-pip install -r requirements.txt
+python -m pip install -e ".[dev]"
 ```
 
-### 2. Run the validated test suite
+If you prefer an explicit bootstrap helper instead of a direct editable install:
+
+```bash
+python scripts/bootstrap_env.py
+```
+
+### 2. Diagnose the active environment
+
+```bash
+make doctor
+python scripts/doctor.py --json
+```
+
+This is useful when `python`, `pip`, and `pytest` may be resolving to different environments.
+
+### 3. Run the validated test suite
 
 ```bash
 pytest -q
 ```
 
-### 3. Run the committee smoke demo
+### 4. Use config overlays when needed
+
+```bash
+python train.py --config configs/base.yaml --config configs/train.yaml
+```
+
+Available overlays include `configs/base.yaml`, `configs/train.yaml`, `configs/inference.yaml`, and `configs/federated.yaml`.
+
+### 5. Run the committee smoke demo
 
 This exercises the inference path, model loading, prediction, and Grad-CAM generation without needing an external web server:
 
@@ -54,13 +79,13 @@ This exercises the inference path, model loading, prediction, and Grad-CAM gener
 
 The wrapper uses the same Python environment that resolves `pytest`. If `fastapi` is installed in that environment, the demo writes a Grad-CAM overlay to `docs/generated/defense_demo_gradcam.png`.
 
-### 4. Build the committee bundle
+### 6. Build the committee bundle
 
 ```bash
 python scripts/finalize_submission.py
 ```
 
-This creates `SUBMISSION_FINAL/` and `SUBMISSION_FINAL.zip`.
+This creates `SUBMISSION_FINAL/`, `SUBMISSION_FINAL.zip`, and a machine-readable `MANIFEST.json` with git state, artifact hashes, validation status, and optional checkpoint metadata.
 
 ## Repository Layout
 
@@ -98,7 +123,7 @@ Claims that are justified directly by the checked-in repository:
 
 - The codebase is modular and testable.
 - Core inference, uncertainty, and federated-learning utilities are implemented.
-- The public test suite currently passes.
+- The public test suite is runnable through the repo-default `pytest -q` command.
 - The repo now includes an explainability-enabled inference path and a reproducible validation workflow.
 
 Claims that should come from experiment logs or committee-approved report tables rather than the repo alone:
@@ -118,10 +143,19 @@ pytest -q
 
 If you have a trained checkpoint and FastAPI dependencies available, you can also run the inference stack directly through the server utilities in `src/inference/server.py`.
 
+To start the server with an explicit trusted checkpoint root:
+
+```bash
+python scripts/inference_server.py \
+  --model checkpoints/best_cnn.pth \
+  --model-type cnn \
+  --trusted-checkpoint-dir checkpoints
+```
+
 ## Known Limitations
 
 - The repository does not currently ship a committee-approved trained checkpoint.
-- The inference API supports a single active model at a time rather than a persistent multi-model serving registry.
+- The inference API supports a single active model at a time rather than a persistent multi-model serving registry, and it now only accepts checkpoints from trusted repo-local directories.
 - The custom exception hierarchy is now used in core runtime modules, but broader adoption across every subsystem remains incomplete.
 - Historical course-era documents remain in `docs/`; use the defense packet and updated slide deck as the authoritative submission-facing materials.
 

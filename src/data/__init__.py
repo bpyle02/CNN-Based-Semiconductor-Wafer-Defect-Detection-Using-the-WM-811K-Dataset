@@ -2,7 +2,7 @@
 
 from typing import Any, NoReturn
 
-from .dataset import load_dataset, extract_failure_label
+from .dataset import load_dataset, extract_failure_label, KNOWN_CLASSES
 
 _PREPROCESSING_IMPORT_ERROR = None
 
@@ -45,6 +45,7 @@ except ImportError as exc:
 __all__ = [
     'load_dataset',
     'extract_failure_label',
+    'KNOWN_CLASSES',
     'WaferMapDataset',
     'preprocess_wafer_maps',
     'preprocess_data',

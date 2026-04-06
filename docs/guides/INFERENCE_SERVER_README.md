@@ -7,6 +7,7 @@ Production-ready FastAPI server for wafer defect classification with TorchServe 
 - **Multi-model serving**: Support for CNN, ResNet-18, and EfficientNet-B0 architectures
 - **Dynamic model loading**: Load checkpoints at runtime via REST API
 - **Flexible input**: Base64-encoded images or file uploads
+- **Batch inference**: Predict on multiple base64 payloads with `/predict_batch`
 - **Comprehensive validation**: Input size, format, and error handling
 - **CORS support**: Web client integration
 - **Async endpoints**: High-concurrency inference
@@ -83,6 +84,7 @@ print(f"Confidence: {prediction['confidence']:.2%}")
 | GET /model_info | Get loaded model details |
 | POST /load_model | Load checkpoint |
 | POST /predict | Predict on base64 image |
+| POST /predict_batch | Predict on multiple base64 images |
 | POST /predict_file | Predict on uploaded file |
 
 ### Class Names (Predicted Values)
@@ -102,7 +104,8 @@ python inference_server.py --device cuda --port 8000
 # Start and load model immediately
 python inference_server.py \
   --model checkpoints/best_cnn.pth \
-  --model-type cnn
+  --model-type cnn \
+  --trusted-checkpoint-dir checkpoints
 
 # Start on external IP (for remote access)
 python inference_server.py --host 0.0.0.0 --port 8000
@@ -144,6 +147,7 @@ python inference_server.py --device cuda --port 8000
 python inference_server.py \
   --model checkpoints/best_cnn.pth \
   --model-type cnn \
+  --trusted-checkpoint-dir checkpoints \
   --device cuda \
   --port 8000
 
@@ -202,6 +206,8 @@ Content-Type: application/json
 }
 ```
 
+The CLI and API only load checkpoints from trusted directories. If you start the server from the wrapper, pass `--trusted-checkpoint-dir checkpoints` or another repo-local root that should be accepted.
+
 Response:
 ```json
 {
@@ -250,6 +256,21 @@ Response:
   "input_shape": [96, 96],
   "inference_ms": 45.23,
   "gradcam_base64": null
+}
+```
+
+### Predict Batch (Base64 Images)
+
+```bash
+POST /predict_batch
+Content-Type: application/json
+
+{
+  "images": [
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+  ],
+  "model_name": null
 }
 ```
 

@@ -34,6 +34,7 @@ except ImportError:
     TestClient = None
 
 from src.models import WaferCNN
+from src.model_registry import save_checkpoint_with_hash
 
 if FASTAPI_AVAILABLE:
     from src.inference.server import create_app, ModelServer, ModelType
@@ -98,12 +99,14 @@ def image_to_base64(image_array: np.ndarray) -> str:
     return encoded
 
 
-def test_server_direct() -> None:
+def test_server_direct(workspace_tmp_path) -> None:
     """Test server directly using TestClient."""
     logger.info("Testing inference server (direct mode)...")
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
 
     # Create app
-    app = create_app(device="cpu")
+    app = create_app(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
     client = TestClient(app)
 
     # Test 1: Health check
@@ -140,10 +143,8 @@ def test_server_direct() -> None:
 
     # Create a temporary model for testing
     model = WaferCNN(num_classes=9)
-    model_path = Path("checkpoints")
-    model_path.mkdir(exist_ok=True)
-    checkpoint_path = model_path / "test_model.pth"
-    torch.save(model.state_dict(), checkpoint_path)
+    checkpoint_path = (allowed_dir / "test_model.pth").resolve()
+    save_checkpoint_with_hash(model.state_dict(), checkpoint_path)
     logger.info(f"   Created test model: {checkpoint_path}")
 
     try:
@@ -245,23 +246,23 @@ def test_server_direct() -> None:
         # Cleanup
         if checkpoint_path.exists():
             checkpoint_path.unlink()
-            if model_path.exists() and not any(model_path.iterdir()):
-                model_path.rmdir()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
 
-
-def test_model_server_direct() -> None:
+def test_model_server_direct(workspace_tmp_path) -> None:
     """Test ModelServer directly."""
     logger.info("Testing ModelServer class directly...")
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
 
     # Create server
-    server = ModelServer(device="cpu")
+    server = ModelServer(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
 
     # Create and save a test model
     model = WaferCNN(num_classes=9)
-    model_path = Path("checkpoints")
-    model_path.mkdir(exist_ok=True)
-    checkpoint_path = model_path / "test_model.pth"
-    torch.save(model.state_dict(), checkpoint_path)
+    checkpoint_path = (allowed_dir / "test_model.pth").resolve()
+    save_checkpoint_with_hash(model.state_dict(), checkpoint_path)
 
     try:
         # Load model
@@ -283,12 +284,173 @@ def test_model_server_direct() -> None:
     finally:
         if checkpoint_path.exists():
             checkpoint_path.unlink()
-        if model_path.exists() and not any(model_path.iterdir()):
-            model_path.rmdir()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
+
+
+def test_load_model_rejects_untrusted_path(workspace_tmp_path) -> None:
+    """Loading via the API should reject checkpoint paths outside trusted roots."""
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    outside_dir = workspace_tmp_path / "outside_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
+    outside_dir.mkdir(parents=True, exist_ok=True)
+
+    app = create_app(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
+    client = TestClient(app)
+
+    checkpoint_path = (outside_dir / "outside_model.pth").resolve()
+    save_checkpoint_with_hash(WaferCNN(num_classes=9).state_dict(), checkpoint_path)
+
+    try:
+        response = client.post(
+            "/load_model",
+            json={
+                "model_type": "cnn",
+                "checkpoint_path": str(checkpoint_path),
+            },
+        )
+        assert response.status_code == 400
+        assert "trusted checkpoint roots" in response.json()["detail"]
+    finally:
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
+
+
+def test_load_model_rejects_hash_mismatch(workspace_tmp_path) -> None:
+    """Loading via the API should fail closed on a bad hash file."""
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
+
+    app = create_app(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
+    client = TestClient(app)
+
+    checkpoint_path = (allowed_dir / "tampered_model.pth").resolve()
+    save_checkpoint_with_hash(WaferCNN(num_classes=9).state_dict(), checkpoint_path)
+    checkpoint_path.with_suffix(".sha256").write_text("0" * 64, encoding="utf-8")
+
+    try:
+        response = client.post(
+            "/load_model",
+            json={
+                "model_type": "cnn",
+                "checkpoint_path": str(checkpoint_path),
+            },
+        )
+        assert response.status_code == 400
+        assert "integrity verification failed" in response.json()["detail"].lower()
+    finally:
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
+
+
+def test_batch_prediction_endpoint(workspace_tmp_path) -> None:
+    """Batch predictions should return one prediction per image."""
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
+
+    app = create_app(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
+    client = TestClient(app)
+
+    checkpoint_path = (allowed_dir / "batch_model.pth").resolve()
+    save_checkpoint_with_hash(WaferCNN(num_classes=9).state_dict(), checkpoint_path)
+
+    try:
+        load_response = client.post(
+            "/load_model",
+            json={
+                "model_type": "cnn",
+                "checkpoint_path": str(checkpoint_path),
+            },
+        )
+        assert load_response.status_code == 200
+        model_name = load_response.json()["model_name"]
+
+        images = [image_to_base64(create_synthetic_image()) for _ in range(3)]
+        response = client.post(
+            "/predict_batch",
+            json={
+                "images": images,
+                "model_name": model_name,
+            },
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["total_time_ms"] >= 0
+        assert len(payload["predictions"]) == 3
+        for prediction in payload["predictions"]:
+            assert prediction["model_name"] == model_name
+            assert prediction["class_name"] in prediction["probabilities"]
+            assert set(prediction["probabilities"].keys()) == set(
+                ["Center", "Donut", "Edge-Loc", "Edge-Ring", "Loc", "Near-full", "Random", "Scratch", "none"]
+            )
+    finally:
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
+
+
+def test_batch_prediction_rejects_invalid_payload(workspace_tmp_path) -> None:
+    """Batch prediction should fail on invalid payloads."""
+    allowed_dir = workspace_tmp_path / "allowed_checkpoints"
+    allowed_dir.mkdir(parents=True, exist_ok=True)
+
+    app = create_app(device="cpu", allowed_checkpoint_dirs=[allowed_dir])
+    client = TestClient(app)
+
+    checkpoint_path = (allowed_dir / "batch_invalid_model.pth").resolve()
+    save_checkpoint_with_hash(WaferCNN(num_classes=9).state_dict(), checkpoint_path)
+
+    try:
+        load_response = client.post(
+            "/load_model",
+            json={
+                "model_type": "cnn",
+                "checkpoint_path": str(checkpoint_path),
+            },
+        )
+        assert load_response.status_code == 200
+
+        response = client.post(
+            "/predict_batch",
+            json={"images": ["not-valid-base64!!!"]},
+        )
+        assert response.status_code in [400, 422]
+
+        response = client.post(
+            "/predict_batch",
+            json={"images": []},
+        )
+        assert response.status_code in [400, 422]
+
+        response = client.post(
+            "/predict_batch",
+            json={
+                "images": [image_to_base64(create_synthetic_image())],
+                "model_name": "wrong-model",
+            },
+        )
+        assert response.status_code == 400
+    finally:
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+        hash_path = checkpoint_path.with_suffix(".sha256")
+        if hash_path.exists():
+            hash_path.unlink()
 
 
 if __name__ == "__main__":
     import sys
+    import tempfile
+    from pathlib import Path
 
     logger.info("=" * 60)
     logger.info("Inference Server Test Suite")
@@ -299,8 +461,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        test_model_server_direct()
-        test_server_direct()
+        with tempfile.TemporaryDirectory(prefix="wafer_inference_tests_") as tmp_dir:
+            workspace_tmp_path = Path(tmp_dir)
+            test_model_server_direct(workspace_tmp_path)
+            test_server_direct(workspace_tmp_path)
         sys.exit(0)
     except Exception as e:
         logger.error(f"Test failed: {str(e)}", exc_info=True)

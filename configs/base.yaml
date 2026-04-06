@@ -1,0 +1,219 @@
+# Base repository defaults for wafer defect detection.
+
+data:
+  dataset_path: data/LSWMD_new.pkl
+  image_size: 96
+  train_size: 0.70
+  val_size: 0.15
+  test_size: 0.15
+  num_workers: 0
+  pin_memory: false
+  augmentation:
+    enabled: true
+    random_rotation: 15
+    horizontal_flip: true
+    vertical_flip: false
+    gaussian_noise: 0.01
+    brightness: 0.1
+    contrast: 0.1
+
+models:
+  cnn:
+    name: Custom CNN
+    architecture: custom
+    input_channels: 1
+    num_classes: 9
+    dropout_rate: 0.5
+    use_batch_norm: true
+  resnet:
+    name: ResNet-18
+    architecture: resnet18
+    pretrained: true
+    num_classes: 9
+    dropout_rate: 0.5
+    freeze_until: layer3
+  efficientnet:
+    name: EfficientNet-B0
+    architecture: efficientnet_b0
+    pretrained: true
+    num_classes: 9
+    dropout_rate: 0.5
+    freeze_until: features.6
+
+training:
+  default_model: all
+  epochs: 5
+  batch_size: 64
+  learning_rate:
+    cnn: 1e-3
+    resnet: 1e-4
+    efficientnet: 1e-4
+  weight_decay: 1e-4
+  gradient_clip_max_norm: 1.0
+  optimizer: adam
+  scheduler:
+    type: ReduceLROnPlateau
+    mode: min
+    factor: 0.5
+    patience: 3
+    min_lr: 1e-6
+    verbose: true
+  loss:
+    type: CrossEntropyLoss
+    weighted: true
+    class_weights: null
+  early_stopping:
+    enabled: true
+    patience: 10
+    min_delta: 1e-4
+  checkpointing:
+    enabled: true
+    save_dir: checkpoints
+    save_best_only: true
+    metric: val_loss
+
+validation:
+  eval_every_n_epochs: 1
+  compute_confusion_matrix: true
+  compute_per_class_metrics: true
+  compute_gradcam: true
+  num_gradcam_samples: 9
+
+inference:
+  model_path: checkpoints/best_model.pth
+  batch_size: 32
+  num_workers: 4
+  device: cuda
+  use_half_precision: false
+  gradcam:
+    enabled: true
+    target_layer: null
+    colormap: jet
+
+ensemble:
+  enabled: false
+  models: [cnn, resnet, efficientnet]
+  aggregation: voting
+  weights: [0.33, 0.33, 0.34]
+
+tuning:
+  enabled: false
+  method: optuna
+  n_trials: 100
+  n_jobs: 4
+  search_space:
+    learning_rate: [1e-5, 1e-2]
+    batch_size: [32, 64, 128]
+    dropout_rate: [0.3, 0.7]
+    weight_decay: [1e-5, 1e-3]
+  optimization:
+    metric: macro_f1
+    direction: maximize
+
+compression:
+  enabled: false
+  quantization:
+    enabled: false
+    dtype: int8
+  pruning:
+    enabled: false
+    percentage: 0.3
+  distillation:
+    enabled: false
+    teacher_model: checkpoints/best_model.pth
+    temperature: 4.0
+    alpha: 0.7
+
+active_learning:
+  enabled: false
+  strategy: uncertainty
+  initial_labeled: 0.1
+  acquisition_size: 100
+  max_iterations: 10
+  uncertainty_method: entropy
+
+mlops:
+  wandb:
+    enabled: false
+    project: wafer-defect-detection
+    entity: null
+    tags: [production, v1.0]
+  mlflow:
+    enabled: false
+    tracking_uri: http://localhost:5000
+    experiment_name: wafer_defect
+  logging:
+    level: INFO
+    log_dir: logs
+    save_configs: true
+
+cross_validation:
+  enabled: false
+  n_splits: 5
+  method: stratified_kfold
+  random_state: 42
+
+progressive_training:
+  enabled: false
+  stages:
+    - image_size: 48
+      epochs: 2
+      learning_rate_factor: 1.0
+    - image_size: 96
+      epochs: 3
+      learning_rate_factor: 0.5
+    - image_size: 192
+      epochs: 2
+      learning_rate_factor: 0.25
+
+distributed:
+  enabled: false
+  backend: nccl
+  world_size: 1
+  rank: 0
+  master_addr: localhost
+  master_port: 29500
+
+uncertainty:
+  enabled: false
+  method: monte_carlo_dropout
+  n_samples: 10
+  dropout_rate: 0.5
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+    - weighted_f1
+    - precision
+    - recall
+    - confusion_matrix
+  visualizations:
+    - training_curves
+    - confusion_matrix
+    - per_class_f1
+    - model_comparison
+    - gradcam
+  save_predictions: true
+  output_dir: results
+
+device:
+  type: cuda
+  device_ids: [0]
+  seed: 42
+  deterministic: true
+  benchmark: false
+
+paths:
+  data_dir: data
+  checkpoint_dir: checkpoints
+  log_dir: logs
+  result_dir: results
+  config_dir: configs
+
+export:
+  enabled: false
+  format: onnx
+  output_dir: exported_models
+  optimize: true
+  quantize_for_export: false

@@ -35,17 +35,16 @@ logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
+from src.data import (
+    load_dataset, preprocess_wafer_maps, get_image_transforms,
+    get_imagenet_normalize, WaferMapDataset, seed_worker, KNOWN_CLASSES
+)
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model
 from src.config import Config, load_config
 
 
-KNOWN_CLASSES = [
-    'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
-    'Loc', 'Near-full', 'Random', 'Scratch', 'none'
-]
 SEED = 42
 
 

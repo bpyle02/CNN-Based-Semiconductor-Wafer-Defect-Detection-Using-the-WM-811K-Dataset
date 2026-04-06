@@ -1,0 +1,13 @@
+training:
+  default_model: all
+  epochs: 5
+  batch_size: 64
+
+validation:
+  compute_confusion_matrix: true
+  compute_per_class_metrics: true
+  compute_gradcam: true
+
+paths:
+  checkpoint_dir: checkpoints
+  result_dir: results

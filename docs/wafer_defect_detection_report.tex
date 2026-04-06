@@ -379,17 +379,18 @@ Table~\ref{tab:model_comparison} summarizes test-set performance after
 \textbf{Model} & \textbf{Acc.\,(\%)} & \textbf{Macro F1}
                & \textbf{Wt.\,F1} & \textbf{Time\,(s)} \\
 \midrule
-Custom CNN       & 10.4 & \textbf{0.501} & \textbf{0.098} & 568 \\
-ResNet-18        & \textbf{11.4} & 0.409 & 0.079 & 661 \\
-EfficientNet-B0  & 9.3 & 0.255 & 0.062 & 509 \\
+Custom CNN       & \textbf{88.6} & 0.610 & \textbf{0.904} & 11{,}400 \\
+ResNet-18        & 83.7 & \textbf{0.665} & 0.875 & 6{,}075 \\
+EfficientNet-B0  & 86.0 & 0.608 & 0.887 & 3{,}630 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The custom CNN achieves the highest macro F1 (0.501), indicating the best
-defect-detection capability. Overall accuracy is low ($\sim$10\%) for all
-models because the rebalancing strategy deliberately suppresses the dominant
-``none'' class.
+The custom CNN achieves the highest overall accuracy (88.6\%) and weighted F1
+(0.904), while ResNet-18 achieves the highest macro~F1 (0.665), indicating
+stronger per-class balance across rare defect types. All three models
+successfully learn the dominant ``none'' class (F1 $> 0.9$), validating the
+corrected methodology.
 
 \subsection{Per-Class Performance}
 
@@ -404,31 +405,34 @@ Table~\ref{tab:per_class} presents per-class metrics for the custom CNN.
 \textbf{Class} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1}
                & \textbf{Support} \\
 \midrule
-Center      & 0.830 & 0.856 & 0.843 & 644 \\
-Donut       & 0.449 & 0.952 & 0.610 & 83 \\
-Edge-Loc    & 0.481 & 0.593 & 0.531 & 779 \\
-Edge-Ring   & 0.998 & 0.859 & 0.923 & 1{,}452 \\
-Loc         & 0.554 & 0.076 & 0.134 & 539 \\
-Near-full   & 0.579 & 1.000 & 0.733 & 22 \\
-Random      & 0.595 & 0.915 & 0.721 & 130 \\
-Scratch     & 0.007 & 0.933 & 0.015 & 179 \\
-None        & 0.000 & 0.000 & 0.000 & 22{,}115 \\
+Center      & 0.841 & 0.846 & 0.844 & 644 \\
+Donut       & 0.467 & 0.843 & 0.601 & 83 \\
+Edge-Loc    & 0.234 & 0.592 & 0.336 & 779 \\
+Edge-Ring   & 0.989 & 0.864 & 0.922 & 1{,}452 \\
+Loc         & 0.331 & 0.458 & 0.384 & 539 \\
+Near-full   & 0.600 & 0.955 & 0.737 & 22 \\
+Random      & 0.513 & 0.915 & 0.658 & 130 \\
+Scratch     & 0.058 & 0.067 & 0.062 & 179 \\
+None        & 0.979 & 0.916 & 0.946 & 22{,}115 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Edge-Ring achieves the highest defect-class F1 (0.923) due to its
-distinctive annular morphology and large support. Near-full achieves perfect
-recall (1.000) despite only 22 test samples, demonstrating the effectiveness
-of the rebalancing strategy for rare catastrophic defects. The ``none'' class
-receives F1 of 0.000, driving low overall accuracy.
+The ``none'' class achieves F1 of 0.946, confirming that the corrected
+methodology (removing WeightedRandomSampler, preserving natural distribution)
+enables proper learning of the dominant class. Edge-Ring achieves the highest
+defect-class F1 (0.922) due to its distinctive annular morphology and large
+support. Near-full achieves 95.5\% recall despite only 22 test samples.
+Scratch remains the weakest class (F1 = 0.062), likely due to its thin linear
+morphology and low support (179 samples).
 
 \subsection{Training Dynamics}
 
-With only 5~epochs, models are far from convergence. The custom CNN improves
-from 8.8\% to 10.4\% validation accuracy; ResNet-18 from 10.1\% to 11.4\%;
-EfficientNet-B0 from 6.7\% to 9.3\%. The monotonic improvement indicates that
-extended training would yield substantial gains.
+Over 5~epochs, all models converge rapidly. The custom CNN improves from
+81.7\% to 91.6\% validation accuracy (best at epoch~4); ResNet-18 from
+83.1\% to 88.4\% (best at epoch~4); EfficientNet-B0 from 80.3\% to 86.3\%
+(best at epoch~5). The continued improvement at epoch~5 suggests that
+extended training could yield further gains, particularly for rare classes.
 
 \subsection{Grad-CAM Analysis}
 
@@ -443,32 +447,33 @@ defect features rather than statistical artifacts.
 \label{sec:discussion}
 % ============================================================================
 
-\textbf{Custom CNN outperforms transfer learning.}
-% NOTE: Macro F1 values will be updated with actual training results.
-The custom CNN outperforms both pretrained models in macro~F1. This reversal
-of the typical transfer-learning advantage~\cite{pan2010} is explained by the
-five-epoch budget: frozen early layers restrict gradient flow in pretrained
-models, while the custom CNN updates all parameters from initialization. With
-longer training, pretrained features would likely surpass the custom
-model~\cite{yosinski2014}.
+\textbf{ResNet-18 achieves highest macro~F1.}
+While the custom CNN achieves the highest accuracy (88.6\%) and weighted~F1
+(0.904), ResNet-18 attains the best macro~F1 (0.665), indicating stronger
+per-class balance. This is explained by ResNet-18's pretrained ImageNet
+features~\cite{pan2010,yosinski2014}, which---once properly normalized---help
+the model generalize better on rare defect classes despite frozen early
+layers. With longer training, the transfer-learning advantage would likely
+widen further.
 
 \textbf{The accuracy--sensitivity trade-off.}
 By removing the WeightedRandomSampler and relying on class-weighted
 cross-entropy loss, the training distribution matches the natural 85\%
-``none''-class prevalence. Under five epochs, overall accuracy remains low
-because the models have not yet converged on the dominant class; however,
-defect-class recall is high for several categories. In manufacturing, this
-trade-off is defensible: flagging a defect-free wafer for re-inspection is
-far less costly than allowing a defective wafer to proceed. A two-stage
-pipeline (defect/no-defect, then defect typing) would achieve a more
-practical operating point.
+``none''-class prevalence. All models achieve ``none''-class F1 above 0.9,
+confirming that the corrected methodology allows the dominant class to be
+learned alongside rare defects. In manufacturing, class-weighted loss
+provides a principled mechanism to penalize missed defects while preserving
+natural prevalence for calibrated predictions. A two-stage pipeline
+(defect/no-defect, then defect typing) could further improve the operating
+point.
 
 \textbf{Five-epoch limitation.}
-All results represent a preliminary lower bound. The monotonic validation
-improvement across epochs indicates the models are far from converged. A
-25-epoch GPU training run would improve convergence, restore the
-transfer-learning advantage, and allow the ``none'' class to be properly
-accommodated alongside defect classes.
+While all three models achieve 83--89\% accuracy and macro~F1 of 0.61--0.67,
+continued validation improvement at epoch~5 suggests the models have not
+fully converged. Extended GPU training (25+ epochs) with learning-rate
+scheduling would likely improve rare-class performance (e.g., Scratch
+F1 = 0.062) without degrading the dominant-class recognition already
+achieved.
 
 % ============================================================================
 \section{Conclusion and Future Work}
@@ -477,18 +482,22 @@ accommodated alongside defect classes.
 
 We compared three CNN architectures for automated wafer-map defect
 classification on the WM-811K dataset. By preserving the natural class
-distribution (removing weighted sampling) and applying layer-boundary freezing
-for transfer learning, we achieved 70--85\% overall accuracy across models
-under CPU-constrained five-epoch training. The custom CNN exhibited macro F1
-in the range 0.40--0.60, with improved recognition of both rare defect classes
-and the dominant ``none'' class compared to previous sampling-based approaches.
-Grad-CAM visualizations confirmed spatially meaningful learned representations.
+distribution (removing weighted sampling), applying correct ImageNet
+normalization for pretrained models, and using layer-boundary freezing for
+transfer learning, all three models achieved 83--89\% overall accuracy under
+CPU-constrained five-epoch training. The custom CNN attained the highest
+accuracy (88.6\%) and weighted~F1 (0.904), while ResNet-18 achieved the best
+macro~F1 (0.665). Critically, the ``none'' class---which collapsed to
+F1 = 0.000 under weighted sampling---now achieves F1 above 0.9 for all
+models. Grad-CAM visualizations confirmed spatially meaningful learned
+representations aligned with known defect morphologies.
 
 Key methodological contributions include: (1)~demonstrating that weighted loss
 functions combined with natural distribution preservation outperform
-distribution-distorting samplers; (2)~establishing proper ImageNet normalization
-and layer-boundary freezing for transfer learning on wafer maps; (3)~providing
-a reproducible training pipeline with stratified validation for imbalanced data.
+distribution-distorting samplers; (2)~establishing that ImageNet normalization
+must be applied consistently during both training and evaluation for
+pretrained models; (3)~providing a reproducible training pipeline with
+stratified validation for severely imbalanced industrial data.
 
 Future work includes: (1)~extended GPU training for 25+ epochs to improve
 convergence; (2)~active learning strategies to prioritize labeling of uncertain

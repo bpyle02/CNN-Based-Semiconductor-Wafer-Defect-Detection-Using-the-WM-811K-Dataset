@@ -27,7 +27,6 @@ from src.data.preprocessing import seed_worker
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 def create_client_loaders(

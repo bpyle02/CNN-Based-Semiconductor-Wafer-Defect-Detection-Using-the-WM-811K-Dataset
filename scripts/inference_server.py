@@ -45,6 +45,7 @@ from typing import Optional
 import uvicorn
 
 from src.inference.server import create_app, ModelType
+from src.model_registry import resolve_trusted_checkpoint_path
 
 # Configure logging
 logging.basicConfig(
@@ -105,6 +106,14 @@ def main() -> int:
     )
 
     parser.add_argument(
+        "--trusted-checkpoint-dir",
+        type=str,
+        action="append",
+        default=[],
+        help="Additional trusted checkpoint directory. Repeat to allow multiple roots."
+    )
+
+    parser.add_argument(
         "--workers",
         type=int,
         default=1,
@@ -133,6 +142,13 @@ def main() -> int:
             parser.error("--model-type is required when --model is specified")
         if not Path(args.model).exists():
             parser.error(f"Model checkpoint not found: {args.model}")
+        try:
+            resolve_trusted_checkpoint_path(
+                args.model,
+                allowed_roots=args.trusted_checkpoint_dir or None,
+            )
+        except Exception as exc:
+            parser.error(str(exc))
 
     if args.device == "cuda":
         try:
@@ -150,7 +166,8 @@ def main() -> int:
     app = create_app(
         device=args.device,
         model_checkpoint=args.model,
-        model_type=model_type
+        model_type=model_type,
+        allowed_checkpoint_dirs=args.trusted_checkpoint_dir or None,
     )
 
     # Start server

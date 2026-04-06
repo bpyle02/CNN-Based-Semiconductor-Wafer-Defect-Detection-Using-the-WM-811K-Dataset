@@ -47,7 +47,7 @@
     │   └── attention.py             # SE & CBAM attention mechanisms
     │
     ├── training/
-    │   ├── config.py                # TrainConfig dataclass
+    │   ├── config.py                # Pydantic-based config (Config, TrainingConfig, etc.)
     │   ├── trainer.py               # train_model() main loop
     │   ├── distributed.py           # Multi-GPU DDP support
     │   ├── simclr.py                # Self-supervised pretraining
@@ -86,11 +86,12 @@
 
 **Problem:** ResNet-18 and EfficientNet-B0 were pretrained on ImageNet (normalized to mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), but notebook applied only `x / 2.0` normalization.
 
-**Solution:** Create separate transform pipelines:
-- **CNN**: Only augmentation (no ImageNet norm)
-- **Pretrained**: Augmentation + ImageNet norm
+**Solution:** Create separate transform pipelines applied consistently in BOTH training and evaluation:
+- **CNN**: Only augmentation during training, no transform during eval (raw [0,1] images)
+- **Pretrained training**: Augmentation + ImageNet norm (composed pipeline)
+- **Pretrained eval**: ImageNet norm only (no augmentation)
 
-Separate dataset/loader objects ensure each model type gets correct normalization.
+**Note (2026-04-06 audit fix):** The original code applied ImageNet norm only during validation/test but NOT during training for pretrained models. This train/eval distribution mismatch was the root cause of ~10% accuracy. Fixed by composing augmentation + ImageNet norm into a single training transform.
 
 ### 3. **Layer-Boundary Freeze Strategy (Critical Fix)**
 
@@ -127,14 +128,15 @@ learning_rate = 1e-4        # Lower LR for transfer learning
 freeze_earlier_layers = True # Only train later blocks
 ```
 
-### Expected Results
+### Actual Results (5 epochs, CPU, 2026-04-06)
 
-After fixing the distribution issue:
-- **Accuracy**: 70-85% (all models learn to predict 'none')
-- **Macro F1**: 0.40-0.60 (limited by 5 epochs and rare classes with <1% support)
-- **Weighted F1**: 0.65-0.80 (dominated by 'none' class)
+After fixing the distribution issue AND the ImageNet normalization bug:
+- **Custom CNN**: Accuracy 88.6%, Macro F1 0.610, Weighted F1 0.904
+- **ResNet-18**: Accuracy 83.7%, Macro F1 0.665, Weighted F1 0.875
+- **EfficientNet-B0**: Accuracy 86.0%, Macro F1 0.608, Weighted F1 0.887
+- **'none' class F1**: 0.946 (CNN), 0.907 (ResNet), 0.929 (EfficientNet)
 
-(Previous broken results: ~10% accuracy, Macro F1=0.000 for 'none')
+(Previous broken results: ~10% accuracy, 'none' F1=0.000 due to missing ImageNet norm during training)
 
 ### Evaluation Workflow
 
@@ -161,7 +163,7 @@ After fixing the distribution issue:
 1. **Type Hints**: All functions have parameter and return type annotations
 2. **Docstrings**: Comprehensive docstrings with algorithm details for complex functions
 3. **Separation of Concerns**: Clear module boundaries (data, models, training, analysis, inference)
-4. **Configuration**: TrainConfig dataclass centralizes hyperparameters
+4. **Configuration**: Pydantic BaseModel with strict validation (Config class, `config.yaml`)
 5. **Error Handling**: Validation in __post_init__ and load_dataset
 6. **Reproducibility**: Seed setting, stratified splits, deterministic preprocessing
 
@@ -359,7 +361,7 @@ python train.py --model cnn --epochs 1
 
 1. **Docker Support** (`Dockerfile`): Multi-stage build with development/production/jupyter targets
 2. **Docker Compose** (`docker-compose.yml`): Orchestrated training, inference, jupyter, MLflow services
-3. **Unified Config** (`config.yaml`, `src/config.py`): YAML-based configuration with Python validation
+3. **Unified Config** (`config.yaml`, `src/config.py`): YAML-based configuration with Pydantic v2 strict validation
 4. **Model Ensembling** (`src/models/ensemble.py`): Voting, averaging, weighted-averaging aggregation strategies
 5. **Progressive Training** (`scripts/progressive_train.py`): Multi-resolution curriculum learning (48x96x192)
 6. **Hyperparameter Tuning** (`scripts/optuna_tune.py`): Optuna-based search with TPE sampler
@@ -381,7 +383,7 @@ python train.py --model cnn --epochs 1
 22. **Domain Adaptation** (`src/training/domain_adaptation.py`): CORAL + adversarial domain alignment
 23. **CI/CD Pipeline** (`.github/workflows/`): Lint/test/model-validation GitHub Actions workflows
 
-**Test suite**: 51 passed, 0 skipped (requires torchvision, fastapi, python-multipart)
+**Test suite**: 165 passed (requires torchvision, fastapi, python-multipart, pydantic>=2.6)
 
 ---
 
@@ -502,5 +504,5 @@ All code in this repository must be complete, correct, and functional. The follo
 
 ---
 
-**Last Updated**: 2026-04-06 (Comprehensive audit and remediation; all 23 improvements complete, 51 tests passing)
+**Last Updated**: 2026-04-06 (Comprehensive audit and remediation; all 23 improvements complete, 165 tests passing)
 **Version**: 4.0

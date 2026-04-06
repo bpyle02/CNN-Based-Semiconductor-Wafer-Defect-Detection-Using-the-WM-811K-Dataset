@@ -4,13 +4,56 @@ import io
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Iterable, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
 from src.exceptions import ModelError
 
 logger = logging.getLogger(__name__)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_TRUSTED_CHECKPOINT_DIRS = (
+    REPO_ROOT / "checkpoints",
+    REPO_ROOT / "model_registry",
+)
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def resolve_checkpoint_path(path: Union[str, Path]) -> Path:
+    """Resolve and validate a checkpoint path."""
+    resolved = Path(path).expanduser().resolve()
+    if not resolved.exists():
+        raise ModelError(f"Checkpoint not found: {resolved}")
+    if resolved.suffix != ".pth":
+        raise ModelError(f"Expected .pth checkpoint, got {resolved.suffix or '<none>'}")
+    if resolved.is_symlink():
+        raise ModelError("Symlinked checkpoint paths are not allowed")
+    return resolved
+
+
+def resolve_trusted_checkpoint_path(
+    path: Union[str, Path],
+    allowed_roots: Optional[Iterable[Union[str, Path]]] = None,
+) -> Path:
+    """Resolve a checkpoint path and ensure it is inside a trusted root."""
+    resolved = resolve_checkpoint_path(path)
+    trusted_roots = tuple(
+        Path(root).expanduser().resolve() for root in (allowed_roots or DEFAULT_TRUSTED_CHECKPOINT_DIRS)
+    )
+    if any(_is_relative_to(resolved, root) for root in trusted_roots):
+        return resolved
+
+    trusted_display = ", ".join(str(root) for root in trusted_roots)
+    raise ModelError(
+        f"Checkpoint path {resolved} is outside the trusted checkpoint roots: {trusted_display}"
+    )
 
 
 def compute_checkpoint_hash(path: Path) -> str:
@@ -118,16 +161,11 @@ class ModelRegistry:
             **metadata.__dict__,
             'timestamp': datetime.now().isoformat(),
         }
-        checkpoint_payload = io.BytesIO()
-        torch.save({
+        checkpoint_payload = {
             'state_dict': state_dict,
             'metadata': metadata_dict,
-        }, checkpoint_payload)
-
-        checkpoint_bytes = checkpoint_payload.getvalue()
-        metadata.model_hash = hashlib.sha256(checkpoint_bytes).hexdigest()
+        }
         metadata.num_params = sum(param.numel() for param in model.parameters())
-        metadata_dict['model_hash'] = metadata.model_hash
         metadata_dict['num_params'] = metadata.num_params
 
         timestamp_slug = datetime.now().strftime("%Y%m%dT%H%M%S")
@@ -140,7 +178,9 @@ class ModelRegistry:
 
         # Save model
         model_path = (self.registry_path / f"{model_id}.pth").resolve()
-        model_path.write_bytes(checkpoint_bytes)
+        file_hash = save_checkpoint_with_hash(checkpoint_payload, model_path)
+        metadata.model_hash = file_hash
+        metadata_dict['model_hash'] = file_hash
 
         # Update registry
         self.models[model_id] = {
@@ -158,12 +198,15 @@ class ModelRegistry:
             raise ModelError(f"Model {model_id} not found in registry")
 
         model_path = Path(self.models[model_id]['path']).resolve()
+        if not verify_checkpoint(model_path):
+            raise ModelError(f"Checkpoint integrity verification failed for {model_path}")
+
         try:
             checkpoint_bytes = model_path.read_bytes()
             checkpoint = torch.load(
                 io.BytesIO(checkpoint_bytes),
                 map_location='cpu',
-                weights_only=False,
+                weights_only=True,
             )
         except OSError as exc:
             raise ModelError(f"Failed to read model artifact for {model_id}") from exc

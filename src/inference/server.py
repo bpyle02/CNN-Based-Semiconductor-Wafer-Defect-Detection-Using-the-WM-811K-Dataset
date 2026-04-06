@@ -13,30 +13,25 @@ import base64
 import io
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import ClassVar, Dict, List, Optional, Tuple, Any
 from enum import Enum
+import time
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
 from src.exceptions import InferenceError, ModelError
 from src.inference.gradcam import GradCAM
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
-from src.model_registry import verify_checkpoint
+from src.model_registry import resolve_trusted_checkpoint_path, verify_checkpoint
 from src.data.dataset import KNOWN_CLASSES
-from src.data.preprocessing import get_image_transforms, get_imagenet_normalize
+from src.data.preprocessing import get_imagenet_normalize
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -78,6 +73,36 @@ class PredictionRequest(BaseModel):
         return v
 
 
+class BatchPredictionRequest(BaseModel):
+    """Request schema for batch base64-encoded image prediction."""
+
+    MAX_IMAGES: ClassVar[int] = 128
+
+    images: List[str] = Field(..., description="List of base64-encoded images")
+    model_name: Optional[str] = Field(
+        None,
+        description="Optional name of the active model. If provided, it must match the currently loaded model.",
+    )
+
+    @field_validator("images")
+    @classmethod
+    def validate_images(cls, images: List[str]) -> List[str]:
+        if not images:
+            raise ValueError("images cannot be empty")
+        if len(images) > cls.MAX_IMAGES:
+            raise ValueError(f"images exceeds the maximum batch size of {cls.MAX_IMAGES}")
+        for idx, image in enumerate(images):
+            if not image:
+                raise ValueError(f"images[{idx}] cannot be empty")
+            if len(image) > 10_000_000:
+                raise ValueError(f"images[{idx}] exceeds 10 MB limit")
+            try:
+                base64.b64decode(image, validate=True)
+            except Exception as exc:
+                raise ValueError(f"Invalid base64 encoding at index {idx}: {exc}") from exc
+        return images
+
+
 class PredictionResponse(BaseModel):
     """Response schema for predictions."""
 
@@ -113,6 +138,12 @@ class PredictionResponse(BaseModel):
         None,
         description="Base64-encoded GradCAM activation map (if requested)"
     )
+
+
+class BatchPredictionResponse(BaseModel):
+    """Response schema for batch predictions."""
+    predictions: List[PredictionResponse]
+    total_time_ms: float
 
 
 class LoadModelRequest(BaseModel):
@@ -175,7 +206,11 @@ class ModelServer:
     - Output post-processing
     """
 
-    def __init__(self, device: str = "cpu") -> None:
+    def __init__(
+        self,
+        device: str = "cpu",
+        allowed_checkpoint_dirs: Optional[List[Path | str]] = None,
+    ) -> None:
         """
         Initialize the model server.
 
@@ -186,6 +221,7 @@ class ModelServer:
         self.model: Optional[torch.nn.Module] = None
         self.model_name: Optional[str] = None
         self.model_type: Optional[ModelType] = None
+        self.allowed_checkpoint_dirs = tuple(allowed_checkpoint_dirs or ())
         logger.info(f"ModelServer initialized on device: {self.device}")
 
     def load_model(
@@ -207,17 +243,22 @@ class ModelServer:
             ModelError: If checkpoint loading fails
         """
         try:
+            resolved_path = resolve_trusted_checkpoint_path(
+                checkpoint_path,
+                allowed_roots=self.allowed_checkpoint_dirs or None,
+            )
+
             # Verify checkpoint integrity before loading
-            if not verify_checkpoint(Path(checkpoint_path)):
-                logger.warning(
-                    f"Checkpoint integrity verification FAILED for {checkpoint_path}. "
-                    "File may be corrupted or tampered with."
+            if not verify_checkpoint(resolved_path):
+                raise ModelError(
+                    f"Checkpoint integrity verification failed for {resolved_path}"
                 )
 
+            # PyTorch security: use weights_only=True
             checkpoint = torch.load(
-                checkpoint_path,
+                str(resolved_path),
                 map_location=self.device,
-                weights_only=False,
+                weights_only=True
             )
 
             # Infer model type and initialize architecture
@@ -252,7 +293,7 @@ class ModelServer:
             model.eval()
 
             self.model = model
-            self.model_name = Path(checkpoint_path).stem
+            self.model_name = resolved_path.stem
             self.model_type = model_type
 
             # Count parameters
@@ -267,7 +308,7 @@ class ModelServer:
                 'device': str(self.device),
                 'total_parameters': total_params,
                 'trainable_parameters': trainable_params,
-                'checkpoint_path': checkpoint_path,
+                'checkpoint_path': str(resolved_path),
             }
 
             logger.info(f"Loaded model: {self.model_name} ({model_type.value})")
@@ -386,7 +427,6 @@ class ModelServer:
             tensor = self.preprocess_image(image_array)
 
             with torch.no_grad():
-                import time
                 start_time = time.time()
                 logits = self.model(tensor)
                 inference_time = (time.time() - start_time) * 1000  # ms
@@ -401,6 +441,58 @@ class ModelServer:
         except Exception as e:
             logger.error(f"Inference failed: {str(e)}")
             raise InferenceError(f"Inference failed: {str(e)}") from e
+
+    def predict_batch(
+        self,
+        image_arrays: List[np.ndarray]
+    ) -> Tuple[List[int], List[np.ndarray], float]:
+        """Run inference on a batch of images."""
+        if self.model is None:
+            raise InferenceError("No model loaded.")
+
+        tensors = []
+        for img in image_arrays:
+            tensors.append(self.preprocess_image(img))
+        
+        batch_tensor = torch.cat(tensors, dim=0).to(self.device)
+        
+        with torch.no_grad():
+            start_time = time.time()
+            logits = self.model(batch_tensor)
+            inference_time = (time.time() - start_time) * 1000  # ms
+            
+            probs = F.softmax(logits, dim=1).cpu().numpy()
+        class_ids = np.argmax(probs, axis=1).tolist()
+
+        return class_ids, list(probs), inference_time
+
+    def decode_image_base64(self, image_base64: str) -> np.ndarray:
+        """Decode a base64 PNG/JPEG payload into a float32 numpy array."""
+        image_data = base64.b64decode(image_base64)
+        image = Image.open(io.BytesIO(image_data))
+        return np.array(image, dtype=np.float32)
+
+    def _build_prediction_response(
+        self,
+        class_id: int,
+        probabilities: np.ndarray,
+        inference_time: float,
+        gradcam_base64: Optional[str] = None,
+    ) -> PredictionResponse:
+        """Build the canonical prediction payload from model outputs."""
+        return PredictionResponse(
+            class_name=KNOWN_CLASSES[class_id],
+            class_id=class_id,
+            confidence=float(probabilities[class_id]),
+            probabilities={
+                KNOWN_CLASSES[i]: float(p)
+                for i, p in enumerate(probabilities)
+            },
+            model_name=self.model_name or "unknown",
+            input_shape=(96, 96),
+            inference_ms=inference_time,
+            gradcam_base64=gradcam_base64,
+        )
 
     def generate_gradcam(
         self,
@@ -434,7 +526,8 @@ class ModelServer:
 def create_app(
     device: str = "cpu",
     model_checkpoint: Optional[str] = None,
-    model_type: Optional[ModelType] = None
+    model_type: Optional[ModelType] = None,
+    allowed_checkpoint_dirs: Optional[List[Path | str]] = None,
 ) -> FastAPI:
     """
     Create and configure FastAPI application.
@@ -463,7 +556,10 @@ def create_app(
     )
 
     # Initialize model server
-    server = ModelServer(device=device)
+    server = ModelServer(
+        device=device,
+        allowed_checkpoint_dirs=allowed_checkpoint_dirs,
+    )
 
     # Load initial model if provided
     if model_checkpoint and model_type:
@@ -556,18 +652,11 @@ def create_app(
         summary="Predict on base64-encoded image",
         tags=["Inference"]
     )
-    async def predict_base64(request: PredictionRequest) -> PredictionResponse:
+    def predict_base64(request: PredictionRequest) -> PredictionResponse:
         """
         Run inference on a base64-encoded image.
-
-        Args:
-            request: PredictionRequest with base64 image data
-
-        Returns:
-            PredictionResponse with class, confidence, and probabilities
-
-        Raises:
-            HTTPException: If no model loaded or prediction fails
+        Uses synchronous 'def' so FastAPI runs it in a threadpool,
+        preventing CPU-bound PyTorch calls from blocking the event loop.
         """
         if server.model is None:
             raise HTTPException(
@@ -586,16 +675,11 @@ def create_app(
 
         try:
             # Decode base64 image
-            image_data = base64.b64decode(request.image_base64)
-            image = Image.open(io.BytesIO(image_data))
-            image_array = np.array(image, dtype=np.float32)
+            image_array = server.decode_image_base64(request.image_base64)
 
             # Run inference
             class_id, probabilities, inference_time = server.predict(image_array)
 
-            # Build response
-            class_name = KNOWN_CLASSES[class_id]
-            confidence = float(probabilities[class_id])
             gradcam_base64 = None
             if request.return_gradcam:
                 gradcam_base64, _ = server.generate_gradcam(
@@ -603,22 +687,15 @@ def create_app(
                     target_class=class_id,
                 )
 
-            response = PredictionResponse(
-                class_name=class_name,
+            response = server._build_prediction_response(
                 class_id=class_id,
-                confidence=confidence,
-                probabilities={
-                    KNOWN_CLASSES[i]: float(p)
-                    for i, p in enumerate(probabilities)
-                },
-                model_name=server.model_name or "unknown",
-                input_shape=(96, 96),
-                inference_ms=inference_time,
+                probabilities=probabilities,
+                inference_time=inference_time,
                 gradcam_base64=gradcam_base64,
             )
 
             logger.info(
-                f"Prediction: {class_name} (confidence: {confidence:.4f}, "
+                f"Prediction: {response.class_name} (confidence: {response.confidence:.4f}, "
                 f"inference: {inference_time:.2f}ms)"
             )
             return response
@@ -629,6 +706,57 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
             logger.error(f"Prediction failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post(
+        "/predict_batch",
+        response_model=BatchPredictionResponse,
+        summary="Predict on batch of base64-encoded images",
+        tags=["Inference"]
+    )
+    def predict_batch(request: BatchPredictionRequest) -> BatchPredictionResponse:
+        """Run batch inference on multiple base64-encoded images."""
+        if server.model is None:
+            raise HTTPException(
+                status_code=503,
+                detail="No model loaded. POST to /load_model first.",
+            )
+
+        if request.model_name is not None and request.model_name != server.model_name:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Requested model '{request.model_name}' is not currently loaded. "
+                    f"Active model: '{server.model_name}'."
+                ),
+            )
+
+        try:
+            image_arrays = [server.decode_image_base64(img_b64) for img_b64 in request.images]
+
+            class_ids, probs_list, total_inference_time = server.predict_batch(image_arrays)
+
+            predictions = []
+            per_image_ms = total_inference_time / len(image_arrays)
+            for cid, probs in zip(class_ids, probs_list):
+                predictions.append(
+                    server._build_prediction_response(
+                        class_id=cid,
+                        probabilities=probs,
+                        inference_time=per_image_ms,
+                    )
+                )
+
+            return BatchPredictionResponse(
+                predictions=predictions,
+                total_time_ms=total_inference_time
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except InferenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            logger.error(f"Batch prediction failed: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post(
@@ -650,17 +778,7 @@ def create_app(
     ) -> PredictionResponse:
         """
         Run inference on an uploaded image file.
-
-        Supports PNG, JPEG, BMP formats.
-
-        Args:
-            file: Uploaded image file
-
-        Returns:
-            PredictionResponse with class, confidence, and probabilities
-
-        Raises:
-            HTTPException: If no model loaded or prediction fails
+        Uses 'async def' because 'await file.read()' is an I/O operation.
         """
         if server.model is None:
             raise HTTPException(

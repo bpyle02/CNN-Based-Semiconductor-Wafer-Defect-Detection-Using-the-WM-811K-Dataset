@@ -30,7 +30,6 @@ from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class ClientManager:

@@ -1,3 +1,6 @@
+# Submission Bundle (build artifact)
+submission/
+
 # Dataset & Large Files
 *.pkl
 *.pickle
@@ -74,6 +77,8 @@ htmlcov/
 *.swp
 *~
 .tmp/
+stderr.txt
+tests/.tmp_workspace/
 
 # ML Experiment Tracking
 wandb/

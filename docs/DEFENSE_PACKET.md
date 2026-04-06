@@ -10,13 +10,13 @@ The repository is a credible research software artifact for semiconductor wafer-
 
 ## What Is Verified
 
-- Full local test run: `pytest -q` -> `45 passed, 6 skipped`
+- Full local verification is run through the default `pytest -q` command
 - Inference API supports:
   - checkpoint loading
   - image prediction
   - model-name validation against the active model
   - Grad-CAM overlays returned in prediction responses
-- Config loading supports direct scalar YAML fields and typed dataclass access
+- Config loading supports the checked-in repository YAML schema with typed access
 - OOD detection uses a fitted threshold rather than recomputing thresholds from query batches
 - The repository test harness is stable under workspace-local execution
 
@@ -100,7 +100,7 @@ Include these artifacts in the committee package:
 1. This defense packet
 2. `docs/presentation.tex` and the compiled PDF if available
 3. `docs/FINAL_STATUS_REPORT.md`
-4. The repository with the test output `45 passed, 6 skipped`
+4. The repository with the `pytest -q` verification command and its output from the active environment
 5. Any separately versioned experiment logs or checkpoints you intend to defend quantitatively
 
 ## Questions the Committee Is Likely to Ask

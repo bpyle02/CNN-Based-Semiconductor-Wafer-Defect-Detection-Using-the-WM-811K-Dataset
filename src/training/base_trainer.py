@@ -127,9 +127,8 @@ class BaseTrainer:
 
         # Verify checkpoint integrity before loading
         if not verify_checkpoint(checkpoint_path):
-            logger.warning(
-                f"Checkpoint integrity verification FAILED for {checkpoint_path}. "
-                "File may be corrupted or tampered with."
+            raise TrainingError(
+                f"Checkpoint integrity verification failed for {checkpoint_path}"
             )
 
         try:
@@ -175,5 +174,5 @@ class BaseTrainer:
             'epochs': training_cfg.epochs,
             'weight_decay': training_cfg.weight_decay,
             'optimizer': training_cfg.optimizer,
-            'scheduler': getattr(training_cfg, 'scheduler', 'plateau'),
+            'scheduler': training_cfg.scheduler.type,
         }

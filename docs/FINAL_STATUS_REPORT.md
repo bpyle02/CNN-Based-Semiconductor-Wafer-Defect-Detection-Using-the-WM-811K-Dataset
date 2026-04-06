@@ -3,7 +3,7 @@
 
 **Date**: 2026-03-22  
 **Status**: Defense-ready as a verified software artifact  
-**Current validation**: `pytest -q` -> **45 passed, 6 skipped**
+**Current validation**: `pytest -q` is the repository-default local verification command.
 
 ---
 
@@ -19,7 +19,7 @@ The important outcome of the defense-preparation pass is that the repo's public 
 
 The following statements are directly supported by the current workspace:
 
-- `pytest -q` passes with `45 passed, 6 skipped`
+- `pytest -q` is the documented local verification command
 - `docs/presentation.pdf` and `docs/wafer_defect_detection_report.pdf` are present
 - the inference API can load a checkpoint, perform prediction, and return Grad-CAM overlays
 - configuration loading accepts direct scalar fields and typed config access
@@ -107,7 +107,7 @@ Supporting operational files:
 ## Recommended Defense Sequence
 
 1. Open the slide deck and frame the repo as a validated software artifact.
-2. Show `pytest -q` as the current local verification result.
+2. Show `pytest -q` as the current local verification command in the active environment.
 3. Run `./scripts/run_defense_demo.ps1` to exercise the inference path.
 4. Show the Grad-CAM output artifact if the FastAPI dependency is available.
 5. Close by separating verified software claims from benchmark claims.

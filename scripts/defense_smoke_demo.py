@@ -129,7 +129,7 @@ def main() -> int:
         logger.warning(
             "Missing runtime dependency for defense_smoke_demo.py: "
             f"{MISSING_DEPENDENCY}. Use the same Python environment that "
-            "successfully runs `pytest -q` after installing requirements.txt."
+            'successfully runs `pytest -q` after `python -m pip install -e ".[dev]"`.'
         )
         return 1
 

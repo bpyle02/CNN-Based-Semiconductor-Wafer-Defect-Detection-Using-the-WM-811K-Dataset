@@ -33,16 +33,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.model_registry import save_checkpoint_with_hash
 
-from src.config import load_config
+from src.config import canonicalize_model_name, load_config, load_merged_config
 from src.data import load_dataset, preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.analysis import evaluate_model
+from src.training.losses import FocalLoss
 
 
-KNOWN_CLASSES = [
-    'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
-    'Loc', 'Near-full', 'Random', 'Scratch', 'none'
-]
+from src.data.dataset import KNOWN_CLASSES
 SEED = 42
 
 
@@ -93,18 +91,9 @@ def load_and_preprocess_data(dataset_path, test_size=0.15, val_size=0.15, seed=S
         stratify=y_temp, random_state=seed
     )
 
-    train_maps_raw = [wafer_maps[i] for i in X_train]
-    val_maps_raw = [wafer_maps[i] for i in X_val]
-    test_maps_raw = [wafer_maps[i] for i in X_test]
-
-    logger.info(f"\nPreprocessing {len(train_maps_raw):,} training maps...")
-    t0 = time.time()
-    train_maps = np.array(preprocess_wafer_maps(train_maps_raw))
-    logger.info(f"Preprocessing {len(val_maps_raw):,} validation maps...")
-    val_maps = np.array(preprocess_wafer_maps(val_maps_raw))
-    logger.info(f"Preprocessing {len(test_maps_raw):,} test maps...")
-    test_maps = np.array(preprocess_wafer_maps(test_maps_raw))
-    logger.info(f"Preprocessing complete in {time.time() - t0:.1f}s")
+    train_maps = np.array([wafer_maps[i] for i in X_train])
+    val_maps = np.array([wafer_maps[i] for i in X_val])
+    test_maps = np.array([wafer_maps[i] for i in X_test])
 
     # Compute class weights from training set
     class_counts_train = Counter(y_train)
@@ -125,72 +114,42 @@ def load_and_preprocess_data(dataset_path, test_size=0.15, val_size=0.15, seed=S
     }
 
 
-def train_model(model, train_loader, val_loader, criterion, optimizer, device, epochs=5):
-    """Train model with validation. Returns (model, epoch_history)."""
-    best_acc = 0.0
-    best_model = None
-    history = []
-
-    for epoch in range(epochs):
-        # Training phase
-        model.train()
-        train_loss = 0.0
-        for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()
-
-        train_loss /= len(train_loader)
-
-        # Validation phase
-        model.eval()
-        val_acc = 0.0
-        with torch.no_grad():
-            for images, labels in val_loader:
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                preds = outputs.argmax(dim=1)
-                val_acc += (preds == labels).float().mean().item()
-
-        val_acc /= len(val_loader)
-
-        if val_acc > best_acc:
-            best_acc = val_acc
-            best_model = {k: v.cpu() if isinstance(v, torch.Tensor) else v for k, v in model.state_dict().items()}
-
-        history.append({'epoch': epoch + 1, 'train_loss': float(train_loss), 'val_acc': float(val_acc)})
-        logger.info(f"  Epoch {epoch+1}/{epochs}: Train Loss={train_loss:.4f}, Val Acc={val_acc:.4f}")
-
-    # Restore best model
-    if best_model:
-        model.load_state_dict(best_model)
-
-    return model, history
-
+from src.training.trainer import train_model
 
 def main():
     """Main training entry point."""
     parser = argparse.ArgumentParser(description='Train wafer defect detection models')
-    parser.add_argument('--model', choices=['cnn', 'resnet', 'effnet', 'all'], default=None)
+    parser.add_argument('--model', choices=['cnn', 'resnet', 'efficientnet', 'effnet', 'all'], default=None)
     parser.add_argument('--epochs', type=int, default=None)
     parser.add_argument('--batch-size', type=int, default=None)
     parser.add_argument('--lr', type=float, default=None)
     parser.add_argument('--device', choices=['cuda', 'cpu'], default=None)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--data-path', type=Path, default=None)
-    parser.add_argument('--config', type=Path, default=Path('config.yaml'),
-                        help='Path to config.yaml (default: config.yaml)')
+    parser.add_argument(
+        '--config',
+        type=Path,
+        action='append',
+        default=None,
+        help='Configuration file path. Repeat to merge overlays in order.',
+    )
     args = parser.parse_args()
 
     # Load config.yaml defaults if available
     config = None
-    if args.config and args.config.exists():
-        config = load_config(str(args.config))
-        logger.info(f"Loaded defaults from {args.config}")
+    config_paths = args.config
+    if config_paths:
+        if len(config_paths) == 1:
+            config = load_config(str(config_paths[0]))
+        else:
+            config = load_merged_config(config_paths)
+        logger.info(
+            "Loaded defaults from %s",
+            ", ".join(str(path) for path in config_paths),
+        )
+    elif Path('config.yaml').exists():
+        config = load_config('config.yaml')
+        logger.info("Loaded defaults from config.yaml")
     else:
         logger.info("No config.yaml found, using hardcoded defaults")
 
@@ -199,9 +158,7 @@ def main():
 
     model_choice = args.model if args.model is not None else (
         config.training.default_model if config else 'cnn')
-    # Map config's "efficientnet" to CLI's "effnet" if needed
-    if model_choice == 'efficientnet':
-        model_choice = 'effnet'
+    model_choice = canonicalize_model_name(model_choice, allow_all=True)
 
     epochs = args.epochs if args.epochs is not None else (
         config.training.epochs if config else 5)
@@ -239,7 +196,12 @@ def main():
     loss_weights = data['loss_weights'].to(device)
     class_names = data['class_names']
 
-    criterion = nn.CrossEntropyLoss(weight=loss_weights)
+    use_focal_loss = config.training.use_focal_loss if config else False
+    if use_focal_loss:
+        logger.info("Using Focal Loss with class weights.")
+        criterion = FocalLoss(weight=loss_weights)
+    else:
+        criterion = nn.CrossEntropyLoss(weight=loss_weights)
 
     # Create transforms
     try:
@@ -267,7 +229,7 @@ def main():
     ckpt_dir.mkdir(exist_ok=True)
     results_dir.mkdir(exist_ok=True)
 
-    models_to_train = ['cnn', 'resnet', 'effnet'] if args.model == 'all' else [args.model]
+    models_to_train = ['cnn', 'resnet', 'efficientnet'] if args.model == 'all' else [args.model]
     results = {}
 
     # Resolve learning rate: CLI --lr > config.yaml per-model > hardcoded default
@@ -323,7 +285,7 @@ def main():
         # Train
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
         t0 = time.time()
-        model, epoch_history = train_model(model, train_loader, val_loader, criterion, optimizer, device, epochs=args.epochs)
+        model, epoch_history = train_model(model, train_loader, val_loader, criterion, optimizer, epochs=args.epochs, model_name=display_name, device=device)
         train_time = time.time() - t0
 
         # Save checkpoint with integrity hash
