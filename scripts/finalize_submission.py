@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
+import logging
 
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SUBMISSION_DIR = PROJECT_ROOT / "SUBMISSION_FINAL"
@@ -383,14 +385,14 @@ def print_summary(
     required_copied = sum(
         1 for record in records if bool(record["required"]) and bool(record["copied"])
     )
-    print("\n" + "=" * 72)
-    print("DEFENSE SUBMISSION FINALIZATION")
-    print("=" * 72)
-    print(f"Required artifacts copied: {required_copied}/{required_total}")
-    print(f"Pytest: {validation['status']} ({validation['summary']})")
-    print(f"Demo: {demo['status']} ({demo['summary']})")
-    print(f"Bundle directory: {SUBMISSION_DIR}")
-    print(f"Bundle archive:   {archive_path}")
+    logger.info("\n" + "=" * 72)
+    logger.info("DEFENSE SUBMISSION FINALIZATION")
+    logger.info("=" * 72)
+    logger.info(f"Required artifacts copied: {required_copied}/{required_total}")
+    logger.info(f"Pytest: {validation['status']} ({validation['summary']})")
+    logger.info(f"Demo: {demo['status']} ({demo['summary']})")
+    logger.info(f"Bundle directory: {SUBMISSION_DIR}")
+    logger.info(f"Bundle archive:   {archive_path}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -433,4 +435,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     raise SystemExit(main())

@@ -1,16 +1,20 @@
 """GradCAM visualization utilities."""
 
-from typing import List, Tuple, Optional
+from typing import Any, List, Tuple, Optional
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 import numpy as np
 from .gradcam import GradCAM
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def plot_gradcam_grid(
     model: nn.Module,
-    test_dataset,
+    test_dataset: Dataset[Any],
     target_layer: nn.Module,
     class_names: List[str],
     num_samples: int = 9,
@@ -83,4 +87,4 @@ def plot_gradcam_grid(
 
 
 if __name__ == "__main__":
-    print("GradCAM visualization module loaded.")
+    logger.info("GradCAM visualization module loaded.")

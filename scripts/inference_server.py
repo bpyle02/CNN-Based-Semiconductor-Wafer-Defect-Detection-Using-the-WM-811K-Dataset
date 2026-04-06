@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
-CLI entry point for the real-time wafer defect detection inference server.
+CLI wrapper for launching the FastAPI inference server.
+
+The server implementation lives in src/inference/server.py.
+This script provides a command-line interface to configure and start it.
 
 Usage:
     # Start server on port 8000 with CPU

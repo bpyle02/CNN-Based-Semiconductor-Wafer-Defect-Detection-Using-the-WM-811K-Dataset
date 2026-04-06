@@ -4,7 +4,7 @@ Model evaluation metrics and parameter counting.
 Computes accuracy, macro/weighted F1, and detailed per-class metrics.
 """
 
-from typing import Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,12 +15,15 @@ from sklearn.metrics import (
     classification_report,
     precision_recall_fscore_support,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def evaluate_model(
     model: nn.Module,
     test_loader: DataLoader,
-    class_names: list,
+    class_names: List[str],
     model_name: str = "Model",
     device: str = "cpu",
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
@@ -67,15 +70,15 @@ def evaluate_model(
     weighted_f1 = f1_score(all_labels, all_preds, average='weighted', zero_division=0)
 
     # Print results
-    print(f"\n{'='*60}")
-    print(f"  {model_name} -- Test Set Evaluation")
-    print(f"{'='*60}")
-    print(f"  Accuracy    : {acc:.4f}")
-    print(f"  Macro F1    : {macro_f1:.4f}")
-    print(f"  Weighted F1 : {weighted_f1:.4f}")
-    print(f"{'='*60}")
-    print()
-    print(classification_report(
+    logger.info(f"\n{'='*60}")
+    logger.info(f"  {model_name} -- Test Set Evaluation")
+    logger.info(f"{'='*60}")
+    logger.info(f"  Accuracy    : {acc:.4f}")
+    logger.info(f"  Macro F1    : {macro_f1:.4f}")
+    logger.info(f"  Weighted F1 : {weighted_f1:.4f}")
+    logger.info(f"{'='*60}")
+    logger.info()
+    logger.info(classification_report(
         all_labels, all_preds,
         target_names=class_names,
         digits=4,
@@ -135,4 +138,4 @@ def count_trainable(model: nn.Module) -> int:
 
 
 if __name__ == "__main__":
-    print("Evaluation module loaded.")
+    logger.info("Evaluation module loaded.")

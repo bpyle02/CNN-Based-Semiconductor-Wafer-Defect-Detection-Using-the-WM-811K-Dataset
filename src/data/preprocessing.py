@@ -5,9 +5,10 @@ Handles resizing, normalization, and transformation of wafer maps to prepare
 them for training and inference with deep learning models.
 """
 
-from typing import List, Tuple, Optional
+from typing import Any, List, Sequence, Tuple, Optional
 from pathlib import Path
 from collections import Counter
+import random
 
 import numpy as np
 import pandas as pd
@@ -15,32 +16,35 @@ import torch
 from torch.utils.data import Dataset
 from skimage.transform import resize as skimage_resize
 from sklearn.preprocessing import LabelEncoder
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     import torchvision.transforms as transforms
 except ImportError:
     class _Compose:
-        def __init__(self, transform_list):
+        def __init__(self, transform_list: Sequence[Any]) -> None:
             self.transforms = list(transform_list)
 
-        def __call__(self, x):
+        def __call__(self, x: torch.Tensor) -> torch.Tensor:
             for transform in self.transforms:
                 x = transform(x)
             return x
 
     class _IdentityTransform:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
 
-        def __call__(self, x):
+        def __call__(self, x: torch.Tensor) -> torch.Tensor:
             return x
 
     class _Normalize:
-        def __init__(self, mean, std):
+        def __init__(self, mean: List[float], std: List[float]) -> None:
             self.mean = torch.tensor(mean, dtype=torch.float32).view(-1, 1, 1)
             self.std = torch.tensor(std, dtype=torch.float32).view(-1, 1, 1)
 
-        def __call__(self, x):
+        def __call__(self, x: torch.Tensor) -> torch.Tensor:
             mean = self.mean.to(device=x.device, dtype=x.dtype)
             std = self.std.to(device=x.device, dtype=x.dtype)
             return (x - mean) / std
@@ -58,6 +62,18 @@ except ImportError:
 from .dataset import load_dataset, KNOWN_CLASSES
 
 TARGET_SIZE = (96, 96)
+
+
+def seed_worker(worker_id: int) -> None:
+    """Seed DataLoader workers for reproducibility.
+
+    When num_workers > 0, each worker gets its own copy of the dataset
+    and random state. This function ensures deterministic behavior by
+    seeding each worker based on the global torch seed.
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 class WaferMapDataset(Dataset):
@@ -150,7 +166,7 @@ def preprocess_wafer_maps(
         preprocessed.append(arr)
 
         if (i + 1) % 25000 == 0:
-            print(f"  Preprocessed {i+1:,} / {len(wafer_maps):,} maps...")
+            logger.info(f"  Preprocessed {i+1:,} / {len(wafer_maps):,} maps...")
 
     return preprocessed
 
@@ -172,17 +188,17 @@ def preprocess_data(
     labeled_mask = data['failureClass'].isin(KNOWN_CLASSES)
     data_subset = data[labeled_mask].reset_index(drop=True)
 
-    print(f"\nLabeled wafers: {len(data_subset):,}  (out of {len(data):,} total)")
-    print(f"Dropped: {len(data) - len(data_subset):,} unlabeled / unknown wafers")
+    logger.info(f"\nLabeled wafers: {len(data_subset):,}  (out of {len(data):,} total)")
+    logger.info(f"Dropped: {len(data) - len(data_subset):,} unlabeled / unknown wafers")
 
     class_dist = data_subset['failureClass'].value_counts()
-    print("\n--- Failure Class Distribution (After Filtering) ---")
-    print(class_dist.to_string())
+    logger.info("\n--- Failure Class Distribution (After Filtering) ---")
+    logger.info(class_dist.to_string())
 
     majority = class_dist.max()
     minority = class_dist.min()
-    print(f"\n--- Class Imbalance Analysis ---")
-    print(f"Imbalance ratio (majority / minority): {majority / minority:.1f}x")
+    logger.info(f"\n--- Class Imbalance Analysis ---")
+    logger.info(f"Imbalance ratio (majority / minority): {majority / minority:.1f}x")
 
     train_aug = get_image_transforms()
     imagenet_norm = get_imagenet_normalize()
@@ -210,15 +226,15 @@ def get_image_transforms(augment: bool = True) -> transforms.Compose:
     else:
         train_transform = transforms.Compose([])
 
-    print("\n--- Image Transform Pipeline ---")
-    print(f"Target image size: {TARGET_SIZE}")
-    print(f"Channels: 3 (replicated grayscale)")
-    print(f"Base normalization: pixel / 2.0 -> [0, 1]")
-    print(
+    logger.info("\n--- Image Transform Pipeline ---")
+    logger.info(f"Target image size: {TARGET_SIZE}")
+    logger.info(f"Channels: 3 (replicated grayscale)")
+    logger.info(f"Base normalization: pixel / 2.0 -> [0, 1]")
+    logger.info(
         "Augmentations: "
         + ("HFlip, VFlip, Rotation(+/-15), Translate(5%)" if augment else "disabled")
     )
-    print(f"Preprocessing: All maps resized ONCE upfront (not per-batch)")
+    logger.info(f"Preprocessing: All maps resized ONCE upfront (not per-batch)")
 
     return train_transform
 
@@ -241,6 +257,6 @@ def get_imagenet_normalize() -> transforms.Normalize:
 
 if __name__ == "__main__":
     data, aug_transform, imagenet_norm = preprocess_data()
-    print(f"\nDataset ready: {len(data)} samples")
-    print(f"Augmentation: {aug_transform}")
-    print(f"ImageNet norm: {imagenet_norm}")
+    logger.info(f"\nDataset ready: {len(data)} samples")
+    logger.info(f"Augmentation: {aug_transform}")
+    logger.info(f"ImageNet norm: {imagenet_norm}")

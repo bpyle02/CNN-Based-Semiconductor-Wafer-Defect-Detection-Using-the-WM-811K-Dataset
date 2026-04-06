@@ -24,6 +24,7 @@ This implementation supports:
 import copy
 import logging
 import time
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
 
@@ -31,6 +32,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+
+from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
 
 
 logger = logging.getLogger(__name__)
@@ -263,7 +266,7 @@ class ByzantineRobustAggregator:
         method: str = 'median',
         trim_ratio: float = 0.2,
         byzantine_tolerance: int = 0,
-    ):
+    ) -> None:
         """
         method: 'median' (robust to 50% malicious),
                 'trimmed_mean' (robust to 30% malicious),
@@ -646,7 +649,7 @@ class FedAveragingServer:
         return self.global_model
 
     def save_checkpoint(self, path: str) -> None:
-        """Save global model checkpoint.
+        """Save global model checkpoint with integrity hash.
 
         Args:
             path: Path to save checkpoint
@@ -658,16 +661,23 @@ class FedAveragingServer:
             'test_acc': self.test_acc_history,
             'config': self.config.__dict__,
         }
-        torch.save(checkpoint, path)
+        file_hash = save_checkpoint_with_hash(checkpoint, Path(path))
         if self.config.verbose:
-            logger.info(f"Checkpoint saved to {path}")
+            logger.info(f"Checkpoint saved to {path} (SHA-256: {file_hash[:16]}...)")
 
     def load_checkpoint(self, path: str) -> None:
-        """Load global model from checkpoint.
+        """Load global model from checkpoint with integrity verification.
 
         Args:
             path: Path to checkpoint file
         """
+        checkpoint_path = Path(path)
+        if not verify_checkpoint(checkpoint_path):
+            logger.warning(
+                f"Checkpoint integrity verification FAILED for {path}. "
+                "File may be corrupted or tampered with."
+            )
+
         checkpoint = torch.load(path, map_location=self.device, weights_only=False)
         self.global_model.load_state_dict(checkpoint['global_model'])
         self.round_loss_history = checkpoint['round_loss']
@@ -745,4 +755,4 @@ def create_federated_setup(
 
 
 if __name__ == "__main__":
-    print("FedAvg module loaded. Use FedAveragingServer and FedAveragingClient.")
+    logger.info("FedAvg module loaded. Use FedAveragingServer and FedAveragingClient.")

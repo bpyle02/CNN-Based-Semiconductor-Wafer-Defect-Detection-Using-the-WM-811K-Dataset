@@ -1,12 +1,18 @@
 """Base trainer class for uniform configuration management."""
 
+import logging
 import torch
+import torch.nn as nn
+import torch.optim as optim
 import numpy as np
 import random
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from src.config import load_config
 from src.exceptions import TrainingError
+from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
+
+logger = logging.getLogger(__name__)
 
 
 class BaseTrainer:
@@ -53,8 +59,8 @@ class BaseTrainer:
 
     def save_checkpoint(
         self,
-        model,
-        optimizer,
+        model: nn.Module,
+        optimizer: optim.Optimizer,
         epoch: int,
         metrics: Dict[str, Any],
         filename: str = 'checkpoint.pth',
@@ -74,23 +80,28 @@ class BaseTrainer:
         """
         checkpoint_path = self.checkpoint_dir / filename
         try:
-            torch.save({
+            checkpoint_data = {
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'metrics': metrics,
                 'seed': self.seed,
                 'device': str(self.device),
-            }, checkpoint_path)
+            }
+            file_hash = save_checkpoint_with_hash(checkpoint_data, checkpoint_path)
+            logger.info(
+                f"Checkpoint saved to {checkpoint_path} "
+                f"(SHA-256: {file_hash[:16]}...)"
+            )
         except Exception as e:
             raise TrainingError(f"Failed to save checkpoint to {checkpoint_path}: {e}") from e
         return str(checkpoint_path)
 
     def load_checkpoint(
         self,
-        model,
-        optimizer=None,
-        checkpoint_path: Optional[str] = None,
+        model: nn.Module,
+        optimizer: Optional[optim.Optimizer] = None,
+        checkpoint_path: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         """
         Load model and optimizer state from checkpoint.
@@ -111,6 +122,15 @@ class BaseTrainer:
             if not checkpoints:
                 raise TrainingError(f"No checkpoints in {self.checkpoint_dir}")
             checkpoint_path = sorted(checkpoints, key=lambda p: p.stat().st_mtime)[-1]
+
+        checkpoint_path = Path(checkpoint_path)
+
+        # Verify checkpoint integrity before loading
+        if not verify_checkpoint(checkpoint_path):
+            logger.warning(
+                f"Checkpoint integrity verification FAILED for {checkpoint_path}. "
+                "File may be corrupted or tampered with."
+            )
 
         try:
             checkpoint = torch.load(

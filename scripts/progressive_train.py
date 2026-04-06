@@ -30,11 +30,13 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import cv2
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model, count_params, count_trainable
@@ -84,9 +86,9 @@ def load_and_split_data(
     seed: int = SEED,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, LabelEncoder]:
     """Load dataset and return raw arrays (before resizing)."""
-    print("\n" + "="*70)
-    print("LOADING DATA")
-    print("="*70)
+    logger.info("\n" + "="*70)
+    logger.info("LOADING DATA")
+    logger.info("="*70)
 
     # Load raw dataset
     df = load_dataset(dataset_path)
@@ -94,12 +96,12 @@ def load_and_split_data(
     # Filter to known classes
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
     df_clean = df[labeled_mask].reset_index(drop=True)
-    print(f"Filtered to {len(df_clean):,} labeled wafers")
+    logger.info(f"Filtered to {len(df_clean):,} labeled wafers")
 
     # Encode labels
     le = LabelEncoder()
     df_clean['label_encoded'] = le.fit_transform(df_clean['failureClass'])
-    print(f"Classes: {le.classes_.tolist()}")
+    logger.info(f"Classes: {le.classes_.tolist()}")
 
     # Extract raw data
     wafer_maps_raw = df_clean['waferMap'].values
@@ -115,7 +117,7 @@ def load_and_split_data(
         stratify=y_temp, random_state=seed
     )
 
-    print(f"Split sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
+    logger.info(f"Split sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
 
     # Return raw maps and labels
     train_maps_raw = wafer_maps_raw[X_train]
@@ -138,7 +140,7 @@ def create_dataloaders(
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """Create dataloaders for current image size."""
     # Preprocess to target size
-    print(f"Preprocessing to {image_size}x{image_size}...")
+    logger.info(f"Preprocessing to {image_size}x{image_size}...")
     train_maps = preprocess_maps_to_size(train_maps, image_size)
     val_maps = preprocess_maps_to_size(val_maps, image_size)
     test_maps = preprocess_maps_to_size(test_maps, image_size)
@@ -156,9 +158,10 @@ def create_dataloaders(
     test_dataset = WaferMapDataset(test_maps, y_test, transform=val_transform)
 
     # Create loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    g = torch.Generator().manual_seed(42)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g)
 
     return train_loader, val_loader, test_loader
 
@@ -195,7 +198,7 @@ def main() -> int:
 
     # Setup
     device = torch.device(config.device)
-    print(f"Device: {device}")
+    logger.info(f"Device: {device}")
 
     # Load data (raw, before resizing)
     if args.data_path is None:
@@ -220,21 +223,21 @@ def main() -> int:
 
     # Progressive training stages
     if not config.progressive_training.enabled:
-        print("Progressive training disabled in config. Set progressive_training.enabled = true")
+        logger.info("Progressive training disabled in config. Set progressive_training.enabled = true")
         return 1
 
     stages = config.progressive_training.stages
-    print(f"\n{'='*70}")
-    print(f"PROGRESSIVE TRAINING: {len(stages)} stages")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info(f"PROGRESSIVE TRAINING: {len(stages)} stages")
+    logger.info(f"{'='*70}")
 
     models_to_train = ['cnn', 'resnet', 'effnet'] if config.training.default_model == 'all' else [config.training.default_model]
     results = {}
 
     for model_type in models_to_train:
-        print(f"\n{'='*70}")
-        print(f"PROGRESSIVE TRAINING: {model_type.upper()}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"PROGRESSIVE TRAINING: {model_type.upper()}")
+        logger.info(f"{'='*70}")
 
         # Create model (once, then train across stages)
         if model_type == 'cnn':
@@ -247,9 +250,9 @@ def main() -> int:
             model = get_efficientnet_b0(num_classes=len(class_names)).to(device)
             model_name = "EfficientNet-B0"
 
-        print(f"{model_name} Parameters:")
-        print(f"  Total: {count_params(model):,}")
-        print(f"  Trainable: {count_trainable(model):,}")
+        logger.info(f"{model_name} Parameters:")
+        logger.info(f"  Total: {count_params(model):,}")
+        logger.info(f"  Trainable: {count_trainable(model):,}")
 
         stage_histories = []
         stage_start_time = time.time()
@@ -260,7 +263,7 @@ def main() -> int:
             epochs = stage['epochs']
             lr_factor = stage.get('learning_rate_factor', 1.0)
 
-            print(f"\n  Stage {stage_idx + 1}/{len(stages)}: {image_size}x{image_size} ({epochs} epochs, LR factor={lr_factor})")
+            logger.info(f"\n  Stage {stage_idx + 1}/{len(stages)}: {image_size}x{image_size} ({epochs} epochs, LR factor={lr_factor})")
 
             # Create dataloaders for this stage
             train_loader, val_loader, test_loader = create_dataloaders(
@@ -319,19 +322,24 @@ def main() -> int:
         }
 
     # Summary
-    print(f"\n{'='*70}")
-    print("PROGRESSIVE TRAINING COMPLETE")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info("PROGRESSIVE TRAINING COMPLETE")
+    logger.info(f"{'='*70}")
     for mtype, res in results.items():
         metrics = res['metrics']
-        print(f"{res['model_name']}:")
-        print(f"  Accuracy:    {metrics['accuracy']:.4f}")
-        print(f"  Macro F1:    {metrics['macro_f1']:.4f}")
-        print(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
-        print(f"  Time:        {res['total_time']:.1f}s")
+        logger.info(f"{res['model_name']}:")
+        logger.info(f"  Accuracy:    {metrics['accuracy']:.4f}")
+        logger.info(f"  Macro F1:    {metrics['macro_f1']:.4f}")
+        logger.info(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
+        logger.info(f"  Time:        {res['total_time']:.1f}s")
 
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

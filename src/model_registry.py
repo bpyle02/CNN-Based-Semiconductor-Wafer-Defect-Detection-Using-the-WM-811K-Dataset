@@ -1,13 +1,78 @@
 import json
 import hashlib
 import io
+import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 import torch
 import torch.nn as nn
 
 from src.exceptions import ModelError
+
+logger = logging.getLogger(__name__)
+
+
+def compute_checkpoint_hash(path: Path) -> str:
+    """Compute SHA-256 hash of a checkpoint file.
+
+    Args:
+        path: Path to the checkpoint file.
+
+    Returns:
+        Hex-encoded SHA-256 digest.
+    """
+    sha256 = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def save_checkpoint_with_hash(state_dict: dict, path: Path) -> str:
+    """Save checkpoint and write a companion .sha256 hash file.
+
+    Args:
+        state_dict: Data to pass to ``torch.save``.
+        path: Destination file path.
+
+    Returns:
+        Hex-encoded SHA-256 digest of the saved file.
+    """
+    torch.save(state_dict, path)
+    file_hash = compute_checkpoint_hash(path)
+    hash_path = path.with_suffix('.sha256')
+    hash_path.write_text(file_hash)
+    logger.info(f"Checkpoint saved to {path} (SHA-256: {file_hash[:16]}...)")
+    return file_hash
+
+
+def verify_checkpoint(path: Path) -> bool:
+    """Verify checkpoint integrity against its stored SHA-256 hash.
+
+    If no companion ``.sha256`` file exists the check is skipped for
+    backwards compatibility and the function returns ``True``.
+
+    Args:
+        path: Path to the checkpoint file.
+
+    Returns:
+        ``True`` if the file matches its hash or no hash file exists,
+        ``False`` if the hash does not match.
+    """
+    hash_path = path.with_suffix('.sha256')
+    if not hash_path.exists():
+        return True  # No hash file = skip verification (backwards compatible)
+    stored_hash = hash_path.read_text().strip()
+    actual_hash = compute_checkpoint_hash(path)
+    if stored_hash != actual_hash:
+        logger.warning(
+            f"Checkpoint integrity check FAILED for {path}: "
+            f"expected {stored_hash[:16]}..., got {actual_hash[:16]}..."
+        )
+        return False
+    logger.info(f"Checkpoint integrity verified for {path}")
+    return True
 
 class ModelMetadata:
     """Metadata for saved models."""
@@ -20,7 +85,7 @@ class ModelMetadata:
         training_config: Dict[str, Any],
         metrics: Dict[str, float],
         dataset_version: str,
-    ):
+    ) -> None:
         self.model_name = model_name
         self.architecture = architecture
         self.num_classes = num_classes
@@ -35,7 +100,7 @@ class ModelMetadata:
 class ModelRegistry:
     """Centralized model storage and versioning."""
 
-    def __init__(self, registry_path: str = 'model_registry'):
+    def __init__(self, registry_path: str = 'model_registry') -> None:
         self.registry_path = Path(registry_path).resolve()
         self.registry_path.mkdir(parents=True, exist_ok=True)
         self.metadata_file = self.registry_path / 'registry.json'
@@ -106,7 +171,7 @@ class ModelRegistry:
             raise ModelError(f"Failed to deserialize model artifact for {model_id}") from exc
         return checkpoint['state_dict'], checkpoint['metadata']
 
-    def list_models(self) -> list:
+    def list_models(self) -> List[str]:
         """List all registered models."""
         return list(self.models.keys())
 
@@ -132,6 +197,6 @@ class ModelRegistry:
                 return json.load(f)
         return {}
 
-    def _save_registry(self):
+    def _save_registry(self) -> None:
         with open(self.metadata_file, 'w', encoding='utf-8') as f:
             json.dump(self.models, f, indent=2)

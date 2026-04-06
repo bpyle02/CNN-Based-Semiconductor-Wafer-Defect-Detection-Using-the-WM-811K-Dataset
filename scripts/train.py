@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-CLI entry point for training wafer defect detection models.
-Refactored to use BaseTrainer and ModelRegistry.
+Refactored training script using BaseTrainer and ModelRegistry.
+
+This is an alternative to the primary CLI entry point (root train.py).
+Use root train.py for standard training; use this script when you need
+BaseTrainer integration or ModelRegistry-based model management.
 """
 
 import argparse
@@ -18,11 +21,13 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model, count_params, count_trainable
@@ -53,9 +58,9 @@ class WaferTrainer(BaseTrainer):
         batch_size: int = 64,
     ) -> Tuple[Dict[str, Any], Dict[str, DataLoader], LabelEncoder]:
         """Load dataset, preprocess, and create train/val/test splits."""
-        print("\n" + "="*70)
-        print("LOADING AND PREPROCESSING DATA")
-        print("="*70)
+        logger.info("\n" + "="*70)
+        logger.info("LOADING AND PREPROCESSING DATA")
+        logger.info("="*70)
 
         try:
             df = load_dataset(dataset_path)
@@ -81,7 +86,7 @@ class WaferTrainer(BaseTrainer):
             stratify=y_temp, random_state=self.seed
         )
 
-        print(f"\nSplit sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
+        logger.info(f"\nSplit sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
 
         train_maps = preprocess_wafer_maps([wafer_maps[i] for i in X_train])
         val_maps = preprocess_wafer_maps([wafer_maps[i] for i in X_val])
@@ -96,15 +101,29 @@ class WaferTrainer(BaseTrainer):
         train_aug = get_image_transforms()
         imagenet_norm = get_imagenet_normalize()
 
-        # DataLoaders (Simplified for refactoring)
-        train_loader = DataLoader(WaferMapDataset(train_maps, y_train, transform=train_aug), batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(WaferMapDataset(val_maps, y_val, transform=None), batch_size=batch_size, shuffle=False)
-        test_loader = DataLoader(WaferMapDataset(test_maps, y_test, transform=None), batch_size=batch_size, shuffle=False)
+        # Compose augmentation + ImageNet norm for pretrained models
+        pretrained_train_transform = transforms.Compose([
+            *train_aug.transforms,
+            imagenet_norm,
+        ])
+        pretrained_val_transform = transforms.Compose([imagenet_norm])
+
+        # CNN: augmentation only (no ImageNet normalization)
+        g = torch.Generator().manual_seed(42)
+        cnn_train_loader = DataLoader(WaferMapDataset(train_maps, y_train, transform=train_aug), batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
+        cnn_val_loader = DataLoader(WaferMapDataset(val_maps, y_val, transform=None), batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
+        cnn_test_loader = DataLoader(WaferMapDataset(test_maps, y_test, transform=None), batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
+
+        # Pretrained (ResNet, EfficientNet): augmentation + ImageNet normalization
+        g_pre = torch.Generator().manual_seed(42)
+        pretrained_train_loader = DataLoader(WaferMapDataset(train_maps, y_train, transform=pretrained_train_transform), batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g_pre)
+        pretrained_val_loader = DataLoader(WaferMapDataset(val_maps, y_val, transform=pretrained_val_transform), batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g_pre)
+        pretrained_test_loader = DataLoader(WaferMapDataset(test_maps, y_test, transform=pretrained_val_transform), batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g_pre)
 
         loaders = {
-            'cnn': (train_loader, val_loader, test_loader),
-            'resnet': (train_loader, val_loader, test_loader), # Should ideally use imagenet_norm
-            'effnet': (train_loader, val_loader, test_loader),
+            'cnn': (cnn_train_loader, cnn_val_loader, cnn_test_loader),
+            'resnet': (pretrained_train_loader, pretrained_val_loader, pretrained_test_loader),
+            'effnet': (pretrained_train_loader, pretrained_val_loader, pretrained_test_loader),
         }
 
         data = {
@@ -140,7 +159,7 @@ class WaferTrainer(BaseTrainer):
         models_to_train = ['cnn', 'resnet', 'effnet'] if self.config.training.default_model == 'all' else [self.config.training.default_model]
         
         for model_type in models_to_train:
-            print(f"\nTraining {model_type.upper()}...")
+            logger.info(f"\nTraining {model_type.upper()}...")
             
             if model_type == 'cnn':
                 model = WaferCNN(num_classes=len(class_names)).to(self.device)
@@ -172,7 +191,7 @@ class WaferTrainer(BaseTrainer):
                 dataset_version="wm811k_v1"
             )
             model_id = self.registry.register(model, metadata)
-            print(f"Model registered as: {model_id}")
+            logger.info(f"Model registered as: {model_id}")
 
 
 def main():
@@ -190,4 +209,9 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     main()

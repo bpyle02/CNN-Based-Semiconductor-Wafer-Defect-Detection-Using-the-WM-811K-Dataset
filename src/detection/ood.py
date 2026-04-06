@@ -18,15 +18,15 @@ class MahalanobisDetector:
     mean. High distance indicates OOD (anomalous) sample.
     """
 
-    def __init__(self, shrinkage: bool = True, percentile: float = 95.0):
+    def __init__(self, shrinkage: bool = True, percentile: float = 95.0) -> None:
         """Initialize detector.
 
         Args:
             shrinkage: Use Ledoit-Wolf shrinkage for covariance estimation
             percentile: Percentile for threshold computation (default: 95)
         """
-        self.mean = None
-        self.inv_cov = None
+        self.mean: Optional[np.ndarray] = None
+        self.inv_cov: Optional[np.ndarray] = None
         self.shrinkage = shrinkage
         self.percentile = percentile
         self.threshold = None
@@ -77,9 +77,9 @@ class MahalanobisDetector:
 class OutOfDistributionDetector:
     """High-level OOD detection interface."""
 
-    def __init__(self, model: nn.Module, device: str = 'cpu'):
+    def __init__(self, model: nn.Module, device: str = 'cpu') -> None:
         """Initialize detector.
-        
+
         Args:
             model: Trained classifier (features extracted from intermediate layer)
             device: Device to use ('cpu' or 'cuda')

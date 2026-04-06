@@ -13,6 +13,9 @@ import base64
 import io
 import sys
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -77,7 +80,7 @@ def ensure_checkpoint(checkpoint_path: Path) -> Path:
 def run_demo(checkpoint_path: Path) -> int:
     """Run the smoke demo using FastAPI's TestClient."""
     if not FASTAPI_AVAILABLE:
-        print("fastapi is not installed. Install requirements.txt to run the demo.")
+        logger.warning("fastapi is not installed. Install requirements.txt to run the demo.")
         return 1
 
     checkpoint_path = ensure_checkpoint(checkpoint_path)
@@ -112,18 +115,18 @@ def run_demo(checkpoint_path: Path) -> int:
     gradcam_bytes = base64.b64decode(payload["gradcam_base64"])
     gradcam_path.write_bytes(gradcam_bytes)
 
-    print("Defense smoke demo completed.")
-    print(f"Loaded model: {model_name}")
-    print(f"Predicted class: {payload['class_name']}")
-    print(f"Confidence: {payload['confidence']:.4f}")
-    print(f"Inference time (ms): {payload['inference_ms']:.2f}")
-    print(f"GradCAM written to: {gradcam_path}")
+    logger.info("Defense smoke demo completed.")
+    logger.info(f"Loaded model: {model_name}")
+    logger.info(f"Predicted class: {payload['class_name']}")
+    logger.info(f"Confidence: {payload['confidence']:.4f}")
+    logger.info(f"Inference time (ms): {payload['inference_ms']:.2f}")
+    logger.info(f"GradCAM written to: {gradcam_path}")
     return 0
 
 
 def main() -> int:
     if MISSING_DEPENDENCY is not None:
-        print(
+        logger.warning(
             "Missing runtime dependency for defense_smoke_demo.py: "
             f"{MISSING_DEPENDENCY}. Use the same Python environment that "
             "successfully runs `pytest -q` after installing requirements.txt."
@@ -142,4 +145,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     raise SystemExit(main())

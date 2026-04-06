@@ -12,8 +12,11 @@ References:
 
 import torch
 import torch.nn as nn
-from typing import Type, Callable, Optional, List
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 import copy
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SEBlock(nn.Module):
@@ -357,7 +360,7 @@ def add_cbam_to_model(
     return model
 
 
-def attention_summary(model: nn.Module) -> dict:
+def attention_summary(model: nn.Module) -> Dict[str, Any]:
     """
     Summarize attention modules in a model.
 
@@ -407,47 +410,47 @@ if __name__ == "__main__":
     import sys
     import os
 
-    print("=" * 70)
-    print("ATTENTION MECHANISMS TEST")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("ATTENTION MECHANISMS TEST")
+    logger.info("=" * 70)
 
     # Test SEBlock
-    print("\n1. SEBlock (Squeeze-and-Excitation)")
-    print("-" * 70)
+    logger.info("\n1. SEBlock (Squeeze-and-Excitation)")
+    logger.info("-" * 70)
     se = SEBlock(channels=64, reduction=16)
     x_se = torch.randn(4, 64, 32, 32)
     out_se = se(x_se)
-    print(f"Input shape: {x_se.shape}")
-    print(f"Output shape: {out_se.shape}")
-    print(f"Parameters: {sum(p.numel() for p in se.parameters()):,}")
-    print(f"[OK] SEBlock forward pass successful")
+    logger.info(f"Input shape: {x_se.shape}")
+    logger.info(f"Output shape: {out_se.shape}")
+    logger.info(f"Parameters: {sum(p.numel() for p in se.parameters()):,}")
+    logger.info(f"[OK] SEBlock forward pass successful")
 
     # Test SpatialAttention
-    print("\n2. SpatialAttention (CBAM spatial component)")
-    print("-" * 70)
+    logger.info("\n2. SpatialAttention (CBAM spatial component)")
+    logger.info("-" * 70)
     spatial = SpatialAttention(kernel_size=7)
     x_spatial = torch.randn(4, 64, 32, 32)
     attn_spatial = spatial(x_spatial)
-    print(f"Input shape: {x_spatial.shape}")
-    print(f"Attention map shape: {attn_spatial.shape}")
-    print(f"Attention map range: [{attn_spatial.min():.4f}, {attn_spatial.max():.4f}]")
-    print(f"Parameters: {sum(p.numel() for p in spatial.parameters()):,}")
-    print(f"[OK] SpatialAttention forward pass successful")
+    logger.info(f"Input shape: {x_spatial.shape}")
+    logger.info(f"Attention map shape: {attn_spatial.shape}")
+    logger.info(f"Attention map range: [{attn_spatial.min():.4f}, {attn_spatial.max():.4f}]")
+    logger.info(f"Parameters: {sum(p.numel() for p in spatial.parameters()):,}")
+    logger.info(f"[OK] SpatialAttention forward pass successful")
 
     # Test CBAMBlock
-    print("\n3. CBAMBlock (Channel + Spatial Attention)")
-    print("-" * 70)
+    logger.info("\n3. CBAMBlock (Channel + Spatial Attention)")
+    logger.info("-" * 70)
     cbam = CBAMBlock(channels=64, reduction=16, kernel_size=7)
     x_cbam = torch.randn(4, 64, 32, 32)
     out_cbam = cbam(x_cbam)
-    print(f"Input shape: {x_cbam.shape}")
-    print(f"Output shape: {out_cbam.shape}")
-    print(f"Parameters: {sum(p.numel() for p in cbam.parameters()):,}")
-    print(f"[OK] CBAMBlock forward pass successful")
+    logger.info(f"Input shape: {x_cbam.shape}")
+    logger.info(f"Output shape: {out_cbam.shape}")
+    logger.info(f"Parameters: {sum(p.numel() for p in cbam.parameters()):,}")
+    logger.info(f"[OK] CBAMBlock forward pass successful")
 
     # Test SE injection on custom CNN
-    print("\n4. SE injection on WaferCNN")
-    print("-" * 70)
+    logger.info("\n4. SE injection on WaferCNN")
+    logger.info("-" * 70)
 
     # Add parent dir to path for imports
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -458,18 +461,18 @@ if __name__ == "__main__":
     cnn_se = add_se_to_model(cnn, reduction=16)
     total_after = sum(p.numel() for p in cnn_se.parameters())
     summary = attention_summary(cnn_se)
-    print(f"Total parameters before: {total_before:,}")
-    print(f"Total parameters after: {total_after:,}")
-    print(f"Added parameters: {total_after - total_before:,}")
-    print(f"SE blocks added: {summary['se_blocks']}")
+    logger.info(f"Total parameters before: {total_before:,}")
+    logger.info(f"Total parameters after: {total_after:,}")
+    logger.info(f"Added parameters: {total_after - total_before:,}")
+    logger.info(f"SE blocks added: {summary['se_blocks']}")
     x_cnn = torch.randn(1, 3, 96, 96)
     out_cnn = cnn_se(x_cnn)
-    print(f"WaferCNN with SE output shape: {out_cnn.shape}")
-    print(f"[OK] SE injection on WaferCNN successful")
+    logger.info(f"WaferCNN with SE output shape: {out_cnn.shape}")
+    logger.info(f"[OK] SE injection on WaferCNN successful")
 
     # Test CBAM injection on ResNet-18
-    print("\n5. CBAM injection on ResNet-18")
-    print("-" * 70)
+    logger.info("\n5. CBAM injection on ResNet-18")
+    logger.info("-" * 70)
     from pretrained import get_resnet18
 
     resnet = get_resnet18(num_classes=9)
@@ -482,19 +485,19 @@ if __name__ == "__main__":
     )
     total_after = sum(p.numel() for p in resnet_cbam.parameters())
     summary = attention_summary(resnet_cbam)
-    print(f"Total parameters before: {total_before:,}")
-    print(f"Total parameters after: {total_after:,}")
-    print(f"Added parameters: {total_after - total_before:,}")
-    print(f"CBAM blocks added: {summary['cbam_blocks']}")
-    print(f"Spatial attention modules: {summary['spatial_attentions']}")
+    logger.info(f"Total parameters before: {total_before:,}")
+    logger.info(f"Total parameters after: {total_after:,}")
+    logger.info(f"Added parameters: {total_after - total_before:,}")
+    logger.info(f"CBAM blocks added: {summary['cbam_blocks']}")
+    logger.info(f"Spatial attention modules: {summary['spatial_attentions']}")
     x_resnet = torch.randn(1, 3, 96, 96)
     out_resnet = resnet_cbam(x_resnet)
-    print(f"ResNet-18 with CBAM output shape: {out_resnet.shape}")
-    print(f"[OK] CBAM injection on ResNet-18 successful")
+    logger.info(f"ResNet-18 with CBAM output shape: {out_resnet.shape}")
+    logger.info(f"[OK] CBAM injection on ResNet-18 successful")
 
     # Test CBAM injection on EfficientNet-B0
-    print("\n6. CBAM injection on EfficientNet-B0")
-    print("-" * 70)
+    logger.info("\n6. CBAM injection on EfficientNet-B0")
+    logger.info("-" * 70)
     from pretrained import get_efficientnet_b0
 
     effnet = get_efficientnet_b0(num_classes=9)
@@ -507,15 +510,15 @@ if __name__ == "__main__":
     )
     total_after = sum(p.numel() for p in effnet_cbam.parameters())
     summary = attention_summary(effnet_cbam)
-    print(f"Total parameters before: {total_before:,}")
-    print(f"Total parameters after: {total_after:,}")
-    print(f"Added parameters: {total_after - total_before:,}")
-    print(f"CBAM blocks added: {summary['cbam_blocks']}")
+    logger.info(f"Total parameters before: {total_before:,}")
+    logger.info(f"Total parameters after: {total_after:,}")
+    logger.info(f"Added parameters: {total_after - total_before:,}")
+    logger.info(f"CBAM blocks added: {summary['cbam_blocks']}")
     x_effnet = torch.randn(1, 3, 96, 96)
     out_effnet = effnet_cbam(x_effnet)
-    print(f"EfficientNet-B0 with CBAM output shape: {out_effnet.shape}")
-    print(f"[OK] CBAM injection on EfficientNet-B0 successful")
+    logger.info(f"EfficientNet-B0 with CBAM output shape: {out_effnet.shape}")
+    logger.info(f"[OK] CBAM injection on EfficientNet-B0 successful")
 
-    print("\n" + "=" * 70)
-    print("ALL TESTS PASSED")
-    print("=" * 70)
+    logger.info("\n" + "=" * 70)
+    logger.info("ALL TESTS PASSED")
+    logger.info("=" * 70)

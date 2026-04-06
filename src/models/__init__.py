@@ -1,5 +1,7 @@
 """Deep learning model architectures for wafer defect classification."""
 
+from typing import Any
+
 from .cnn import WaferCNN
 from .vit import ViT, get_vit_small, get_vit_tiny
 from .attention import (
@@ -18,12 +20,12 @@ try:
 except ImportError as exc:
     _PRETRAINED_IMPORT_ERROR = exc
 
-    def get_resnet18(*args, **kwargs):
+    def get_resnet18(*args: Any, **kwargs: Any) -> Any:
         raise ImportError(
             "torchvision is required to use ResNet-18 models"
         ) from _PRETRAINED_IMPORT_ERROR
 
-    def get_efficientnet_b0(*args, **kwargs):
+    def get_efficientnet_b0(*args: Any, **kwargs: Any) -> Any:
         raise ImportError(
             "torchvision is required to use EfficientNet-B0 models"
         ) from _PRETRAINED_IMPORT_ERROR

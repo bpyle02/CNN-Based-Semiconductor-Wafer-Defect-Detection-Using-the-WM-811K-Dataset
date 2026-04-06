@@ -5,8 +5,13 @@ Implements a lightweight convolutional neural network optimized for CPU inferenc
 on 96x96 wafer map images.
 """
 
+from typing import Tuple
+
 import torch
 import torch.nn as nn
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class WaferCNN(nn.Module):
@@ -120,7 +125,7 @@ class WaferCNN(nn.Module):
         return x
 
 
-def count_parameters(model: nn.Module) -> tuple:
+def count_parameters(model: nn.Module) -> Tuple[int, int]:
     """
     Count total and trainable parameters in model.
 
@@ -138,12 +143,12 @@ def count_parameters(model: nn.Module) -> tuple:
 if __name__ == "__main__":
     model = WaferCNN(num_classes=9)
     total, trainable = count_parameters(model)
-    print(f"WaferCNN:")
-    print(f"  Total parameters: {total:,}")
-    print(f"  Trainable parameters: {trainable:,}")
+    logger.info(f"WaferCNN:")
+    logger.info(f"  Total parameters: {total:,}")
+    logger.info(f"  Trainable parameters: {trainable:,}")
 
     # Test forward pass
     x = torch.randn(1, 3, 96, 96)
     y = model(x)
-    print(f"  Input shape: {x.shape}")
-    print(f"  Output shape: {y.shape}")
+    logger.info(f"  Input shape: {x.shape}")
+    logger.info(f"  Output shape: {y.shape}")

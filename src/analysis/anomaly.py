@@ -21,6 +21,9 @@ from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, roc_curve
 import warnings
+import logging
+
+logger = logging.getLogger(__name__)
 
 warnings.filterwarnings('ignore', category=UserWarning)
 
@@ -254,7 +257,7 @@ class AnomalyDetector:
 
             avg_loss = total_loss / len(train_loader)
             if (epoch + 1) % 5 == 0:
-                print(f"Autoencoder Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
+                logger.info(f"Autoencoder Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
 
         self.model = autoencoder
 
@@ -415,7 +418,7 @@ class AnomalyDetector:
 class OODDetector:
     """Out-of-distribution detection."""
 
-    def __init__(self, method: str = 'mahalanobis', threshold: float = 0.95):
+    def __init__(self, method: str = 'mahalanobis', threshold: float = 0.95) -> None:
         self.method = method
         self.threshold = threshold  # Percentile for anomaly threshold
         self.feature_mean = None

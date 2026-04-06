@@ -5,10 +5,13 @@ Supports DataParallel and DistributedDataParallel for scalable training.
 """
 
 import os
-from typing import Optional
+from typing import List, Optional
 import torch
 import torch.nn as nn
 from torch.nn.parallel import DataParallel, DistributedDataParallel
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def setup_distributed(rank: int, world_size: int, backend: str = 'nccl') -> None:
@@ -56,7 +59,7 @@ def get_world_size() -> int:
 
 def wrap_model_dataparallel(
     model: nn.Module,
-    device_ids: Optional[list] = None,
+    device_ids: Optional[List[int]] = None,
 ) -> nn.Module:
     """
     Wrap model with DataParallel for multi-GPU training.
@@ -72,10 +75,10 @@ def wrap_model_dataparallel(
         device_ids = list(range(torch.cuda.device_count()))
 
     if len(device_ids) > 1:
-        print(f"Using DataParallel on GPUs: {device_ids}")
+        logger.info(f"Using DataParallel on GPUs: {device_ids}")
         model = DataParallel(model, device_ids=device_ids)
     else:
-        print(f"Using single GPU: {device_ids[0]}")
+        logger.info(f"Using single GPU: {device_ids[0]}")
 
     return model
 
@@ -103,7 +106,7 @@ def wrap_model_distributed(
         output_device=rank,
         find_unused_parameters=True,
     )
-    print(f"Rank {rank}/{world_size}: Model wrapped with DistributedDataParallel")
+    logger.info(f"Rank {rank}/{world_size}: Model wrapped with DistributedDataParallel")
     return model
 
 

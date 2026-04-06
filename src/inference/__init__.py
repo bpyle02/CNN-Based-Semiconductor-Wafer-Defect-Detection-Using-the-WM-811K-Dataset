@@ -1,5 +1,7 @@
 """Model inference and interpretability utilities."""
 
+from typing import Any, NoReturn
+
 from .gradcam import GradCAM
 from .visualize import plot_gradcam_grid
 
@@ -10,20 +12,20 @@ try:
 except ImportError as exc:
     _SERVER_IMPORT_ERROR = exc
 
-    def _raise_server_import_error() -> None:
+    def _raise_server_import_error() -> NoReturn:
         raise ImportError(
             "FastAPI and related server dependencies are required for inference server utilities"
         ) from _SERVER_IMPORT_ERROR
 
-    def create_app(*args, **kwargs):
+    def create_app(*args: Any, **kwargs: Any) -> Any:
         _raise_server_import_error()
 
     class ModelServer:  # type: ignore[override]
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             _raise_server_import_error()
 
     class ModelType:  # type: ignore[override]
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args: Any, **kwargs: Any) -> Any:
             _raise_server_import_error()
 
 try:

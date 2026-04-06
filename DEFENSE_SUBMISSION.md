@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the operational submission note for the committee-facing package as it exists on `2026-03-22`.
+This is the operational submission note for the committee-facing package as it exists on `2026-04-05`.
 
 Use this file together with:
 
@@ -13,8 +13,8 @@ Use this file together with:
 
 ## Verified State
 
-- Repository validation date: `2026-03-22`
-- Current automated verification: `pytest -q` -> `45 passed, 6 skipped`
+- Repository validation date: `2026-04-05`
+- Test suite: 51 test functions across 5 files (static count verified via `grep -c "def test_"`)
 - The inference API supports Grad-CAM overlays in prediction responses.
 - The repository includes a defense smoke-demo script and wrapper.
 
@@ -52,7 +52,7 @@ pytest -q
 Expected local result in the current workspace:
 
 ```text
-45 passed, 6 skipped
+51 test functions collected (actual pass/skip counts depend on installed optional dependencies)
 ```
 
 ### 2. Package the committee bundle

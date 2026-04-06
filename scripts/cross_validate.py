@@ -24,11 +24,14 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import f1_score, accuracy_score
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from torchvision import transforms as tv_transforms
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model
@@ -55,7 +58,7 @@ def set_seed(seed: int) -> None:
 
 def load_and_preprocess(dataset_path: Path, seed: int = SEED) -> Tuple[np.ndarray, np.ndarray, list]:
     """Load dataset and preprocess."""
-    print("Loading data...")
+    logger.info("Loading data...")
     df = load_dataset(dataset_path)
 
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
@@ -68,11 +71,11 @@ def load_and_preprocess(dataset_path: Path, seed: int = SEED) -> Tuple[np.ndarra
     labels = df_clean['label_encoded'].values
 
     # Preprocess all maps
-    print(f"Preprocessing {len(wafer_maps):,} maps...")
+    logger.info(f"Preprocessing {len(wafer_maps):,} maps...")
     maps_raw = [wafer_maps[i] for i in range(len(wafer_maps))]
     maps_processed = preprocess_wafer_maps(maps_raw)
 
-    print(f"Loaded: {len(maps_processed):,} samples, {len(le.classes_)} classes")
+    logger.info(f"Loaded: {len(maps_processed):,} samples, {len(le.classes_)} classes")
     return maps_processed, labels, le.classes_.tolist()
 
 
@@ -99,9 +102,9 @@ def cross_validate(
     seed: int = SEED,
 ) -> Dict[str, Any]:
     """Perform k-fold cross-validation."""
-    print(f"\n{'='*70}")
-    print(f"CROSS-VALIDATION: {model_type.upper()} ({n_splits}-Fold)")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info(f"CROSS-VALIDATION: {model_type.upper()} ({n_splits}-Fold)")
+    logger.info(f"{'='*70}")
 
     # Create fold splitter
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
@@ -113,27 +116,30 @@ def cross_validate(
     }
 
     for fold_idx, (train_idxs, val_idxs) in enumerate(skf.split(maps, labels)):
-        print(f"\n  Fold {fold_idx + 1}/{n_splits}")
+        logger.info(f"\n  Fold {fold_idx + 1}/{n_splits}")
 
         # Split data
         maps_train, maps_val = maps[train_idxs], maps[val_idxs]
         labels_train, labels_val = labels[train_idxs], labels[val_idxs]
 
-        print(f"    Train: {len(labels_train):,}, Val: {len(labels_val):,}")
+        logger.info(f"    Train: {len(labels_train):,}, Val: {len(labels_val):,}")
 
         # Create datasets
         if model_type == 'cnn':
             train_transform = get_image_transforms()
             val_transform = None
-        else:  # pretrained
-            train_transform = torch.nn.Sequential(get_image_transforms(), get_imagenet_normalize())
-            val_transform = get_imagenet_normalize()
+        else:  # pretrained models need ImageNet normalization
+            base_aug = get_image_transforms()
+            imagenet_norm = get_imagenet_normalize()
+            train_transform = tv_transforms.Compose([base_aug, imagenet_norm])
+            val_transform = imagenet_norm
 
         train_dataset = WaferMapDataset(maps_train, labels_train, transform=train_transform)
         val_dataset = WaferMapDataset(maps_val, labels_val, transform=val_transform)
 
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        g = torch.Generator().manual_seed(42)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g)
 
         # Create model
         if model_type == 'cnn':
@@ -183,18 +189,18 @@ def cross_validate(
         fold_results['macro_f1'].append(macro_f1)
         fold_results['weighted_f1'].append(weighted_f1)
 
-        print(f"    Accuracy: {accuracy:.4f}, Macro F1: {macro_f1:.4f}, Weighted F1: {weighted_f1:.4f}")
+        logger.info(f"    Accuracy: {accuracy:.4f}, Macro F1: {macro_f1:.4f}, Weighted F1: {weighted_f1:.4f}")
 
     # Compute statistics
-    print(f"\n  {'='*70}")
-    print(f"  FOLD STATISTICS (Cross-Validation)")
-    print(f"  {'='*70}")
+    logger.info(f"\n  {'='*70}")
+    logger.info(f"  FOLD STATISTICS (Cross-Validation)")
+    logger.info(f"  {'='*70}")
     for metric in fold_results.keys():
         values = fold_results[metric]
-        print(f"  {metric.upper()}:")
-        print(f"    Mean: {np.mean(values):.4f} ± {np.std(values):.4f}")
-        print(f"    Min:  {np.min(values):.4f}")
-        print(f"    Max:  {np.max(values):.4f}")
+        logger.info(f"  {metric.upper()}:")
+        logger.info(f"    Mean: {np.mean(values):.4f} ± {np.std(values):.4f}")
+        logger.info(f"    Min:  {np.min(values):.4f}")
+        logger.info(f"    Max:  {np.max(values):.4f}")
 
     return fold_results
 
@@ -224,7 +230,7 @@ def main():
     # Setup
     set_seed(args.seed)
     device = args.device
-    print(f"Device: {device}")
+    logger.info(f"Device: {device}")
 
     # Load data
     if args.data_path is None:
@@ -250,17 +256,22 @@ def main():
         results[model_type] = fold_results
 
     # Summary
-    print(f"\n{'='*70}")
-    print("CROSS-VALIDATION SUMMARY")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info("CROSS-VALIDATION SUMMARY")
+    logger.info(f"{'='*70}")
     for model_type, fold_results in results.items():
-        print(f"\n{model_type.upper()}:")
+        logger.info(f"\n{model_type.upper()}:")
         for metric in fold_results.keys():
             values = fold_results[metric]
-            print(f"  {metric}: {np.mean(values):.4f} ± {np.std(values):.4f}")
+            logger.info(f"  {metric}: {np.mean(values):.4f} ± {np.std(values):.4f}")
 
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

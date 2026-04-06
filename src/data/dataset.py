@@ -6,12 +6,14 @@ including extraction of failure class labels from nested structures.
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import pandas as pd
 import numpy as np
 
 from src.exceptions import DataLoadError
+import logging
 
+logger = logging.getLogger(__name__)
 
 KNOWN_CLASSES = [
     'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
@@ -48,26 +50,26 @@ def load_dataset(path: Optional[Path] = None) -> pd.DataFrame:
 
     df['failureClass'] = df['failureType'].apply(extract_failure_label)
 
-    print("\n--- Dataset Info ---")
-    print(f"Dataset Shape: {df.shape}")
-    print(f"Dataset Columns: {df.columns.tolist()}")
+    logger.info("\n--- Dataset Info ---")
+    logger.info(f"Dataset Shape: {df.shape}")
+    logger.info(f"Dataset Columns: {df.columns.tolist()}")
     memory_mb = df.memory_usage(deep=True).sum() / (1024 ** 2)
-    print(f"Dataset Memory Usage: {memory_mb:.2f} MB\n")
-    print(f"{df.head()}")
+    logger.info(f"Dataset Memory Usage: {memory_mb:.2f} MB\n")
+    logger.info(f"{df.head()}")
 
     class_counts = df['failureClass'].value_counts()
-    print("\n--- Failure Class Distribution (Before Filtering) ---")
-    print(class_counts.to_string())
+    logger.info("\n--- Failure Class Distribution (Before Filtering) ---")
+    logger.info(class_counts.to_string())
 
-    print("\n--- Data Quality Checks ---")
+    logger.info("\n--- Data Quality Checks ---")
     unique_classes = df['failureClass'].unique().tolist()
-    print(f"Unique failure classes: {unique_classes}")
-    print(f"Total wafers: {len(df):,}")
+    logger.info(f"Unique failure classes: {unique_classes}")
+    logger.info(f"Total wafers: {len(df):,}")
 
     return df
 
 
-def extract_failure_label(failure_label) -> str:
+def extract_failure_label(failure_label: Any) -> str:
     """
     Extract a clean failure class label from the raw 'failureType' field.
 

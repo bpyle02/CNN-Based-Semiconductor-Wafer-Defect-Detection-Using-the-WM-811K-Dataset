@@ -29,6 +29,9 @@ from src.augmentation.synthetic import (
     WaferMapGenerator,
     balance_dataset_with_synthetic,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -101,54 +104,54 @@ def main() -> None:
     setup_seeds(args.seed)
 
     device = torch.device(args.device)
-    print(f"Device: {device}")
-    print(f"Generator type: {args.generator}")
+    logger.info(f"Device: {device}")
+    logger.info(f"Generator type: {args.generator}")
 
     # ---- Load and preprocess data ----
-    print("\n=== Loading Dataset ===")
+    logger.info("\n=== Loading Dataset ===")
     try:
         df = load_dataset()
     except FileNotFoundError:
-        print("ERROR: Dataset not found. Place LSWMD_new.pkl in data/ directory.")
+        logger.warning("ERROR: Dataset not found. Place LSWMD_new.pkl in data/ directory.")
         return
 
     # Filter to known classes
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
     df_filtered = df[labeled_mask].reset_index(drop=True)
-    print(f"Loaded {len(df_filtered)} labeled samples")
+    logger.info(f"Loaded {len(df_filtered)} labeled samples")
 
     # Extract wafer maps and labels
     wafer_maps = np.array(df_filtered['waferMap'].tolist())
     labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered['failureClass']])
 
-    print(f"Wafer maps shape: {wafer_maps.shape}")
-    print(f"Labels shape: {labels.shape}")
+    logger.info(f"Wafer maps shape: {wafer_maps.shape}")
+    logger.info(f"Labels shape: {labels.shape}")
 
     # Count samples per class
     class_counts = Counter(labels)
-    print("\n--- Original Class Distribution ---")
+    logger.info("\n--- Original Class Distribution ---")
     for class_idx in sorted(class_counts.keys()):
         class_name = KNOWN_CLASSES[class_idx]
         count = class_counts[class_idx]
         pct = 100 * count / len(labels)
-        print(f"  {class_name:12s}: {count:6d} ({pct:5.1f}%)")
+        logger.info(f"  {class_name:12s}: {count:6d} ({pct:5.1f}%)")
 
     # For demonstration, use a subset (preprocessing is slow)
-    print("\n=== Subsampling for Demo (first 1000 samples) ===")
+    logger.info("\n=== Subsampling for Demo (first 1000 samples) ===")
     subsample_size = min(1000, len(wafer_maps))
     indices = np.random.choice(len(wafer_maps), subsample_size, replace=False)
     wafer_maps = wafer_maps[indices]
     labels = labels[indices]
 
     # Preprocess (resize and normalize)
-    print("\nPreprocessing wafer maps (resize to 96x96)...")
+    logger.info("\nPreprocessing wafer maps (resize to 96x96)...")
     preprocessed_maps = preprocess_wafer_maps(wafer_maps, target_size=(96, 96))
     preprocessed_maps = np.array(preprocessed_maps)
-    print(f"Preprocessed shape: {preprocessed_maps.shape}")
+    logger.info(f"Preprocessed shape: {preprocessed_maps.shape}")
 
     if args.visualize_only:
         # ---- Visualization Only ----
-        print("\n=== Generating and Visualizing Samples ===")
+        logger.info("\n=== Generating and Visualizing Samples ===")
         augmenter = SyntheticDataAugmenter(
             generator_type=args.generator,
             image_size=96,
@@ -163,7 +166,7 @@ def main() -> None:
 
     # ---- Train GAN (if applicable) ----
     if args.generator == 'gan':
-        print("\n=== Training GAN ===")
+        logger.info("\n=== Training GAN ===")
         augmenter = SyntheticDataAugmenter(
             generator_type='gan',
             image_size=96,
@@ -180,10 +183,10 @@ def main() -> None:
         # Save trained GAN
         gan_path = 'wafer_gan_checkpoint.pth'
         augmenter.save_gan(gan_path)
-        print(f"GAN saved to {gan_path}")
+        logger.info(f"GAN saved to {gan_path}")
 
     # ---- Augment Dataset ----
-    print("\n=== Augmenting Dataset ===")
+    logger.info("\n=== Augmenting Dataset ===")
     augmented_maps, augmented_labels = balance_dataset_with_synthetic(
         preprocessed_maps,
         labels,
@@ -194,15 +197,15 @@ def main() -> None:
 
     # Show augmented distribution
     aug_counts = Counter(augmented_labels)
-    print("\n--- Augmented Class Distribution ---")
+    logger.info("\n--- Augmented Class Distribution ---")
     for class_idx in sorted(aug_counts.keys()):
         class_name = KNOWN_CLASSES[class_idx]
         count = aug_counts[class_idx]
         pct = 100 * count / len(augmented_labels)
-        print(f"  {class_name:12s}: {count:6d} ({pct:5.1f}%)")
+        logger.info(f"  {class_name:12s}: {count:6d} ({pct:5.1f}%)")
 
     # ---- Visualization ----
-    print("\n=== Visualizing Generated Samples ===")
+    logger.info("\n=== Visualizing Generated Samples ===")
     augmenter = SyntheticDataAugmenter(
         generator_type=args.generator,
         image_size=96,
@@ -214,11 +217,16 @@ def main() -> None:
         num_samples_per_class=args.num_samples_per_class
     )
 
-    print("\n✓ Augmentation complete!")
-    print(f"  Original dataset: {len(preprocessed_maps)} samples")
-    print(f"  Augmented dataset: {len(augmented_maps)} samples")
-    print(f"  Synthetic samples generated: {len(augmented_maps) - len(preprocessed_maps)}")
+    logger.info("\n✓ Augmentation complete!")
+    logger.info(f"  Original dataset: {len(preprocessed_maps)} samples")
+    logger.info(f"  Augmented dataset: {len(augmented_maps)} samples")
+    logger.info(f"  Synthetic samples generated: {len(augmented_maps) - len(preprocessed_maps)}")
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     main()

@@ -10,6 +10,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def plot_training_curves(
@@ -199,4 +202,4 @@ def plot_per_class_f1(
 
 
 if __name__ == "__main__":
-    print("Visualization module loaded.")
+    logger.info("Visualization module loaded.")

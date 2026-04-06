@@ -27,17 +27,19 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import confusion_matrix, f1_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import logging
 
+logger = logging.getLogger(__name__)
 try:
     import streamlit as st
 except ImportError:
-    print("Error: streamlit not installed. Run: pip install streamlit")
+    logger.warning("Error: streamlit not installed. Run: pip install streamlit")
     sys.exit(1)
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.analysis import evaluate_model, count_params, count_trainable
 from src.config import load_config
@@ -179,7 +181,8 @@ def main() -> None:
                 # Create test dataset
                 test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
                 test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
-                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+                g = torch.Generator().manual_seed(42)
+                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
                 # Evaluate
                 preds, labels, metrics = evaluate_model(
@@ -216,7 +219,8 @@ def main() -> None:
             with st.spinner("Computing metrics..."):
                 test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
                 test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
-                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+                g = torch.Generator().manual_seed(42)
+                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
                 preds, labels, metrics = evaluate_model(
                     model, test_loader, class_names, selected_model, str(device)
@@ -267,7 +271,8 @@ def main() -> None:
 
         test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
         test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
-        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+        g = torch.Generator().manual_seed(42)
+        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
         preds, labels, _ = evaluate_model(
             model, test_loader, class_names, selected_model, str(device)
@@ -382,4 +387,9 @@ def main() -> None:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     main()

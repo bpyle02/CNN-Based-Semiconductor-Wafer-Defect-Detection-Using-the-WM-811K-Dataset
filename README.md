@@ -4,8 +4,8 @@ This repository contains a modular wafer-defect detection codebase built around 
 
 ## Verified Status
 
-- Repository validation date: `2026-03-22`
-- Current automated verification: `pytest -q` -> `45 passed, 6 skipped`
+- Repository validation date: `2026-04-05`
+- Test suite: 51 test functions across 5 files (static count verified via `grep -c "def test_"`)
 - The inference API now supports Grad-CAM overlays in prediction responses.
 - The test harness is stable inside the repo workspace and no longer depends on inaccessible temp directories.
 

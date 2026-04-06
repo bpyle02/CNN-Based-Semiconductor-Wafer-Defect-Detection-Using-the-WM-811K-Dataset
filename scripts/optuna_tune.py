@@ -29,11 +29,13 @@ from sklearn.metrics import f1_score
 import optuna
 from optuna.trial import Trial
 from optuna.samplers import TPESampler
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.analysis import evaluate_model
@@ -65,12 +67,12 @@ def load_and_preprocess(
     seed: int = SEED,
 ) -> Tuple[Dict[str, Any], Dict[str, DataLoader], LabelEncoder]:
     """Load dataset, preprocess, and create loaders."""
-    print("Loading data...")
+    logger.info("Loading data...")
     df = load_dataset(dataset_path)
 
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
     df_clean = df[labeled_mask].reset_index(drop=True)
-    print(f"Loaded {len(df_clean):,} samples")
+    logger.info(f"Loaded {len(df_clean):,} samples")
 
     le = LabelEncoder()
     df_clean['label_encoded'] = le.fit_transform(df_clean['failureClass'])
@@ -153,7 +155,7 @@ class HyperparameterTuner:
         dropout_rate = trial.suggest_float('dropout_rate', 0.2, 0.7)
         weight_decay = trial.suggest_float('weight_decay', 1e-5, 1e-3, log=True)
 
-        print(f"\n  Trial {self.trial_count}: LR={lr:.2e}, BS={batch_size}, Dropout={dropout_rate:.2f}, WD={weight_decay:.2e}")
+        logger.info(f"\n  Trial {self.trial_count}: LR={lr:.2e}, BS={batch_size}, Dropout={dropout_rate:.2f}, WD={weight_decay:.2e}")
 
         try:
             # Create model
@@ -167,11 +169,14 @@ class HyperparameterTuner:
             model = model.to(self.device)
 
             # Create loaders
+            g = torch.Generator().manual_seed(42)
             train_loader = DataLoader(
-                self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=0
+                self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                worker_init_fn=seed_worker, generator=g
             )
             val_loader = DataLoader(
-                self.val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
+                self.val_dataset, batch_size=batch_size, shuffle=False, num_workers=0,
+                worker_init_fn=seed_worker, generator=g
             )
 
             # Setup training
@@ -213,7 +218,7 @@ class HyperparameterTuner:
                         val_targets.extend(targets.numpy())
 
                 val_f1 = f1_score(val_targets, val_preds, average='macro', zero_division=0)
-                print(f"    Epoch {epoch + 1}: Val Macro F1={val_f1:.4f}")
+                logger.info(f"    Epoch {epoch + 1}: Val Macro F1={val_f1:.4f}")
 
                 if val_f1 > best_val_f1:
                     best_val_f1 = val_f1
@@ -225,11 +230,11 @@ class HyperparameterTuner:
 
                 model.train()
 
-            print(f"    Best Val F1: {best_val_f1:.4f}")
+            logger.info(f"    Best Val F1: {best_val_f1:.4f}")
             return best_val_f1
 
         except Exception as e:
-            print(f"    Trial failed: {e}")
+            logger.warning(f"    Trial failed: {e}")
             return 0.0
 
 
@@ -254,8 +259,8 @@ def main():
 
     # Setup
     set_seed(args.seed)
-    print(f"\nDevice: {args.device}")
-    print(f"Tuning with Optuna: {args.n_trials} trials")
+    logger.info(f"\nDevice: {args.device}")
+    logger.info(f"Tuning with Optuna: {args.n_trials} trials")
 
     # Load data
     if args.data_path is None:
@@ -272,9 +277,9 @@ def main():
     results = {}
 
     for model_type in models_to_tune:
-        print(f"\n{'='*70}")
-        print(f"TUNING {model_type.upper()}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"TUNING {model_type.upper()}")
+        logger.info(f"{'='*70}")
 
         # Select datasets
         if model_type == 'cnn':
@@ -303,11 +308,11 @@ def main():
         )
 
         # Summary
-        print(f"\nBest trial:")
-        print(f"  Macro F1: {study.best_value:.4f}")
-        print(f"  Hyperparameters:")
+        logger.info(f"\nBest trial:")
+        logger.info(f"  Macro F1: {study.best_value:.4f}")
+        logger.info(f"  Hyperparameters:")
         for key, value in study.best_params.items():
-            print(f"    {key}: {value}")
+            logger.info(f"    {key}: {value}")
 
         results[model_type] = {
             'best_params': study.best_params,
@@ -316,14 +321,19 @@ def main():
         }
 
     # Save results
-    print(f"\n{'='*70}")
-    print("TUNING COMPLETE")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info("TUNING COMPLETE")
+    logger.info(f"{'='*70}")
     for mtype, res in results.items():
-        print(f"{mtype}: Best Macro F1 = {res['best_value']:.4f}")
+        logger.info(f"{mtype}: Best Macro F1 = {res['best_value']:.4f}")
 
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

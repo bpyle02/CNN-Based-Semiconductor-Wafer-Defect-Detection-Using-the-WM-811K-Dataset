@@ -35,15 +35,15 @@ jobs:
 
     - name: Check formatting with black
       run: |
-        black --check --line-length=100 src/ train.py *.py 2>/dev/null || echo "Formatting issues (use: black src/ train.py)"
+        black --check --line-length=100 src/ train.py
 
     - name: Check import sorting with isort
       run: |
-        isort --check-only --profile black src/ train.py *.py 2>/dev/null || echo "Import sorting issues"
+        isort --check-only --profile black src/ train.py
 
     - name: Type checking with mypy
       run: |
-        mypy src/ --ignore-missing-imports --no-implicit-optional || echo "Type checking complete (warnings allowed)"
+        mypy src/ --ignore-missing-imports --no-implicit-optional
 
   test:
     runs-on: ubuntu-latest
@@ -67,7 +67,16 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest tests/ -v --tb=short --cov=src --cov-report=term-missing || echo "Tests complete"
+        pytest tests/ -v --tb=short --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:htmlcov/ --cov-fail-under=30
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: |
+          coverage.xml
+          htmlcov/
 
     - name: Test imports
       run: |

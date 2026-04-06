@@ -25,6 +25,8 @@ from torch.utils.data import DataLoader
 
 from src.federated.fed_avg import FedAveragingClient
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+from src.data.preprocessing import seed_worker
+from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
 
 
 logger = logging.getLogger(__name__)
@@ -140,7 +142,7 @@ class ClientManager:
         return weights
 
     def save_checkpoint(self) -> str:
-        """Save local model checkpoint.
+        """Save local model checkpoint with integrity hash.
 
         Returns:
             Path to saved checkpoint
@@ -153,16 +155,26 @@ class ClientManager:
             'acc_history': self.client.local_acc_history,
             'metadata': self.metadata,
         }
-        torch.save(checkpoint, path)
-        logger.info(f"Client {self.client_id}: Checkpoint saved to {path}")
+        file_hash = save_checkpoint_with_hash(checkpoint, path)
+        logger.info(
+            f"Client {self.client_id}: Checkpoint saved to {path} "
+            f"(SHA-256: {file_hash[:16]}...)"
+        )
         return str(path)
 
     def load_checkpoint(self, path: str) -> None:
-        """Load model from checkpoint.
+        """Load model from checkpoint with integrity verification.
 
         Args:
             path: Path to checkpoint file
         """
+        checkpoint_path = Path(path)
+        if not verify_checkpoint(checkpoint_path):
+            logger.warning(
+                f"Client {self.client_id}: Checkpoint integrity verification "
+                f"FAILED for {path}. File may be corrupted or tampered with."
+            )
+
         checkpoint = torch.load(path)
         self.client.model.load_state_dict(checkpoint['model'])
         self.round_num = checkpoint['round']
@@ -212,7 +224,8 @@ def simulate_client_training(
     X = torch.randn(10, 3, 96, 96)
     y = torch.randint(0, 9, (10,))
     dataset = torch.utils.data.TensorDataset(X, y)
-    loader = DataLoader(dataset, batch_size=5, shuffle=True)
+    g = torch.Generator().manual_seed(42)
+    loader = DataLoader(dataset, batch_size=5, shuffle=True, worker_init_fn=seed_worker, generator=g)
 
     # Create model
     if model_type == "cnn":

@@ -10,7 +10,7 @@ This module provides practical examples of:
 
 import torch
 import torch.nn as nn
-from attention import (
+from src.models.attention import (
     SEBlock,
     SpatialAttention,
     CBAMBlock,
@@ -18,20 +18,23 @@ from attention import (
     add_cbam_to_model,
     attention_summary,
 )
-from cnn import WaferCNN
-from pretrained import get_resnet18, get_efficientnet_b0
+import logging
+
+logger = logging.getLogger(__name__)
+from src.models.cnn import WaferCNN
+from src.models.pretrained import get_resnet18, get_efficientnet_b0
 
 
-def example_1_standalone_se_block():
+def example_1_standalone_se_block() -> None:
     """
     Example 1: Create and use a standalone SE block.
 
     SE blocks are lightweight (1-2% parameter increase) and can be easily
     added to any convolutional layer output.
     """
-    print("=" * 70)
-    print("EXAMPLE 1: Standalone SE Block")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 1: Standalone SE Block")
+    logger.info("=" * 70)
 
     # Create a simple feature extraction pipeline
     feature_extractor = nn.Sequential(
@@ -45,22 +48,22 @@ def example_1_standalone_se_block():
     x = torch.randn(4, 3, 96, 96)
     y = feature_extractor(x)
 
-    print(f"Input shape: {x.shape}")
-    print(f"Output shape: {y.shape}")
-    print(f"Total parameters: {sum(p.numel() for p in feature_extractor.parameters()):,}")
-    print()
+    logger.info(f"Input shape: {x.shape}")
+    logger.info(f"Output shape: {y.shape}")
+    logger.info(f"Total parameters: {sum(p.numel() for p in feature_extractor.parameters()):,}")
+    logger.info()
 
 
-def example_2_cbam_block():
+def example_2_cbam_block() -> None:
     """
     Example 2: Create and use a CBAM block (channel + spatial attention).
 
     CBAM provides both channel and spatial attention, offering better
     expressiveness at the cost of slightly higher computation.
     """
-    print("=" * 70)
-    print("EXAMPLE 2: CBAM Block (Channel + Spatial Attention)")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 2: CBAM Block (Channel + Spatial Attention)")
+    logger.info("=" * 70)
 
     # Create feature extraction with CBAM
     feature_extractor = nn.Sequential(
@@ -78,26 +81,26 @@ def example_2_cbam_block():
     x = torch.randn(4, 3, 96, 96)
     y = feature_extractor(x)
 
-    print(f"Input shape: {x.shape}")
-    print(f"Output shape: {y.shape}")
-    print(f"Total parameters: {sum(p.numel() for p in feature_extractor.parameters()):,}")
+    logger.info(f"Input shape: {x.shape}")
+    logger.info(f"Output shape: {y.shape}")
+    logger.info(f"Total parameters: {sum(p.numel() for p in feature_extractor.parameters()):,}")
 
     # Check attention modules
     summary = attention_summary(feature_extractor)
-    print(f"CBAM blocks: {summary['cbam_blocks']}")
-    print()
+    logger.info(f"CBAM blocks: {summary['cbam_blocks']}")
+    logger.info()
 
 
-def example_3_inject_se_into_custom_cnn():
+def example_3_inject_se_into_custom_cnn() -> None:
     """
     Example 3: Inject SE attention into the custom WaferCNN model.
 
     This is the most common use case: take a trained CNN and enhance it
     with attention mechanisms post-hoc.
     """
-    print("=" * 70)
-    print("EXAMPLE 3: Inject SE into Custom WaferCNN")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 3: Inject SE into Custom WaferCNN")
+    logger.info("=" * 70)
 
     # Create baseline model
     model_baseline = WaferCNN(num_classes=9)
@@ -114,31 +117,31 @@ def example_3_inject_se_into_custom_cnn():
 
     summary = attention_summary(model_with_se)
 
-    print(f"Baseline WaferCNN:")
-    print(f"  Total parameters: {baseline_params:,}")
-    print(f"Output shape: {y_baseline.shape}")
-    print()
-    print(f"WaferCNN with SE blocks:")
-    print(f"  Total parameters: {se_params:,}")
-    print(f"  Added parameters: {se_params - baseline_params:,}")
-    print(f"  Parameter increase: {(se_params - baseline_params) / baseline_params * 100:.2f}%")
-    print(f"  SE blocks injected: {summary['se_blocks']}")
-    print(f"Output shape: {y_with_se.shape}")
-    print()
-    print("Note: SE blocks add minimal parameters but can improve accuracy")
-    print()
+    logger.info(f"Baseline WaferCNN:")
+    logger.info(f"  Total parameters: {baseline_params:,}")
+    logger.info(f"Output shape: {y_baseline.shape}")
+    logger.info()
+    logger.info(f"WaferCNN with SE blocks:")
+    logger.info(f"  Total parameters: {se_params:,}")
+    logger.info(f"  Added parameters: {se_params - baseline_params:,}")
+    logger.info(f"  Parameter increase: {(se_params - baseline_params) / baseline_params * 100:.2f}%")
+    logger.info(f"  SE blocks injected: {summary['se_blocks']}")
+    logger.info(f"Output shape: {y_with_se.shape}")
+    logger.info()
+    logger.info("Note: SE blocks add minimal parameters but can improve accuracy")
+    logger.info()
 
 
-def example_4_inject_cbam_into_resnet():
+def example_4_inject_cbam_into_resnet() -> None:
     """
     Example 4: Inject CBAM into ResNet-18, targeting only final layers.
 
     This strategy freezes early layers and adds attention only to the
     final task-specific layers, balancing expressiveness and efficiency.
     """
-    print("=" * 70)
-    print("EXAMPLE 4: Inject CBAM into ResNet-18 (Final Layers Only)")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 4: Inject CBAM into ResNet-18 (Final Layers Only)")
+    logger.info("=" * 70)
 
     # Create baseline ResNet
     model_baseline = get_resnet18(num_classes=9)
@@ -161,32 +164,32 @@ def example_4_inject_cbam_into_resnet():
 
     summary = attention_summary(model_with_cbam)
 
-    print(f"Baseline ResNet-18:")
-    print(f"  Total parameters: {baseline_params:,}")
-    print(f"Output shape: {y_baseline.shape}")
-    print()
-    print(f"ResNet-18 with CBAM in layer4:")
-    print(f"  Total parameters: {cbam_params:,}")
-    print(f"  Added parameters: {cbam_params - baseline_params:,}")
-    print(f"  Parameter increase: {(cbam_params - baseline_params) / baseline_params * 100:.2f}%")
-    print(f"  CBAM blocks injected: {summary['cbam_blocks']}")
-    print(f"Output shape: {y_with_cbam.shape}")
-    print()
-    print("Strategy: CBAM only in final layers improves expressiveness while")
-    print("keeping computation low and preserving pretrained ImageNet features.")
-    print()
+    logger.info(f"Baseline ResNet-18:")
+    logger.info(f"  Total parameters: {baseline_params:,}")
+    logger.info(f"Output shape: {y_baseline.shape}")
+    logger.info()
+    logger.info(f"ResNet-18 with CBAM in layer4:")
+    logger.info(f"  Total parameters: {cbam_params:,}")
+    logger.info(f"  Added parameters: {cbam_params - baseline_params:,}")
+    logger.info(f"  Parameter increase: {(cbam_params - baseline_params) / baseline_params * 100:.2f}%")
+    logger.info(f"  CBAM blocks injected: {summary['cbam_blocks']}")
+    logger.info(f"Output shape: {y_with_cbam.shape}")
+    logger.info()
+    logger.info("Strategy: CBAM only in final layers improves expressiveness while")
+    logger.info("keeping computation low and preserving pretrained ImageNet features.")
+    logger.info()
 
 
-def example_5_inject_cbam_into_efficientnet():
+def example_5_inject_cbam_into_efficientnet() -> None:
     """
     Example 5: Inject CBAM into EfficientNet-B0, targeting final blocks.
 
     EfficientNet uses a different layer naming scheme. This shows how to
     target specific blocks (features.7, features.8).
     """
-    print("=" * 70)
-    print("EXAMPLE 5: Inject CBAM into EfficientNet-B0 (Final Blocks)")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 5: Inject CBAM into EfficientNet-B0 (Final Blocks)")
+    logger.info("=" * 70)
 
     # Create baseline EfficientNet
     model_baseline = get_efficientnet_b0(num_classes=9)
@@ -209,31 +212,31 @@ def example_5_inject_cbam_into_efficientnet():
 
     summary = attention_summary(model_with_cbam)
 
-    print(f"Baseline EfficientNet-B0:")
-    print(f"  Total parameters: {baseline_params:,}")
-    print(f"Output shape: {y_baseline.shape}")
-    print()
-    print(f"EfficientNet-B0 with CBAM in features.7-8:")
-    print(f"  Total parameters: {cbam_params:,}")
-    print(f"  Added parameters: {cbam_params - baseline_params:,}")
-    print(f"  Parameter increase: {(cbam_params - baseline_params) / baseline_params * 100:.2f}%")
-    print(f"  CBAM blocks injected: {summary['cbam_blocks']}")
-    print(f"Output shape: {y_with_cbam.shape}")
-    print()
-    print("EfficientNet compounds multiple small blocks, so targeting final")
-    print("blocks (features.7-8) enables task-specific adaptation efficiently.")
-    print()
+    logger.info(f"Baseline EfficientNet-B0:")
+    logger.info(f"  Total parameters: {baseline_params:,}")
+    logger.info(f"Output shape: {y_baseline.shape}")
+    logger.info()
+    logger.info(f"EfficientNet-B0 with CBAM in features.7-8:")
+    logger.info(f"  Total parameters: {cbam_params:,}")
+    logger.info(f"  Added parameters: {cbam_params - baseline_params:,}")
+    logger.info(f"  Parameter increase: {(cbam_params - baseline_params) / baseline_params * 100:.2f}%")
+    logger.info(f"  CBAM blocks injected: {summary['cbam_blocks']}")
+    logger.info(f"Output shape: {y_with_cbam.shape}")
+    logger.info()
+    logger.info("EfficientNet compounds multiple small blocks, so targeting final")
+    logger.info("blocks (features.7-8) enables task-specific adaptation efficiently.")
+    logger.info()
 
 
-def example_6_comparison_all_models():
+def example_6_comparison_all_models() -> None:
     """
     Example 6: Compare parameter counts and inference for all model variants.
 
     This shows the computational trade-offs of different attention strategies.
     """
-    print("=" * 70)
-    print("EXAMPLE 6: Model Comparison (Parameter Efficiency)")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 6: Model Comparison (Parameter Efficiency)")
+    logger.info("=" * 70)
 
     # Models to compare
     models = {
@@ -250,8 +253,8 @@ def example_6_comparison_all_models():
 
     x = torch.randn(1, 3, 96, 96)
 
-    print(f"{'Model':<30} {'Params':>15} {'Increase':>15} {'Output':>15}")
-    print("-" * 75)
+    logger.info(f"{'Model':<30} {'Params':>15} {'Increase':>15} {'Output':>15}")
+    logger.info("-" * 75)
 
     for name, model in models.items():
         total_params = sum(p.numel() for p in model.parameters())
@@ -268,20 +271,20 @@ def example_6_comparison_all_models():
         else:
             increase_str = "baseline"
 
-        print(f"{name:<30} {total_params:>15,} {increase_str:>15} {str(y.shape):>15}")
+        logger.info(f"{name:<30} {total_params:>15,} {increase_str:>15} {str(y.shape):>15}")
 
-    print()
+    logger.info()
 
 
-def example_7_training_with_attention():
+def example_7_training_with_attention() -> None:
     """
     Example 7: Pseudocode for training models with attention.
 
     Shows the recommended workflow for fine-tuning with attention mechanisms.
     """
-    print("=" * 70)
-    print("EXAMPLE 7: Training Workflow with Attention")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("EXAMPLE 7: Training Workflow with Attention")
+    logger.info("=" * 70)
 
     code = """
     # Step 1: Load data and create baseline model
@@ -311,8 +314,8 @@ def example_7_training_with_attention():
     # Recommended: Option A (inject after pretraining) often works better
     # because it combines pretrained features with learned attention patterns
     """
-    print(code)
-    print()
+    logger.info(code)
+    logger.info()
 
 
 if __name__ == "__main__":
@@ -324,10 +327,10 @@ if __name__ == "__main__":
     example_6_comparison_all_models()
     example_7_training_with_attention()
 
-    print("=" * 70)
-    print("SUMMARY")
-    print("=" * 70)
-    print("""
+    logger.info("=" * 70)
+    logger.info("SUMMARY")
+    logger.info("=" * 70)
+    logger.info("""
 SE Block (Squeeze-and-Excitation):
   - Adds 1-2% parameters
   - Channel attention only

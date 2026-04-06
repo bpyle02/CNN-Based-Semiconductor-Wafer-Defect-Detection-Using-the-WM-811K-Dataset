@@ -27,11 +27,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, DistributedSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training import train_model
 from src.training.distributed import (
@@ -68,9 +70,9 @@ def load_and_preprocess(
 ) -> Tuple[Dict[str, Any], Dict[str, DataLoader], LabelEncoder]:
     """Load dataset, preprocess, and create loaders."""
     if rank == 0:
-        print("\n" + "="*70)
-        print("LOADING AND PREPROCESSING DATA")
-        print("="*70)
+        logger.info("\n" + "="*70)
+        logger.info("LOADING AND PREPROCESSING DATA")
+        logger.info("="*70)
 
     # Load raw dataset
     df = load_dataset(dataset_path)
@@ -79,7 +81,7 @@ def load_and_preprocess(
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
     df_clean = df[labeled_mask].reset_index(drop=True)
     if rank == 0:
-        print(f"Filtered to {len(df_clean):,} labeled wafers")
+        logger.info(f"Filtered to {len(df_clean):,} labeled wafers")
 
     # Encode labels
     le = LabelEncoder()
@@ -109,7 +111,7 @@ def load_and_preprocess(
     test_maps = preprocess_wafer_maps(test_maps_raw)
 
     if rank == 0:
-        print(f"Split sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
+        logger.info(f"Split sizes: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
 
     # Compute loss weights
     class_counts_train = Counter(y_train)
@@ -142,16 +144,22 @@ def load_and_preprocess(
             train_dataset_pre, num_replicas=get_world_size(), rank=get_rank(),
             shuffle=True, seed=seed
         )
-        train_loader_cnn = DataLoader(train_dataset_cnn, batch_size=batch_size, sampler=train_sampler_cnn, num_workers=0)
-        train_loader_pre = DataLoader(train_dataset_pre, batch_size=batch_size, sampler=train_sampler_pre, num_workers=0)
+        g_cnn = torch.Generator().manual_seed(42)
+        train_loader_cnn = DataLoader(train_dataset_cnn, batch_size=batch_size, sampler=train_sampler_cnn, num_workers=0, worker_init_fn=seed_worker, generator=g_cnn)
+        g_pre = torch.Generator().manual_seed(42)
+        train_loader_pre = DataLoader(train_dataset_pre, batch_size=batch_size, sampler=train_sampler_pre, num_workers=0, worker_init_fn=seed_worker, generator=g_pre)
     else:
-        train_loader_cnn = DataLoader(train_dataset_cnn, batch_size=batch_size, shuffle=True, num_workers=0)
-        train_loader_pre = DataLoader(train_dataset_pre, batch_size=batch_size, shuffle=True, num_workers=0)
+        g_cnn = torch.Generator().manual_seed(42)
+        train_loader_cnn = DataLoader(train_dataset_cnn, batch_size=batch_size, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g_cnn)
+        g_pre = torch.Generator().manual_seed(42)
+        train_loader_pre = DataLoader(train_dataset_pre, batch_size=batch_size, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g_pre)
 
-    val_loader_cnn = DataLoader(val_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0)
-    test_loader_cnn = DataLoader(test_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0)
-    val_loader_pre = DataLoader(val_dataset_pre, batch_size=batch_size, shuffle=False, num_workers=0)
-    test_loader_pre = DataLoader(test_dataset_pre, batch_size=batch_size, shuffle=False, num_workers=0)
+    g_val_cnn = torch.Generator().manual_seed(42)
+    val_loader_cnn = DataLoader(val_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g_val_cnn)
+    test_loader_cnn = DataLoader(test_dataset_cnn, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g_val_cnn)
+    g_val_pre = torch.Generator().manual_seed(42)
+    val_loader_pre = DataLoader(val_dataset_pre, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g_val_pre)
+    test_loader_pre = DataLoader(test_dataset_pre, batch_size=batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g_val_pre)
 
     loaders = {
         'cnn': (train_loader_cnn, val_loader_cnn, test_loader_cnn),
@@ -189,7 +197,7 @@ def main():
     # Setup distributed training
     is_dist = world_size > 1 or args.distributed
     if is_dist and rank == 0:
-        print(f"Distributed training: rank={rank}, world_size={world_size}")
+        logger.info(f"Distributed training: rank={rank}, world_size={world_size}")
 
     if is_dist:
         setup_distributed(rank, world_size, backend='nccl' if torch.cuda.is_available() else 'gloo')
@@ -201,7 +209,7 @@ def main():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     if rank == 0:
-        print(f"Device: {device}")
+        logger.info(f"Device: {device}")
 
     set_seed(config.seed)
 
@@ -221,9 +229,9 @@ def main():
 
     for model_type in models_to_train:
         if rank == 0:
-            print("\n" + "="*70)
-            print(f"DISTRIBUTED TRAINING: {model_type.upper()}")
-            print("="*70)
+            logger.info("\n" + "="*70)
+            logger.info(f"DISTRIBUTED TRAINING: {model_type.upper()}")
+            logger.info("="*70)
 
         # Create model
         if model_type == 'cnn':
@@ -250,7 +258,7 @@ def main():
         if rank == 0:
             total_params = count_params(model)
             trainable_params = count_trainable(model)
-            print(f"{model_name} Parameters: Total={total_params:,}, Trainable={trainable_params:,}")
+            logger.info(f"{model_name} Parameters: Total={total_params:,}, Trainable={trainable_params:,}")
 
         # Training setup
         optimizer = optim.Adam(
@@ -281,15 +289,15 @@ def main():
 
     # Summary (only on rank 0)
     if rank == 0:
-        print("\n" + "="*70)
-        print("TRAINING COMPLETE")
-        print("="*70)
+        logger.info("\n" + "="*70)
+        logger.info("TRAINING COMPLETE")
+        logger.info("="*70)
         for mtype, res in results.items():
             metrics = res['metrics']
-            print(f"Metrics:")
-            print(f"  Accuracy:    {metrics['accuracy']:.4f}")
-            print(f"  Macro F1:    {metrics['macro_f1']:.4f}")
-            print(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
+            logger.info(f"Metrics:")
+            logger.info(f"  Accuracy:    {metrics['accuracy']:.4f}")
+            logger.info(f"  Macro F1:    {metrics['macro_f1']:.4f}")
+            logger.info(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
 
     # Cleanup
     if is_dist:
@@ -299,5 +307,10 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     import os
     sys.exit(main())

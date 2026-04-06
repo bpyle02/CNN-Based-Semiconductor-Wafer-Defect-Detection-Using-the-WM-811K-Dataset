@@ -20,8 +20,10 @@ from sklearn.preprocessing import LabelEncoder
 
 from src.federated.fed_avg import FedAveragingServer, FedAveragingClient, FedAvgConfig
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+from src.model_registry import save_checkpoint_with_hash
 from src.training.config import TrainConfig
 from src.data.dataset import KNOWN_CLASSES
+from src.data.preprocessing import seed_worker
 
 
 logger = logging.getLogger(__name__)
@@ -78,6 +80,8 @@ def create_client_loaders(
                     batch_size=batch_size,
                     shuffle=shuffle,
                     num_workers=num_workers,
+                    worker_init_fn=seed_worker,
+                    generator=torch.Generator().manual_seed(42),
                 )
                 for subset in client_indices
             ]
@@ -111,6 +115,8 @@ def create_client_loaders(
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=num_workers,
+            worker_init_fn=seed_worker,
+            generator=torch.Generator().manual_seed(42),
         )
         for subset in client_indices
     ]
@@ -268,10 +274,10 @@ def federated_train(
     logger.info("Starting federated training...")
     results = server.train()
 
-    # Save results
+    # Save results with integrity hash
     model_path = checkpoint_path / f"fed_{model_name}_final.pth"
-    torch.save(results['global_model'].state_dict(), model_path)
-    logger.info(f"Model saved to {model_path}")
+    file_hash = save_checkpoint_with_hash(results['global_model'].state_dict(), model_path)
+    logger.info(f"Model saved to {model_path} (SHA-256: {file_hash[:16]}...)")
 
     # Save metrics
     metrics = {

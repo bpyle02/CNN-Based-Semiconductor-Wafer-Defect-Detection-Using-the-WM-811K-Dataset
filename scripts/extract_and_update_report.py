@@ -11,6 +11,9 @@ Reads the training output, extracts metrics, and updates:
 import re
 import sys
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_train_output(output_text: str) -> dict:
@@ -127,32 +130,32 @@ def main():
     report_path = Path('docs/wafer_defect_detection_report.tex')
 
     if not report_path.exists():
-        print(f"ERROR: Report not found at {report_path}")
+        logger.warning(f"ERROR: Report not found at {report_path}")
         return 1
 
     # Try to read training output from stdin or file
-    print("Usage: pipe train.py output to this script")
-    print("Example: python train.py --model all --epochs 5 | python extract_and_update_report.py")
+    logger.info("Usage: pipe train.py output to this script")
+    logger.info("Example: python train.py --model all --epochs 5 | python extract_and_update_report.py")
 
     # Read from stdin if available
     try:
         output = sys.stdin.read()
     except:
-        print("ERROR: No input provided. Pipe training output to this script.")
+        logger.warning("ERROR: No input provided. Pipe training output to this script.")
         return 1
 
     # Parse results
     results = parse_train_output(output)
 
     if not results:
-        print("ERROR: Could not extract metrics from output")
-        print("Output received:")
-        print(output[:500])
+        logger.warning("ERROR: Could not extract metrics from output")
+        logger.info("Output received:")
+        logger.info(output[:500])
         return 1
 
-    print(f"Extracted metrics for {len(results)} models:")
+    logger.info(f"Extracted metrics for {len(results)} models:")
     for model, metrics in results.items():
-        print(f"  {model}: Acc={metrics['accuracy']:.2%}, Macro F1={metrics['macro_f1']:.3f}, Time={metrics['time']:.0f}s")
+        logger.info(f"  {model}: Acc={metrics['accuracy']:.2%}, Macro F1={metrics['macro_f1']:.3f}, Time={metrics['time']:.0f}s")
 
     # Update report
     updated_content = update_report(report_path, results)
@@ -161,9 +164,14 @@ def main():
     with open(report_path, 'w') as f:
         f.write(updated_content)
 
-    print(f"✓ Report updated: {report_path}")
+    logger.info(f"✓ Report updated: {report_path}")
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

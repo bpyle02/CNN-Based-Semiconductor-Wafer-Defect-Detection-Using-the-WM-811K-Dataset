@@ -51,9 +51,9 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 ENV CUDA_VISIBLE_DEVICES=0
 
-# Health check
+# Health check (device-agnostic: verifies torch imports and model loading)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import torch; print(f'GPU: {torch.cuda.is_available()}')" || exit 1
+    CMD python -c "import torch; from src.models import WaferCNN; print('healthy')" || exit 1
 
 # Run inference server
 CMD ["python", "-m", "src.inference.server"]

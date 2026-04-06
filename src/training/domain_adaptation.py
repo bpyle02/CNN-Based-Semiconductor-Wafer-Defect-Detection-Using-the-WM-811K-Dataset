@@ -17,6 +17,9 @@ from torch.utils.data import DataLoader, ConcatDataset
 from typing import Tuple, Dict, Any, Optional, List
 import numpy as np
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CORLAlignmentLoss(nn.Module):
@@ -188,7 +191,7 @@ class DomainAdaptationTrainer:
         optimizer: Optional[torch.optim.Optimizer] = None,
         epochs: int = 5,
         lambda_domain: float = 1.0,
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Run domain adaptation.
 
@@ -264,7 +267,7 @@ class DomainAdaptationTrainer:
             history['loss'].append(avg_loss)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
-                print(f"Fine-tuning Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
+                logger.info(f"Fine-tuning Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
 
         return dict(history)
 
@@ -348,7 +351,7 @@ class DomainAdaptationTrainer:
             history['coral_loss'].append(avg_coral)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
-                print(
+                logger.info(
                     f"CORAL Epoch {epoch + 1}/{epochs}, "
                     f"Loss: {avg_loss:.6f}, CORAL: {avg_coral:.6f}"
                 )
@@ -443,7 +446,7 @@ class DomainAdaptationTrainer:
             history['disc_loss'].append(avg_disc)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
-                print(
+                logger.info(
                     f"Adversarial Epoch {epoch + 1}/{epochs}, "
                     f"Loss: {avg_loss:.6f}, Disc: {avg_disc:.6f}"
                 )

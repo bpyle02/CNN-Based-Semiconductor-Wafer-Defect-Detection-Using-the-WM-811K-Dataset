@@ -60,7 +60,7 @@ class DefectSimulator:
 class SyntheticDataGenerator:
     """High-level interface for synthetic data generation."""
 
-    def __init__(self, method: str = 'rule_based'):
+    def __init__(self, method: str = 'rule_based') -> None:
         """Initialize generator."""
         self.method = method
 

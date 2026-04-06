@@ -13,7 +13,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import logging
 
+logger = logging.getLogger(__name__)
 
 def train_model(
     model: nn.Module,
@@ -147,7 +149,7 @@ def train_model(
             best_model_wts = copy.deepcopy(model.state_dict())
 
         # Log progress
-        print(
+        logger.info(
             f"[{model_name}] Epoch {epoch:2d}/{epochs} | "
             f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f} | "
             f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}"
@@ -159,7 +161,7 @@ def train_model(
     history['total_time'] = elapsed
     history['best_epoch'] = best_epoch
 
-    print(
+    logger.info(
         f"\n{model_name} training complete in {elapsed:.1f}s "
         f"(best val acc: {best_val_acc:.4f} at epoch {best_epoch})\n"
     )
@@ -168,4 +170,4 @@ def train_model(
 
 
 if __name__ == "__main__":
-    print("Training module loaded. Use train_model() from training pipeline.")
+    logger.info("Training module loaded. Use train_model() from training pipeline.")

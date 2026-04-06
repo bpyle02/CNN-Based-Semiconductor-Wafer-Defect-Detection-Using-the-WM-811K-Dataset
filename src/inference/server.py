@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from src.exceptions import InferenceError, ModelError
 from src.inference.gradcam import GradCAM
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+from src.model_registry import verify_checkpoint
 from src.data.dataset import KNOWN_CLASSES
 from src.data.preprocessing import get_image_transforms, get_imagenet_normalize
 
@@ -129,13 +130,15 @@ class LoadModelRequest(BaseModel):
     @field_validator('checkpoint_path')
     @classmethod
     def validate_path(cls, v: str) -> str:
-        """Validate checkpoint path exists."""
-        p = Path(v)
+        """Validate checkpoint path exists and is safe to load."""
+        p = Path(v).resolve()
         if not p.exists():
-            raise ValueError(f"Checkpoint not found: {v}")
+            raise ValueError("Checkpoint not found")
         if not p.suffix == '.pth':
             raise ValueError(f"Expected .pth file, got {p.suffix}")
-        return v
+        if p.is_symlink():
+            raise ValueError("Symlinked checkpoint paths are not allowed")
+        return str(p)
 
 
 class ModelInfo(BaseModel):
@@ -204,6 +207,13 @@ class ModelServer:
             ModelError: If checkpoint loading fails
         """
         try:
+            # Verify checkpoint integrity before loading
+            if not verify_checkpoint(Path(checkpoint_path)):
+                logger.warning(
+                    f"Checkpoint integrity verification FAILED for {checkpoint_path}. "
+                    "File may be corrupted or tampered with."
+                )
+
             checkpoint = torch.load(
                 checkpoint_path,
                 map_location=self.device,
@@ -443,12 +453,12 @@ def create_app(
         version="1.0.0",
     )
 
-    # Add CORS middleware
+    # Add CORS middleware (permissive for research use; restrict origins in production)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
 

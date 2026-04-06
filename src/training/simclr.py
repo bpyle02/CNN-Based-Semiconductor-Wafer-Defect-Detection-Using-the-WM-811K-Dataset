@@ -11,6 +11,9 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from typing import Tuple, Optional, Callable
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SimCLRProjection(nn.Module):
@@ -224,7 +227,7 @@ class SimCLRPretrainer:
             num_batches += 1
 
             if (batch_idx + 1) % 100 == 0:
-                print(
+                logger.info(
                     f"  Batch {batch_idx + 1}/{len(train_loader)}, Loss: {loss.item():.6f}"
                 )
 
@@ -258,9 +261,9 @@ class SimCLRPretrainer:
                 scheduler.step()
 
             if (epoch + 1) % 10 == 0:
-                print(f"Epoch {epoch + 1}/{epochs}, Avg Loss: {loss:.6f}")
+                logger.info(f"Epoch {epoch + 1}/{epochs}, Avg Loss: {loss:.6f}")
 
-        print(f"Pretraining complete. Final loss: {losses[-1]:.6f}")
+        logger.info(f"Pretraining complete. Final loss: {losses[-1]:.6f}")
         return losses
 
     def get_backbone(self) -> nn.Module:

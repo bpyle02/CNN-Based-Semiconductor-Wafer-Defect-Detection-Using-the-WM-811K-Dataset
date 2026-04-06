@@ -36,11 +36,13 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import f1_score
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset
+from src.data import load_dataset, preprocess_wafer_maps, get_image_transforms, get_imagenet_normalize, WaferMapDataset, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.analysis import evaluate_model
 from src.config import load_config
@@ -57,7 +59,7 @@ def load_data_splits(
     seed: int = SEED,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
     """Load and split data into labeled pool and unlabeled pool."""
-    print("Loading data...")
+    logger.info("Loading data...")
     df = load_dataset(dataset_path)
 
     labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
@@ -82,7 +84,7 @@ def load_data_splits(
     pool_maps = np.array(preprocess_wafer_maps(pool_maps))
     test_maps = np.array(preprocess_wafer_maps(test_maps))
 
-    print(f"Pool: {len(y_pool):,}, Test: {len(y_test):,}")
+    logger.info(f"Pool: {len(y_pool):,}, Test: {len(y_test):,}")
 
     return pool_maps, y_pool, test_maps, y_test, le.classes_.tolist()
 
@@ -96,7 +98,8 @@ def compute_uncertainty(
 ) -> np.ndarray:
     """Compute uncertainty scores for all samples."""
     model.eval()
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    g = torch.Generator().manual_seed(42)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
     uncertainties = []
     with torch.no_grad():
@@ -169,8 +172,8 @@ def main() -> int:
         trainer.seed = args.seed
         trainer.set_seed()
     device = args.device
-    print(f"Device: {device}")
-    print(f"Active Learning: {args.strategy}, {args.n_iterations} iterations")
+    logger.info(f"Device: {device}")
+    logger.info(f"Active Learning: {args.strategy}, {args.n_iterations} iterations")
 
     # Load data
     if args.data_path is None:
@@ -194,15 +197,15 @@ def main() -> int:
     labeled_indices = np.random.choice(len(y_pool), n_initial, replace=False)
     unlabeled_indices = np.setdiff1d(np.arange(len(y_pool)), labeled_indices)
 
-    print(f"Initial labeled: {len(labeled_indices)}, Unlabeled: {len(unlabeled_indices)}")
+    logger.info(f"Initial labeled: {len(labeled_indices)}, Unlabeled: {len(unlabeled_indices)}")
 
     # Active learning loop
     models_to_train = ['cnn', 'resnet', 'effnet'] if args.model == 'all' else [args.model]
 
     for model_type in models_to_train:
-        print(f"\n{'='*70}")
-        print(f"ACTIVE LEARNING: {model_type.upper()}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"ACTIVE LEARNING: {model_type.upper()}")
+        logger.info(f"{'='*70}")
 
         # Create model
         if model_type == 'cnn':
@@ -221,8 +224,8 @@ def main() -> int:
         iteration_results = []
 
         for iteration in range(args.n_iterations):
-            print(f"\n  Iteration {iteration + 1}/{args.n_iterations}")
-            print(f"    Labeled: {len(current_labeled)}, Unlabeled: {len(current_unlabeled)}")
+            logger.info(f"\n  Iteration {iteration + 1}/{args.n_iterations}")
+            logger.info(f"    Labeled: {len(current_labeled)}, Unlabeled: {len(current_unlabeled)}")
 
             # Create training dataset
             train_aug = get_image_transforms()
@@ -235,7 +238,8 @@ def main() -> int:
             train_dataset = WaferMapDataset(
                 pool_maps[current_labeled], y_pool[current_labeled], transform=train_transform
             )
-            train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0)
+            g_train = torch.Generator().manual_seed(42)
+            train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g_train)
 
             # Train model
             model.train()
@@ -275,14 +279,15 @@ def main() -> int:
             # Evaluate on test set
             test_transform = None if model_type == 'cnn' else imagenet_norm
             test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
-            test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+            g_test = torch.Generator().manual_seed(42)
+            test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g_test)
 
             model.eval()
             preds, labels, metrics = evaluate_model(
                 model, test_loader, class_names, f"{model_name} (Iter {iteration + 1})", device
             )
 
-            print(f"    Test Macro F1: {metrics['macro_f1']:.4f}")
+            logger.info(f"    Test Macro F1: {metrics['macro_f1']:.4f}")
             iteration_results.append({
                 'iteration': iteration + 1,
                 'labeled': len(current_labeled),
@@ -291,12 +296,17 @@ def main() -> int:
             })
 
         # Summary
-        print(f"\n  {model_name} Summary:")
+        logger.info(f"\n  {model_name} Summary:")
         for res in iteration_results:
-            print(f"    Iter {res['iteration']}: Labeled={res['labeled']:,}, Accuracy={res['accuracy']:.4f}, F1={res['f1']:.4f}")
+            logger.info(f"    Iter {res['iteration']}: Labeled={res['labeled']:,}, Accuracy={res['accuracy']:.4f}, F1={res['f1']:.4f}")
 
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

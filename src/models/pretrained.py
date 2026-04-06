@@ -4,9 +4,13 @@ Pretrained model architectures for transfer learning on wafer defect classificat
 Implements ResNet-18 and EfficientNet-B0 with proper layer-boundary freezing strategy.
 """
 
+import torch
 import torch.nn as nn
 import torchvision.models as models
 from typing import Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_resnet18(num_classes: int = 9, pretrained: bool = True) -> nn.Module:
@@ -116,28 +120,28 @@ def get_frozen_params(model: nn.Module) -> Tuple[str, ...]:
 
 
 if __name__ == "__main__":
-    print("ResNet-18:")
+    logger.info("ResNet-18:")
     resnet = get_resnet18(num_classes=9)
     total, trainable = count_params(resnet)
     frozen = len(get_frozen_params(resnet))
-    print(f"  Total parameters: {total:,}")
-    print(f"  Trainable parameters: {trainable:,}")
-    print(f"  Frozen parameters: {frozen:,}")
-    print(f"  Frozen layers: layer1, layer2, layer3")
+    logger.info(f"  Total parameters: {total:,}")
+    logger.info(f"  Trainable parameters: {trainable:,}")
+    logger.info(f"  Frozen parameters: {frozen:,}")
+    logger.info(f"  Frozen layers: layer1, layer2, layer3")
 
-    print("\nEfficientNet-B0:")
+    logger.info("\nEfficientNet-B0:")
     effnet = get_efficientnet_b0(num_classes=9)
     total, trainable = count_params(effnet)
     frozen = len(get_frozen_params(effnet))
-    print(f"  Total parameters: {total:,}")
-    print(f"  Trainable parameters: {trainable:,}")
-    print(f"  Frozen parameters: {frozen:,}")
-    print(f"  Frozen layers: features.0-6")
+    logger.info(f"  Total parameters: {total:,}")
+    logger.info(f"  Trainable parameters: {trainable:,}")
+    logger.info(f"  Frozen parameters: {frozen:,}")
+    logger.info(f"  Frozen layers: features.0-6")
 
     # Test forward pass
     x = torch.randn(1, 3, 96, 96)
     y_resnet = resnet(x)
     y_effnet = effnet(x)
-    print(f"\nForward pass check:")
-    print(f"  ResNet-18 output shape: {y_resnet.shape}")
-    print(f"  EfficientNet-B0 output shape: {y_effnet.shape}")
+    logger.info(f"\nForward pass check:")
+    logger.info(f"  ResNet-18 output shape: {y_resnet.shape}")
+    logger.info(f"  EfficientNet-B0 output shape: {y_effnet.shape}")

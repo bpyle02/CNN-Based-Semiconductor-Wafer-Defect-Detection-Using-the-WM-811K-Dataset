@@ -31,8 +31,13 @@ from torch.utils.data import DataLoader, random_split
 import matplotlib.pyplot as plt
 
 from src.data.dataset import load_dataset, KNOWN_CLASSES
+import logging
+
+logger = logging.getLogger(__name__)
+
 from src.data.preprocessing import (
-    preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize
+    preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize,
+    seed_worker,
 )
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.training.trainer import train_model
@@ -125,7 +130,7 @@ def load_and_preprocess_data(
     sample_size: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Load and preprocess wafer data."""
-    print("\n=== Loading Dataset ===")
+    logger.info("\n=== Loading Dataset ===")
     df = load_dataset()
 
     # Filter to known classes
@@ -134,17 +139,17 @@ def load_and_preprocess_data(
 
     # Sample if needed
     if sample_size is not None and sample_size < len(df_filtered):
-        print(f"Sampling {sample_size} examples for testing...")
+        logger.info(f"Sampling {sample_size} examples for testing...")
         df_filtered = df_filtered.sample(n=sample_size, random_state=42)
 
     wafer_maps = np.array(df_filtered['waferMap'].tolist())
     labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered['failureClass']])
 
-    print(f"Loaded {len(wafer_maps)} samples")
-    print(f"Wafer shape: {wafer_maps[0].shape}")
+    logger.info(f"Loaded {len(wafer_maps)} samples")
+    logger.info(f"Wafer shape: {wafer_maps[0].shape}")
 
     # Preprocess
-    print("Preprocessing wafer maps...")
+    logger.info("Preprocessing wafer maps...")
     preprocessed_maps = preprocess_wafer_maps(wafer_maps, target_size=(96, 96))
     preprocessed_maps = np.array(preprocessed_maps)
 
@@ -163,7 +168,7 @@ def augment_data_if_needed(
     if augmentation_type == 'none':
         return maps, labels
 
-    print(f"\n=== Applying {augmentation_type} Augmentation ===")
+    logger.info(f"\n=== Applying {augmentation_type} Augmentation ===")
 
     # Determine target
     if target_samples is None:
@@ -178,7 +183,7 @@ def augment_data_if_needed(
             image_size=96,
             device=device
         )
-        print("Training GAN on wafer maps...")
+        logger.info("Training GAN on wafer maps...")
         augmenter.train_generator(
             maps,
             epochs=gan_epochs,
@@ -247,14 +252,15 @@ def create_dataloaders(
     )
 
     # Create loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    g = torch.Generator().manual_seed(42)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
-    print(f"\nDataset split:")
-    print(f"  Train: {len(train_maps)} samples")
-    print(f"  Val:   {len(val_maps)} samples")
-    print(f"  Test:  {len(test_maps)} samples")
+    logger.info(f"\nDataset split:")
+    logger.info(f"  Train: {len(train_maps)} samples")
+    logger.info(f"  Val:   {len(val_maps)} samples")
+    logger.info(f"  Test:  {len(test_maps)} samples")
 
     return train_loader, val_loader, test_loader
 
@@ -282,8 +288,8 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Device: {device}")
-    print(f"Output directory: {output_dir}")
+    logger.info(f"Device: {device}")
+    logger.info(f"Output directory: {output_dir}")
 
     # Load data
     maps, labels = load_and_preprocess_data()
@@ -291,9 +297,9 @@ def main() -> None:
     # Show original distribution
     from collections import Counter
     counts = Counter(labels)
-    print("\n--- Original Class Distribution ---")
+    logger.info("\n--- Original Class Distribution ---")
     for class_idx in sorted(counts.keys()):
-        print(f"  {KNOWN_CLASSES[class_idx]:12s}: {counts[class_idx]:5d}")
+        logger.info(f"  {KNOWN_CLASSES[class_idx]:12s}: {counts[class_idx]:5d}")
 
     # Augment if needed
     if args.augmentation != 'none':
@@ -307,9 +313,9 @@ def main() -> None:
 
     # Show augmented distribution
     counts = Counter(labels)
-    print("\n--- Final Class Distribution ---")
+    logger.info("\n--- Final Class Distribution ---")
     for class_idx in sorted(counts.keys()):
-        print(f"  {KNOWN_CLASSES[class_idx]:12s}: {counts[class_idx]:5d}")
+        logger.info(f"  {KNOWN_CLASSES[class_idx]:12s}: {counts[class_idx]:5d}")
 
     # Create dataloaders
     train_loader, val_loader, test_loader = create_dataloaders(
@@ -321,9 +327,9 @@ def main() -> None:
 
     results = {}
     for model_type in models_to_train:
-        print(f"\n{'='*60}")
-        print(f"Training {model_type.upper()}")
-        print(f"{'='*60}")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Training {model_type.upper()}")
+        logger.info(f"{'='*60}")
 
         model = create_model(model_type, device)
 
@@ -352,7 +358,7 @@ def main() -> None:
         )
 
         # Evaluate
-        print(f"\nEvaluating on test set...")
+        logger.info(f"\nEvaluating on test set...")
         test_preds, test_labels, metrics = evaluate_model(
             trained_model, test_loader, KNOWN_CLASSES, device
         )
@@ -365,14 +371,14 @@ def main() -> None:
             'true_labels': test_labels,
         }
 
-        print(f"\n{model_type.upper()} Results:")
-        print(f"  Accuracy:    {metrics['accuracy']:.4f}")
-        print(f"  Macro F1:    {metrics['macro_f1']:.4f}")
-        print(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
+        logger.info(f"\n{model_type.upper()} Results:")
+        logger.info(f"  Accuracy:    {metrics['accuracy']:.4f}")
+        logger.info(f"  Macro F1:    {metrics['macro_f1']:.4f}")
+        logger.info(f"  Weighted F1: {metrics['weighted_f1']:.4f}")
 
     # Visualization
     if len(results) > 0:
-        print("\n=== Visualizing Results ===")
+        logger.info("\n=== Visualizing Results ===")
 
         for model_type, res in results.items():
             # Training curves
@@ -389,8 +395,13 @@ def main() -> None:
                 save_path=output_dir / f'{model_type}_confusion_matrix.png'
             )
 
-    print(f"\n✓ Training complete! Results saved to {output_dir}")
+    logger.info(f"\n✓ Training complete! Results saved to {output_dir}")
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     main()

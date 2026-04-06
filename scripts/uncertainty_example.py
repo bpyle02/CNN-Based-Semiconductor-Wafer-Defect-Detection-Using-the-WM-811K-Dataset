@@ -21,12 +21,17 @@ import numpy as np
 import torch
 from pathlib import Path
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from src.data import (
     load_dataset,
     preprocess_wafer_maps,
     WaferMapDataset,
     get_image_transforms,
     get_imagenet_normalize,
+    seed_worker,
 )
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.inference.uncertainty import (
@@ -60,23 +65,23 @@ def load_model(model_type: str, checkpoint_path: str, device: str) -> torch.nn.M
 def main(args):
     """Main uncertainty quantification pipeline."""
     device = 'cuda' if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
-    print(f"\nMonte Carlo Dropout Uncertainty Quantification")
-    print(f"{'='*60}")
-    print(f"Model: {args.model}")
-    print(f"Checkpoint: {args.checkpoint}")
-    print(f"Device: {device}")
-    print(f"MC Iterations: {args.num_iterations}")
-    print(f"{'='*60}\n")
+    logger.info(f"\nMonte Carlo Dropout Uncertainty Quantification")
+    logger.info(f"{'='*60}")
+    logger.info(f"Model: {args.model}")
+    logger.info(f"Checkpoint: {args.checkpoint}")
+    logger.info(f"Device: {device}")
+    logger.info(f"MC Iterations: {args.num_iterations}")
+    logger.info(f"{'='*60}\n")
 
     # Load dataset
-    print("Loading dataset...")
+    logger.info("Loading dataset...")
     df = load_dataset()
     df = df[df['failureClass'] != 'unknown'].reset_index(drop=True)
     raw_maps = df['waferMap'].values
     labels = df['failureClass'].values
 
     # Preprocess
-    print("Preprocessing wafer maps...")
+    logger.info("Preprocessing wafer maps...")
     processed_maps = preprocess_wafer_maps(raw_maps)
 
     # Create test dataset (stratified split)
@@ -99,28 +104,30 @@ def main(args):
         else get_imagenet_normalize()
     )
     test_dataset = WaferMapDataset(test_maps, test_labels, transform=transform)
+    g = torch.Generator().manual_seed(42)
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=args.batch_size, shuffle=False
+        test_dataset, batch_size=args.batch_size, shuffle=False,
+        worker_init_fn=seed_worker, generator=g
     )
 
     # Load model
-    print(f"Loading {args.model} model...")
+    logger.info(f"Loading {args.model} model...")
     model = load_model(args.model, args.checkpoint, device)
     model.eval()
 
     # Initialize MC Dropout wrapper
-    print(f"Initializing MC Dropout wrapper (T={args.num_iterations})...")
+    logger.info(f"Initializing MC Dropout wrapper (T={args.num_iterations})...")
     mc_model = MCDropoutModel(model, num_iterations=args.num_iterations, device=device)
 
     # Initialize uncertainty estimator
     estimator = UncertaintyEstimator(model, num_iterations=args.num_iterations, device=device)
 
-    print("\n" + "="*60)
-    print("UNCERTAINTY ESTIMATION ON TEST SET")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("UNCERTAINTY ESTIMATION ON TEST SET")
+    logger.info("="*60)
 
     # Estimate uncertainty for all test samples
-    print("\nEstimating uncertainty for test set...")
+    logger.info("\nEstimating uncertainty for test set...")
     results = estimator.estimate_dataset_uncertainty(test_loader, return_predictions=True)
 
     uncertainties = results['uncertainty']
@@ -130,68 +137,68 @@ def main(args):
     true_labels = results['true_labels']
 
     # Basic statistics
-    print(f"\nUncertainty Statistics:")
-    print(f"  Mean:    {uncertainties.mean():.4f}")
-    print(f"  Std:     {uncertainties.std():.4f}")
-    print(f"  Min:     {uncertainties.min():.4f}")
-    print(f"  Max:     {uncertainties.max():.4f}")
-    print(f"  Median:  {np.median(uncertainties):.4f}")
+    logger.info(f"\nUncertainty Statistics:")
+    logger.info(f"  Mean:    {uncertainties.mean():.4f}")
+    logger.info(f"  Std:     {uncertainties.std():.4f}")
+    logger.info(f"  Min:     {uncertainties.min():.4f}")
+    logger.info(f"  Max:     {uncertainties.max():.4f}")
+    logger.info(f"  Median:  {np.median(uncertainties):.4f}")
 
-    print(f"\nPredictive Entropy Statistics:")
-    print(f"  Mean:    {entropy.mean():.4f}")
-    print(f"  Std:     {entropy.std():.4f}")
-    print(f"  Min:     {entropy.min():.4f}")
-    print(f"  Max:     {entropy.max():.4f}")
+    logger.info(f"\nPredictive Entropy Statistics:")
+    logger.info(f"  Mean:    {entropy.mean():.4f}")
+    logger.info(f"  Std:     {entropy.std():.4f}")
+    logger.info(f"  Min:     {entropy.min():.4f}")
+    logger.info(f"  Max:     {entropy.max():.4f}")
 
     # Accuracy
     correct = (predictions == true_labels).astype(np.float32)
     accuracy = correct.mean()
-    print(f"\nAccuracy: {accuracy:.4f}")
+    logger.info(f"\nAccuracy: {accuracy:.4f}")
 
     # Per-class accuracy and uncertainty
-    print(f"\nPer-Class Analysis:")
-    print(f"{'Class':<20} {'Samples':<10} {'Accuracy':<12} {'Mean UNC':<12}")
-    print(f"{'-'*54}")
+    logger.info(f"\nPer-Class Analysis:")
+    logger.info(f"{'Class':<20} {'Samples':<10} {'Accuracy':<12} {'Mean UNC':<12}")
+    logger.info(f"{'-'*54}")
     for i, class_name in enumerate(class_names):
         mask = (predictions == i)
         if mask.sum() > 0:
             class_acc = correct[mask].mean()
             class_unc = uncertainties[mask].mean()
-            print(f"{class_name:<20} {mask.sum():<10} {class_acc:<12.4f} {class_unc:<12.4f}")
+            logger.info(f"{class_name:<20} {mask.sum():<10} {class_acc:<12.4f} {class_unc:<12.4f}")
 
     # Calibration analysis
-    print("\n" + "="*60)
-    print("UNCERTAINTY CALIBRATION")
-    print("="*60)
-    print("\nComputing calibration metrics...")
+    logger.info("\n" + "="*60)
+    logger.info("UNCERTAINTY CALIBRATION")
+    logger.info("="*60)
+    logger.info("\nComputing calibration metrics...")
     cal_metrics = estimator.uncertainty_calibration(test_loader)
 
-    print(f"\nCalibration Metrics:")
-    print(f"  Brier Score: {cal_metrics['brier_score']:.4f}")
-    print(f"  ECE (Expected Calibration Error): {cal_metrics['ece']:.4f}")
-    print(f"  Uncertainty-Accuracy Correlation: {cal_metrics['uncertainty_accuracy_correlation']:.4f}")
-    print(f"  Mean Uncertainty: {cal_metrics['mean_uncertainty']:.4f}")
-    print(f"  Std Uncertainty: {cal_metrics['std_uncertainty']:.4f}")
+    logger.info(f"\nCalibration Metrics:")
+    logger.info(f"  Brier Score: {cal_metrics['brier_score']:.4f}")
+    logger.info(f"  ECE (Expected Calibration Error): {cal_metrics['ece']:.4f}")
+    logger.info(f"  Uncertainty-Accuracy Correlation: {cal_metrics['uncertainty_accuracy_correlation']:.4f}")
+    logger.info(f"  Mean Uncertainty: {cal_metrics['mean_uncertainty']:.4f}")
+    logger.info(f"  Std Uncertainty: {cal_metrics['std_uncertainty']:.4f}")
 
     # Interpretation
-    print(f"\nInterpretation:")
+    logger.info(f"\nInterpretation:")
     if cal_metrics['brier_score'] < 0.3:
-        print(f"  ✓ Brier score is good (< 0.3)")
+        logger.info(f"  ✓ Brier score is good (< 0.3)")
     else:
-        print(f"  ✗ Brier score is high (> 0.3)")
+        logger.info(f"  ✗ Brier score is high (> 0.3)")
 
     if abs(cal_metrics['uncertainty_accuracy_correlation']) > 0.3:
         corr_sign = "negative" if cal_metrics['uncertainty_accuracy_correlation'] < 0 else "positive"
-        print(f"  ✓ Strong {corr_sign} correlation (well-calibrated if negative)")
+        logger.info(f"  ✓ Strong {corr_sign} correlation (well-calibrated if negative)")
     else:
-        print(f"  ✗ Weak correlation (poorly calibrated)")
+        logger.info(f"  ✗ Weak correlation (poorly calibrated)")
 
     # Confidence intervals
-    print("\n" + "="*60)
-    print("CONFIDENCE INTERVALS")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("CONFIDENCE INTERVALS")
+    logger.info("="*60)
 
-    print("\nComputing 95% confidence intervals for first 5 test samples...")
+    logger.info("\nComputing 95% confidence intervals for first 5 test samples...")
     first_batch = next(iter(test_loader))
     if isinstance(first_batch, (tuple, list)):
         first_batch = first_batch[0]
@@ -200,8 +207,8 @@ def main(args):
 
     median, lower, upper = mc_model.confidence_intervals(first_batch)
 
-    print(f"\n{'Sample':<10} {'Class':<20} {'Median':<12} {'95% CI':<30}")
-    print(f"{'-'*72}")
+    logger.info(f"\n{'Sample':<10} {'Class':<20} {'Median':<12} {'95% CI':<30}")
+    logger.info(f"{'-'*72}")
     for i in range(median.shape[0]):
         pred_class = median[i].argmax()
         pred_prob = median[i, pred_class]
@@ -209,31 +216,31 @@ def main(args):
         ci_upper = upper[i, pred_class]
         class_name = class_names[pred_class]
         ci_str = f"[{ci_lower:.4f}, {ci_upper:.4f}]"
-        print(f"Sample {i:<3} {class_name:<20} {pred_prob:<12.4f} {ci_str:<30}")
+        logger.info(f"Sample {i:<3} {class_name:<20} {pred_prob:<12.4f} {ci_str:<30}")
 
     # Active learning: uncertain sample selection
-    print("\n" + "="*60)
-    print("ACTIVE LEARNING: UNCERTAIN SAMPLE SELECTION")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("ACTIVE LEARNING: UNCERTAIN SAMPLE SELECTION")
+    logger.info("="*60)
 
-    print("\nSelecting top-10 most uncertain samples (entropy metric)...")
+    logger.info("\nSelecting top-10 most uncertain samples (entropy metric)...")
     uncertain_samples = estimator.get_uncertain_samples(
         test_loader, k=10, metric='entropy'
     )
 
-    print(f"\n{'Rank':<6} {'Entropy':<12} {'Max Prob':<12} {'Top-2 Margin':<12}")
-    print(f"{'-'*42}")
+    logger.info(f"\n{'Rank':<6} {'Entropy':<12} {'Max Prob':<12} {'Top-2 Margin':<12}")
+    logger.info(f"{'-'*42}")
     for i, idx in enumerate(uncertain_samples['indices']):
         entropy_score = uncertain_samples['uncertainties'][i]
         max_prob = uncertain_samples['predictions'][i].max()
         margin = uncertain_samples['top2_margin'][i]
-        print(f"{i+1:<6} {entropy_score:<12.4f} {max_prob:<12.4f} {margin:<12.4f}")
+        logger.info(f"{i+1:<6} {entropy_score:<12.4f} {max_prob:<12.4f} {margin:<12.4f}")
 
     # Visualization
-    print("\n" + "="*60)
-    print("VISUALIZATION")
-    print("="*60)
-    print("\nGenerating uncertainty distribution plots...")
+    logger.info("\n" + "="*60)
+    logger.info("VISUALIZATION")
+    logger.info("="*60)
+    logger.info("\nGenerating uncertainty distribution plots...")
     plot_uncertainty_distribution(
         uncertainties,
         predictions=mean_probs,
@@ -241,12 +248,17 @@ def main(args):
         class_names=class_names,
     )
 
-    print("\n" + "="*60)
-    print("UNCERTAINTY QUANTIFICATION COMPLETE")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("UNCERTAINTY QUANTIFICATION COMPLETE")
+    logger.info("="*60)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     parser = argparse.ArgumentParser(
         description="Monte Carlo Dropout Uncertainty Quantification Example"
     )

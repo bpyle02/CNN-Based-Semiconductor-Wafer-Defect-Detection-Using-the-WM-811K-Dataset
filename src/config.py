@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import Dict, Any, Optional, List, Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _as_int(value: Any, default: int) -> int:
@@ -72,7 +75,7 @@ class DataConfig:
     num_workers: int = 0
     pin_memory: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate configuration."""
         self.image_size = _as_int(self.image_size, 96)
         self.train_size = _as_float(self.train_size, 0.70)
@@ -102,7 +105,7 @@ class TrainingConfig:
     optimizer: str = "adam"
     seed: int = 42
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate configuration."""
         self.epochs = _as_int(self.epochs, 5)
         self.batch_size = _as_int(self.batch_size, 64)
@@ -238,14 +241,14 @@ def load_config(config_path: str = "config.yaml") -> Config:
     config_path = Path(config_path)
 
     if config_path.exists():
-        print(f"Loading configuration from {config_path}")
+        logger.info(f"Loading configuration from {config_path}")
         return Config.from_yaml(str(config_path))
     else:
-        print(f"Config file not found: {config_path}, using defaults")
+        logger.warning(f"Config file not found: {config_path}, using defaults")
         return Config()
 
 
 if __name__ == "__main__":
     # Example usage
     cfg = load_config("config.yaml")
-    print(cfg)
+    logger.info(cfg)

@@ -14,48 +14,60 @@
 
 ## Repository Structure
 
+> **Full file tree**: See `structure.md` Part II for the complete verified inventory of all 69 files across 9 modules.
+
+### Core Modules (Original Design)
+
 ```
 .
 ├── train.py                          # CLI entry point for training
+├── config.yaml                       # Unified YAML configuration
 ├── requirements.txt                  # Python dependencies
-├── CLAUDE.md                         # This file
-├── README.md                         # User-facing project overview
+├── Dockerfile                        # Multi-stage Docker build
+��── docker-compose.yml                # Service orchestration
 │
 ├── data/
 │   └── LSWMD_new.pkl               # Dataset (not in git, user provides)
 │
 ├── docs/
-│   ├── wafer_defect_detection_report.tex      # LaTeX report (8-9 pages)
-│   ├── presentation.tex                        # Beamer slides (18 slides)
-│   └── wafer_defect_detection_run.ipynb        # Jupyter notebook (reference implementation)
+│   ├── wafer_defect_detection_report.tex      # LaTeX report
+│   ├── presentation.tex                        # Beamer slides
+│   └── wafer_defect_detection_run.ipynb        # Jupyter notebook
 │
 └── src/
-    ├── __init__.py
-    │
     ├── data/
-    │   ├── __init__.py
     │   ├── dataset.py               # Load and parse WM-811K pickle
     │   └── preprocessing.py         # Resize, normalize, augment, create datasets
     │
     ├── models/
-    │   ├── __init__.py
-    │   ├── cnn.py                   # Custom CNN (lightweight, from scratch)
-    │   └── pretrained.py            # ResNet-18 & EfficientNet-B0 (ImageNet, fine-tuned)
+    │   ├── cnn.py                   # Custom 4-block CNN (from scratch)
+    │   ├── pretrained.py            # ResNet-18 & EfficientNet-B0 (ImageNet, fine-tuned)
+    │   ├── vit.py                   # Vision Transformer
+    │   ├── ensemble.py              # Model ensembling
+    │   └── attention.py             # SE & CBAM attention mechanisms
     │
     ├── training/
-    │   ├── __init__.py
     │   ├── config.py                # TrainConfig dataclass
-    │   └── trainer.py               # train_model() main loop
+    │   ├── trainer.py               # train_model() main loop
+    │   ├── distributed.py           # Multi-GPU DDP support
+    │   ├── simclr.py                # Self-supervised pretraining
+    │   └── domain_adaptation.py     # CORAL + adversarial adaptation
     │
     ├── analysis/
-    │   ├── __init__.py
     │   ├── evaluate.py              # Metrics, classification_report
-    │   └── visualize.py             # Plots: training curves, confusion matrices, per-class F1
+    │   ├── visualize.py             # Plots: training curves, confusion matrices
+    │   └── anomaly.py               # Autoencoder, IsolationForest, OC-SVM
     │
-    └── inference/
-        ├── __init__.py
-        ├── gradcam.py               # GradCAM for interpretability
-        └── visualize.py             # GradCAM grid visualization
+    ├── inference/
+    │   ├── server.py                # FastAPI inference server (6 endpoints)
+    │   ├── gradcam.py               # GradCAM for interpretability
+    │   ├── uncertainty.py           # MC Dropout uncertainty quantification
+    │   └── visualize.py             # GradCAM grid visualization
+    │
+    ├── augmentation/                # Synthetic defect generation, FID/IS metrics
+    ├── detection/                   # OOD detection (Mahalanobis)
+    ├── federated/                   # FedAvg, Byzantine-robust aggregation
+    └── mlops/                       # W&B + MLflow experiment tracking
 ```
 
 ---
@@ -276,7 +288,7 @@ preds, labels, metrics = evaluate_model(model, test_loader, class_names)
 ### 4. Python Package (`src/`)
 
 - **Modules**: 11 files across 5 packages
-- **Lines of Code**: ~2500 (type-hinted, documented)
+- **Lines of Code**: ~8,500 in src/ package; ~12,750 total including scripts and tests
 - **Quality**: PhD-level package structure, no external ML libraries (pure PyTorch + sklearn)
 
 ### 5. CLI Entry Point (`train.py`)
@@ -291,9 +303,9 @@ preds, labels, metrics = evaluate_model(model, test_loader, class_names)
 
 ### Code Quality
 
-- ✓ Type hints on all functions
+- ✓ Type hints on core module interfaces (data, models, training, analysis entry points)
 - ✓ Comprehensive docstrings (Sphinx-compatible)
-- ✓ PEP 8 compliant (black formatted, flake8 clean)
+- ✓ PEP 8 conventions followed; CI enforces black + flake8 on push
 - ✓ No external ML libraries (pure PyTorch + sklearn)
 - ✓ Seed setting for reproducibility
 - ✓ Error handling with meaningful messages
@@ -474,5 +486,21 @@ streamlit run scripts/dashboard.py
 
 ---
 
+## Completeness and Correctness Policy
+
+All code in this repository must be complete, correct, and functional. The following practices are strictly prohibited:
+
+1. **No skeletonization**: Every function, class, and module must contain a full, working implementation. Skeleton code, placeholder stubs, `pass`-only bodies, or `NotImplementedError` raises are not acceptable in any committed file.
+
+2. **No templating in lieu of implementation**: Do not substitute outlines, pseudocode, or template structures for real implementations. If a file is committed, it must work when invoked.
+
+3. **No eschewment of completeness**: Every feature listed in documentation (CLAUDE.md, README.md, structure.md) must correspond to a real, runnable implementation. Do not document features that do not exist or that exist only as stubs.
+
+4. **No false completion claims**: Status markers (checkmarks, "COMPLETE", version numbers) must reflect verified, tested reality. Claims of test passage must be backed by actual test execution. Claims of feature completeness must be backed by functional code.
+
+5. **Verification before assertion**: Before marking any feature, test, or module as complete, verify by running the relevant code path. The only acceptable states are "verified working", "known broken with documented issue", or "not yet implemented".
+
+---
+
 **Last Updated**: 2026-04-05 (All 23 improvements complete, 51 tests passing)
-**Version**: 3.0
+**Version**: 3.1

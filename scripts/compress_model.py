@@ -27,7 +27,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score
+import logging
 
+logger = logging.getLogger(__name__)
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -41,11 +43,11 @@ from src.training.base_trainer import BaseTrainer
 def load_checkpoint(checkpoint_path: str, model: nn.Module, device: str = 'cuda') -> nn.Module:
     """Load model weights from checkpoint."""
     if not Path(checkpoint_path).exists():
-        print(f"Warning: Checkpoint not found at {checkpoint_path}")
+        logger.warning(f"Warning: Checkpoint not found at {checkpoint_path}")
         return model
     state_dict = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(state_dict)
-    print(f"Loaded weights from {checkpoint_path}")
+    logger.info(f"Loaded weights from {checkpoint_path}")
     return model
 
 
@@ -58,7 +60,7 @@ def count_parameters(model: nn.Module) -> Tuple[int, int]:
 
 def quantize_model(model: nn.Module, dtype: str = 'int8') -> nn.Module:
     """Quantize model to lower precision."""
-    print(f"\nQuantizing model to {dtype}...")
+    logger.info(f"\nQuantizing model to {dtype}...")
 
     if dtype == 'int8':
         # Use PyTorch's quantization
@@ -74,15 +76,15 @@ def quantize_model(model: nn.Module, dtype: str = 'int8') -> nn.Module:
     total, _ = count_parameters(model)
     total_q, _ = count_parameters(model_q)
 
-    print(f"Model size: {total * 4 / 1e6:.2f}M -> {total_q * 2 / 1e6:.2f}M (approx)")
-    print(f"Compression ratio: {total / total_q:.2f}x")
+    logger.info(f"Model size: {total * 4 / 1e6:.2f}M -> {total_q * 2 / 1e6:.2f}M (approx)")
+    logger.info(f"Compression ratio: {total / total_q:.2f}x")
 
     return model_q
 
 
 def prune_model(model: nn.Module, sparsity: float = 0.3) -> nn.Module:
     """Prune model by removing small-magnitude weights."""
-    print(f"\nPruning model to {sparsity * 100:.1f}% sparsity...")
+    logger.info(f"\nPruning model to {sparsity * 100:.1f}% sparsity...")
 
     total_params = 0
     pruned_params = 0
@@ -101,7 +103,7 @@ def prune_model(model: nn.Module, sparsity: float = 0.3) -> nn.Module:
             pruned_params += (~mask).sum().item()
             module.weight.data *= mask.float()
 
-    print(f"Pruned {pruned_params:,} / {total_params:,} parameters ({pruned_params / total_params * 100:.2f}%)")
+    logger.info(f"Pruned {pruned_params:,} / {total_params:,} parameters ({pruned_params / total_params * 100:.2f}%)")
 
     return model
 
@@ -117,7 +119,7 @@ def distill_model(
     alpha: float = 0.7,
 ) -> nn.Module:
     """Knowledge distillation: train student from teacher."""
-    print(f"\nKnowledge Distillation (T={temperature}, α={alpha})...")
+    logger.info(f"\nKnowledge Distillation (T={temperature}, α={alpha})...")
 
     teacher = teacher.to(device)
     student = student.to(device)
@@ -171,7 +173,7 @@ def distill_model(
         val_f1 = f1_score(val_targets, val_preds, average='macro', zero_division=0)
         student_checkpoints.append(student.state_dict())
 
-        print(f"  Epoch {epoch + 1}/{epochs}: Loss={train_loss / len(train_loader):.4f}, Val F1={val_f1:.4f}")
+        logger.info(f"  Epoch {epoch + 1}/{epochs}: Loss={train_loss / len(train_loader):.4f}, Val F1={val_f1:.4f}")
 
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
@@ -187,7 +189,7 @@ def distill_model(
 
 def benchmark_inference(model: nn.Module, test_loader: DataLoader, device: str = 'cuda', num_runs: int = 10) -> Tuple[float, float]:
     """Benchmark inference speed."""
-    print(f"\nBenchmarking inference speed ({num_runs} runs)...")
+    logger.info(f"\nBenchmarking inference speed ({num_runs} runs)...")
 
     model = model.to(device)
     model.eval()
@@ -211,8 +213,8 @@ def benchmark_inference(model: nn.Module, test_loader: DataLoader, device: str =
     avg_time = np.mean(times)
     throughput = len(inputs) / avg_time
 
-    print(f"  Avg latency: {avg_time * 1000:.2f}ms")
-    print(f"  Throughput: {throughput:.1f} samples/sec")
+    logger.info(f"  Avg latency: {avg_time * 1000:.2f}ms")
+    logger.info(f"  Throughput: {throughput:.1f} samples/sec")
 
     return avg_time, throughput
 
@@ -246,12 +248,12 @@ def main() -> int:
     args = parser.parse_args()
 
     device = args.device
-    print(f"Device: {device}")
+    logger.info(f"Device: {device}")
 
     if args.method == 'quantize':
-        print(f"\n{'='*70}")
-        print(f"QUANTIZATION: {args.model}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"QUANTIZATION: {args.model}")
+        logger.info(f"{'='*70}")
 
         # Create model
         num_classes = 9
@@ -272,12 +274,12 @@ def main() -> int:
         # Save
         if args.output:
             torch.save(model_q.state_dict(), args.output)
-            print(f"Saved quantized model to {args.output}")
+            logger.info(f"Saved quantized model to {args.output}")
 
     elif args.method == 'prune':
-        print(f"\n{'='*70}")
-        print(f"PRUNING: {args.model}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"PRUNING: {args.model}")
+        logger.info(f"{'='*70}")
 
         # Create model
         num_classes = 9
@@ -298,12 +300,12 @@ def main() -> int:
         # Save
         if args.output:
             torch.save(model_p.state_dict(), args.output)
-            print(f"Saved pruned model to {args.output}")
+            logger.info(f"Saved pruned model to {args.output}")
 
     elif args.method == 'distill':
-        print(f"\n{'='*70}")
-        print(f"KNOWLEDGE DISTILLATION: {args.student} <- {args.teacher}")
-        print(f"{'='*70}")
+        logger.info(f"\n{'='*70}")
+        logger.info(f"KNOWLEDGE DISTILLATION: {args.student} <- {args.teacher}")
+        logger.info(f"{'='*70}")
 
         # Create models
         num_classes = 9
@@ -322,15 +324,20 @@ def main() -> int:
             teacher = get_efficientnet_b0(num_classes=num_classes)
 
         # Load teacher weights
-        print(f"Note: Provide teacher checkpoint via --checkpoint")
+        logger.info(f"Note: Provide teacher checkpoint via --checkpoint")
         if args.checkpoint:
             teacher = load_checkpoint(args.checkpoint, teacher, device)
 
-        print("Distillation requires training data loaders. Run this with actual training loop.")
-        print("Example: See progressive_train.py for dataloader setup")
+        logger.info("Distillation requires training data loaders. Run this with actual training loop.")
+        logger.info("Example: See progressive_train.py for dataloader setup")
 
     return 0
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     sys.exit(main())

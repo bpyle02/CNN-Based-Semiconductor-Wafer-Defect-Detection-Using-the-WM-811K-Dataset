@@ -293,7 +293,7 @@ device:
   device_ids: [0]  # GPU IDs to use
   seed: 42
   deterministic: true
-  benchmark: true  # Enable CUDA benchmarking
+  benchmark: false  # Must be false when deterministic=true for reproducibility
 
 # ============================================================================
 # PATHS CONFIGURATION

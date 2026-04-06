@@ -9,6 +9,18 @@ from typing import Tuple, List, Dict
 import numpy as np
 from tqdm import tqdm
 
+
+def scipy_linalg_sqrtm(matrix: np.ndarray) -> np.ndarray:
+    """Compute matrix square root using scipy if available, else eigenvalue decomposition fallback."""
+    try:
+        from scipy.linalg import sqrtm
+        return sqrtm(matrix)
+    except ImportError:
+        evals, evecs = np.linalg.eigh(matrix)
+        evals = np.maximum(evals, 0)
+        return evecs @ np.diag(np.sqrt(evals)) @ np.linalg.inv(evecs)
+
+
 def compute_fid_score(
     real_images: torch.Tensor,
     fake_images: torch.Tensor,
@@ -21,13 +33,11 @@ def compute_fid_score(
     """
     inception_model.eval()
 
-    # InceptionV3 expects 3 channels. If we have 1 channel, repeat it.
     if real_images.size(1) == 1:
         real_images = real_images.repeat(1, 3, 1, 1)
     if fake_images.size(1) == 1:
         fake_images = fake_images.repeat(1, 3, 1, 1)
 
-    # InceptionV3 expects inputs to be resized to 299x299
     resize = nn.Upsample(size=(299, 299), mode='bilinear', align_corners=False)
     real_images = resize(real_images)
     fake_images = resize(fake_images)
@@ -36,16 +46,13 @@ def compute_fid_score(
         real_features = inception_model(real_images).cpu().numpy()
         fake_features = inception_model(fake_images).cpu().numpy()
 
-    # Compute mean and covariance
     mu_real = np.mean(real_features, axis=0)
     mu_fake = np.mean(fake_features, axis=0)
 
     sigma_real = np.cov(real_features, rowvar=False)
     sigma_fake = np.cov(fake_features, rowvar=False)
 
-    # FID score
     diff = mu_real - mu_fake
-    # Adding a small epsilon to the diagonal to avoid singular matrices during sqrtm
     eps = 1e-6
     covmean = scipy_linalg_sqrtm(sigma_real.dot(sigma_fake) + np.eye(sigma_real.shape[0]) * eps)
 
@@ -54,17 +61,6 @@ def compute_fid_score(
 
     fid = np.sum(diff**2) + np.trace(sigma_real + sigma_fake - 2*covmean)
     return float(fid)
-
-# Need a simple implementation or scipy for sqrtm. We'll use scipy if available, else a fallback.
-def scipy_linalg_sqrtm(matrix):
-    try:
-        from scipy.linalg import sqrtm
-        return sqrtm(matrix)
-    except ImportError:
-        # Fallback using eigenvalue decomposition
-        evals, evecs = np.linalg.eigh(matrix)
-        evals = np.maximum(evals, 0) # ensure positive
-        return evecs @ np.diag(np.sqrt(evals)) @ np.linalg.inv(evecs)
 
 
 def train_generator(

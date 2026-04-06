@@ -12,10 +12,11 @@ import torch.nn as nn
 
 class Krum:
     """Krum aggregation: selects parameter vector closest to most others.
-    
+
     Filters out potential Byzantine updates by selecting the gradient vector
     that is closest (in Euclidean distance) to the maximum number of other
-    gradient vectors. Robust to f malicious clients where f < n/2.
+    gradient vectors. Robust to f malicious clients where n >= 2f + 3
+    (per Blanchard et al., 2017).
     """
 
     @staticmethod
@@ -46,12 +47,15 @@ class Krum:
         
         # Compute pairwise distances
         distances = torch.cdist(flat_updates, flat_updates)  # (n_clients, n_clients)
-        
-        # For each client, find distance to k-closest (where k = n - f - 2)
+
+        # Exclude self-distances by setting diagonal to infinity
+        distances.fill_diagonal_(float('inf'))
+
+        # For each client, find distance to k-closest others (where k = n - f - 2)
         k = n_clients - byzantine_tolerance - 2
         closest_distances = torch.topk(distances, k, largest=False)[0]
-        
-        # Sum of distances to k-closest neighbors
+
+        # Sum of distances to k-closest neighbors (excluding self)
         neighbor_sums = closest_distances.sum(dim=1)
         
         # Select client with minimum sum of distances
@@ -85,16 +89,18 @@ class MultiKrum:
             Averaged aggregation of top-m selected vectors
         """
         selected_updates = []
-        remaining_updates = client_updates.copy()
-        
+        remaining_updates = list(client_updates)
+
         for _ in range(min(num_selected, len(client_updates))):
+            if not remaining_updates:
+                break
             # Apply Krum to remaining updates
             selected = Krum.aggregate(remaining_updates, byzantine_tolerance)
             selected_updates.append(selected)
-            
-            # Remove selected update
+
+            # Remove selected update by identity (safe: Krum returns original ref)
             remaining_updates = [
-                u for u in remaining_updates 
+                u for u in remaining_updates
                 if u is not selected
             ]
         

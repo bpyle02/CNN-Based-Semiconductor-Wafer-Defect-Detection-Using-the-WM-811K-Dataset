@@ -13,6 +13,9 @@ import torch
 import torch.nn as nn
 from skimage.transform import resize as skimage_resize
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GradCAM:
@@ -141,4 +144,4 @@ class GradCAM:
 
 
 if __name__ == "__main__":
-    print("GradCAM module loaded. Use with trained PyTorch models.")
+    logger.info("GradCAM module loaded. Use with trained PyTorch models.")
