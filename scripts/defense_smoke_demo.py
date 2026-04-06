@@ -80,7 +80,7 @@ def ensure_checkpoint(checkpoint_path: Path) -> Path:
 def run_demo(checkpoint_path: Path) -> int:
     """Run the smoke demo using FastAPI's TestClient."""
     if not FASTAPI_AVAILABLE:
-        logger.warning("fastapi is not installed. Install requirements.txt to run the demo.")
+        logger.warning('fastapi is not installed. Install with `python -m pip install -e ".[dev]"` to run the demo.')
         return 1
 
     checkpoint_path = ensure_checkpoint(checkpoint_path)

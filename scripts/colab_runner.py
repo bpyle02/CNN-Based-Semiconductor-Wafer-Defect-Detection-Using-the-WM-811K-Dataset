@@ -50,7 +50,7 @@ def setup_colab():
     logger.info("\n[3/6] Installing dependencies...")
     run_cmd("pip install --upgrade pip")
     run_cmd("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118")
-    run_cmd("pip install -q -r requirements.txt")
+    run_cmd("pip install -q -e '.[dev]'")
 
     # Step 4: Setup dataset
     logger.info("\n[4/6] Dataset setup...")
@@ -155,4 +155,4 @@ if __name__ == "__main__":
         setup_colab()
     else:
         logger.info("This script is designed for Google Colab.")
-        logger.info("For local setup, run: python setup.py")
+        logger.info("For local setup, run: python -m pip install -e '.[dev]'")

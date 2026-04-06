@@ -39,7 +39,8 @@
 - **This file**: Team development guide
 
 ### Automation Scripts
-- **`setup.py`**: One-command dependency installation
+- **`pyproject.toml`**: Editable packaging and dependency groups
+- **`scripts/bootstrap_env.py`**: Explicit environment bootstrap helper
 - **`colab_runner.py`**: Interactive Colab setup and training
 - **`.gitignore`**: Comprehensive file ignoring (datasets, checkpoints, IDE files)
 
@@ -102,7 +103,7 @@ python train.py --help  # Does it run?
 
 ```bash
 git checkout feature/phd-complete-implementation
-python setup.py                           # Install dependencies
+python -m pip install -e ".[dev]"        # Install dependencies
 cp /path/to/LSWMD_new.pkl data/          # Add dataset
 python train.py --model all --epochs 5 --device cuda
 ```
@@ -219,7 +220,8 @@ EfficientNet-B0 - Accuracy: 0.8312, Macro F1: 0.5067, Time: 389.2s
 ```
 feature/phd-complete-implementation
 ├── train.py                    ← CLI entry point
-├── setup.py                    ← Dependency installer
+├── pyproject.toml              ← Package metadata and dependency groups
+├── scripts/bootstrap_env.py    ← Environment bootstrap helper
 ├── colab_runner.py             ← Interactive Colab setup
 ├── requirements.txt            ← Python packages
 ├── .gitignore                  ← Ignore rules
