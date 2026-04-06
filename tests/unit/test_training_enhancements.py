@@ -49,7 +49,8 @@ def test_build_classification_loss_supports_focal_loss():
     assert isinstance(criterion, FocalLoss)
     assert criterion.gamma == 1.5
     assert criterion.label_smoothing == 0.05
-    assert torch.equal(criterion.weight, weights)
+    # FocalLoss with gamma > 0 applies sqrt to weights to avoid double-compensation
+    assert torch.allclose(criterion.weight, weights.sqrt())
 
 
 def test_train_model_tracks_macro_f1_and_steps_standard_scheduler():

@@ -69,7 +69,7 @@ def train_model(
     criterion: nn.Module,
     optimizer: optim.Optimizer,
     scheduler: Optional[optim.lr_scheduler.LRScheduler] = None,
-    epochs: int = 5,
+    epochs: int = 25,
     model_name: str = "Model",
     device: str = "cpu",
     gradient_clip: Optional[float] = None,
@@ -79,7 +79,7 @@ def train_model(
     early_stopping_enabled: bool = False,
     early_stopping_patience: Optional[int] = None,
     early_stopping_min_delta: float = 0.0,
-    monitored_metric: str = "val_acc",
+    monitored_metric: str = "val_macro_f1",
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Train a model and return the best checkpoint according to ``monitored_metric``.

@@ -22,6 +22,9 @@ data:
     gaussian_noise: 0.01
     brightness: 0.1
     contrast: 0.1
+    synthetic:
+      enabled: false
+      target_per_class: null  # null = match max class count
 
 # ============================================================================
 # MODEL CONFIGURATION
@@ -67,12 +70,22 @@ models:
       total: 5288548
       trainable: 2109876
 
+  vit:
+    name: "ViT-small"
+    architecture: "vit_small"
+    input_channels: 3
+    num_classes: 9
+    dropout_rate: 0.1
+    parameters:
+      total: 0
+      trainable: 0
+
 # ============================================================================
 # TRAINING CONFIGURATION
 # ============================================================================
 training:
   default_model: "all"  # "cnn", "resnet", "efficientnet", "all"
-  epochs: 5
+  epochs: 25
   batch_size: 64
   learning_rate:
     cnn: 1e-3
@@ -90,13 +103,15 @@ training:
   # Learning rate scheduler
   scheduler:
     type: "ReduceLROnPlateau"
-    mode: "min"
+    mode: "auto"  # auto-derived from monitored metric ("min" for loss, "max" otherwise)
     factor: 0.5
     patience: 3
     min_lr: 1e-6
     step_size: 5
     t_max: null
     eta_min: 0.0
+    warmup_epochs: 0            # 0 = disabled (backward compatible)
+    warmup_start_factor: 0.1    # Start at 10% of base LR
     verbose: true
 
   # Loss function
@@ -119,7 +134,7 @@ training:
     enabled: true
     save_dir: "checkpoints"
     save_best_only: true
-    metric: "val_loss"
+    metric: "val_macro_f1"
 
 # ============================================================================
 # VALIDATION CONFIGURATION

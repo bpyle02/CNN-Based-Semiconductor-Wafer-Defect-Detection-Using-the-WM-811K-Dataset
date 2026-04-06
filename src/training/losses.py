@@ -23,8 +23,16 @@ class FocalLoss(nn.Module):
         gamma: float = 2.0,
         reduction: str = "mean",
         label_smoothing: float = 0.0,
+        moderate_weights: bool = True,
     ) -> None:
         super().__init__()
+        # When both class weights and focal modulation (gamma > 0) are active,
+        # rare classes get double-compensated: higher weight from class_weights
+        # AND stronger (1-pt)^gamma scaling (since rare classes have lower pt).
+        # Applying sqrt to the weights reduces this overlap (Lin et al., 2017
+        # recommend lowering alpha as gamma increases).
+        if moderate_weights and weight is not None and gamma > 0:
+            weight = weight.sqrt()
         self.register_buffer("weight", weight.clone().detach() if weight is not None else None)
         self.gamma = gamma
         self.reduction = reduction
@@ -55,6 +63,7 @@ def build_classification_loss(
     label_smoothing: float = 0.0,
     focal_gamma: float = 2.0,
     reduction: str = "mean",
+    moderate_weights: bool = True,
 ) -> nn.Module:
     """Create a classification loss function from normalized config values."""
     if loss_name == "FocalLoss":
@@ -63,6 +72,7 @@ def build_classification_loss(
             gamma=focal_gamma,
             reduction=reduction,
             label_smoothing=label_smoothing,
+            moderate_weights=moderate_weights,
         )
 
     if loss_name != "CrossEntropyLoss":

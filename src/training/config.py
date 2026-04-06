@@ -27,7 +27,7 @@ class TrainConfig:
         loss_weights: Per-class weights for CrossEntropyLoss (set during data prep)
     """
 
-    num_epochs: int = 5
+    num_epochs: int = 25
     batch_size: int = 64
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4

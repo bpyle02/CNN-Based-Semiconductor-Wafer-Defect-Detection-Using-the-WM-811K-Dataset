@@ -141,7 +141,7 @@ from src.training.trainer import train_model
 
 DEFAULT_SCHEDULER_CONFIG = SimpleNamespace(
     type="ReduceLROnPlateau",
-    mode="min",
+    mode="auto",
     factor=0.5,
     patience=3,
     min_lr=1e-6,
@@ -257,32 +257,77 @@ def build_optimizer(
     raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 
 
-def build_scheduler(optimizer, scheduler_cfg, epochs: int):
-    """Create the configured scheduler."""
+def build_scheduler(optimizer, scheduler_cfg, epochs: int, monitored_metric: str = "val_macro_f1"):
+    """Create the configured scheduler, optionally with linear warmup.
+
+    For ReduceLROnPlateau, the mode is auto-derived from the monitored metric:
+    metrics containing 'loss' use 'min', all others use 'max'.  This prevents
+    the scheduler from reducing LR when accuracy *increases*.
+
+    When ``warmup_epochs > 0``, a :class:`~torch.optim.lr_scheduler.LinearLR`
+    warmup phase is composed with the main scheduler via
+    :class:`~torch.optim.lr_scheduler.SequentialLR`.  Warmup is only applied to
+    StepLR and CosineAnnealingLR; ReduceLROnPlateau is adaptive by nature and
+    skips warmup (a log message is emitted).
+    """
+    warmup_epochs = getattr(scheduler_cfg, "warmup_epochs", 0)
+    warmup_start_factor = getattr(scheduler_cfg, "warmup_start_factor", 0.1)
+
     scheduler_type = scheduler_cfg.type.lower()
     if scheduler_type in {"none", "off", "disabled"}:
         return None
+
     if scheduler_type == "reducelronplateau":
+        if warmup_epochs > 0:
+            logger.info(
+                "warmup_epochs=%d ignored for ReduceLROnPlateau (adaptive scheduler)",
+                warmup_epochs,
+            )
+        mode = "min" if "loss" in monitored_metric.lower() else "max"
         return optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
-            mode=scheduler_cfg.mode,
+            mode=mode,
             factor=scheduler_cfg.factor,
             patience=scheduler_cfg.patience,
             min_lr=scheduler_cfg.min_lr,
         )
+
+    # Build the main (non-Plateau) scheduler
+    main_sched: optim.lr_scheduler.LRScheduler
     if scheduler_type == "steplr":
-        return optim.lr_scheduler.StepLR(
+        main_sched = optim.lr_scheduler.StepLR(
             optimizer,
             step_size=max(1, getattr(scheduler_cfg, "step_size", scheduler_cfg.patience)),
             gamma=scheduler_cfg.factor,
         )
-    if scheduler_type == "cosineannealinglr":
-        return optim.lr_scheduler.CosineAnnealingLR(
+    elif scheduler_type == "cosineannealinglr":
+        main_sched = optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=max(1, getattr(scheduler_cfg, "t_max", None) or epochs),
             eta_min=getattr(scheduler_cfg, "min_lr", 0.0),
         )
-    raise ValueError(f"Unsupported scheduler type: {scheduler_cfg.type}")
+    else:
+        raise ValueError(f"Unsupported scheduler type: {scheduler_cfg.type}")
+
+    if warmup_epochs <= 0:
+        return main_sched
+
+    # Compose warmup + main via SequentialLR
+    warmup_sched = optim.lr_scheduler.LinearLR(
+        optimizer,
+        start_factor=warmup_start_factor,
+        total_iters=warmup_epochs,
+    )
+    logger.info(
+        "LR warmup enabled: %d epochs, start_factor=%.3f",
+        warmup_epochs,
+        warmup_start_factor,
+    )
+    return optim.lr_scheduler.SequentialLR(
+        optimizer,
+        schedulers=[warmup_sched, main_sched],
+        milestones=[warmup_epochs],
+    )
 
 def main():
     """Main training entry point."""
@@ -335,7 +380,7 @@ def main():
     model_choice = canonicalize_model_name(model_choice, allow_all=True)
 
     epochs = args.epochs if args.epochs is not None else (
-        config.training.epochs if config else 5)
+        config.training.epochs if config else 25)
     batch_size = args.batch_size if args.batch_size is not None else (
         config.training.batch_size if config else 64)
     device = args.device if args.device is not None else (
@@ -532,10 +577,12 @@ def main():
             momentum=(training_cfg.momentum if training_cfg else 0.9),
             nesterov=(training_cfg.nesterov if training_cfg else True),
         )
+        monitored_metric = (training_cfg.checkpointing.metric if training_cfg else "val_macro_f1")
         scheduler = build_scheduler(
             optimizer,
             scheduler_cfg=(training_cfg.scheduler if training_cfg else DEFAULT_SCHEDULER_CONFIG),
             epochs=args.epochs,
+            monitored_metric=monitored_metric,
         ) if training_cfg else None
         t0 = time.time()
         model, epoch_history = train_model(
@@ -553,7 +600,7 @@ def main():
             early_stopping_enabled=(training_cfg.early_stopping.enabled if training_cfg else False),
             early_stopping_patience=(training_cfg.early_stopping.patience if training_cfg else None),
             early_stopping_min_delta=(training_cfg.early_stopping.min_delta if training_cfg else 0.0),
-            monitored_metric=(training_cfg.checkpointing.metric if training_cfg else "val_acc"),
+            monitored_metric=monitored_metric,
         )
         train_time = time.time() - t0
 

@@ -25,7 +25,7 @@ def _compute_ece(
     confidences: np.ndarray,
     correct: np.ndarray,
     n_bins: int,
-) -> List[Dict[str, float | int]]:
+) -> Tuple[List[Dict[str, float | int]], float, float]:
     """Compute reliability bin statistics and expected calibration error."""
     bins = np.linspace(0.0, 1.0, n_bins + 1)
     bin_stats: List[Dict[str, float | int]] = []

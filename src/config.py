@@ -155,6 +155,8 @@ class SchedulerConfig(StrictConfigModel):
     step_size: int = 5
     t_max: Optional[int] = None
     eta_min: float = 0.0
+    warmup_epochs: int = Field(default=0, ge=0)
+    warmup_start_factor: float = Field(default=0.1, gt=0.0, le=1.0)
     verbose: bool = True
 
     @field_validator("type")
@@ -183,8 +185,8 @@ class SchedulerConfig(StrictConfigModel):
     @classmethod
     def validate_mode(cls, value: str) -> str:
         normalized = str(value).strip().lower()
-        if normalized not in {"min", "max"}:
-            raise ValueError("scheduler.mode must be one of: min, max")
+        if normalized not in {"min", "max", "auto"}:
+            raise ValueError("scheduler.mode must be one of: min, max, auto")
         return normalized
 
 

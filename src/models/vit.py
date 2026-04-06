@@ -16,7 +16,7 @@ class PatchEmbedding(nn.Module):
     Convert image to patch embeddings.
 
     Splits input image into non-overlapping patches and linearly embeds them.
-    Also adds learnable positional encodings.
+    Positional encodings are added by the ViT class after CLS token prepend.
 
     Args:
         image_size: Height/width of input image (assumed square)
@@ -46,10 +46,6 @@ class PatchEmbedding(nn.Module):
             stride=patch_size,
         )
 
-        # Learnable positional embeddings (for num_patches tokens)
-        self.pos_embed = nn.Parameter(torch.randn(1, self.num_patches, embed_dim))
-        nn.init.trunc_normal_(self.pos_embed, std=0.02)
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -66,9 +62,6 @@ class PatchEmbedding(nn.Module):
 
         # Transpose to (B, num_patches, embed_dim)
         x = x.transpose(1, 2)
-
-        # Add positional embeddings
-        x = x + self.pos_embed
 
         return x
 
@@ -190,9 +183,9 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
         nn.init.trunc_normal_(self.cls_token, std=0.02)
 
-        # Positional embedding for class token
-        self.cls_pos_embed = nn.Parameter(torch.randn(1, 1, embed_dim))
-        nn.init.trunc_normal_(self.cls_pos_embed, std=0.02)
+        # Joint positional embedding for CLS + all patches (standard ViT)
+        self.pos_embed = nn.Parameter(torch.randn(1, 1 + self.num_patches, embed_dim))
+        nn.init.trunc_normal_(self.pos_embed, std=0.02)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -236,8 +229,10 @@ class ViT(nn.Module):
 
         # Prepend class token
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # (B, 1, embed_dim)
-        cls_tokens = cls_tokens + self.cls_pos_embed
         x = torch.cat([cls_tokens, x], dim=1)  # (B, 1 + num_patches, embed_dim)
+
+        # Add joint positional embedding (CLS + patches in shared space)
+        x = x + self.pos_embed
 
         x = self.dropout(x)
 
