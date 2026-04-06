@@ -3,6 +3,7 @@
 from typing import Any, NoReturn
 
 from .gradcam import GradCAM
+from .tta import TestTimeAugmentation
 from .visualize import plot_gradcam_grid
 
 _SERVER_IMPORT_ERROR = None
@@ -43,6 +44,7 @@ except ImportError:
 
 __all__ = [
     'GradCAM',
+    'TestTimeAugmentation',
     'plot_gradcam_grid',
     'create_app',
     'ModelServer',

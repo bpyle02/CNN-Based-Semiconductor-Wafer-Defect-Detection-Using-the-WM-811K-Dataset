@@ -2,6 +2,10 @@
 
 from .evaluate import (
     evaluate_model,
+    evaluate_with_tta,
+    calibrate_and_evaluate,
+    calibrate_and_evaluate_asymmetric,
+    AsymmetricCalibrator,
     compute_calibration_metrics,
     count_params,
     count_trainable,
@@ -24,6 +28,10 @@ from .visualize import (
 
 __all__ = [
     'evaluate_model',
+    'evaluate_with_tta',
+    'calibrate_and_evaluate',
+    'calibrate_and_evaluate_asymmetric',
+    'AsymmetricCalibrator',
     'compute_calibration_metrics',
     'count_params',
     'count_trainable',

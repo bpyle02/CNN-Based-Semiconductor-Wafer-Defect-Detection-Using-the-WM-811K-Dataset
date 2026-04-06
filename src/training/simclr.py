@@ -3,6 +3,20 @@ SimCLR: A Simple Framework for Contrastive Learning of Visual Representations.
 
 Implements SimCLR (Chen et al., ICML 2020) for self-supervised pretraining on unlabeled wafer maps.
 Learns useful representations without labels by maximizing agreement between different augmentations.
+
+References:
+    [11] Kang et al. (2021). "WaPIRL: Representation Learning for Wafer Maps". DOI:10.1109/TSM.2021.3064435
+    [37] Chen et al. (2020). "SimCLR: Contrastive Learning of Visual Representations". arXiv:2002.05709
+    [38] Grill et al. (2020). "BYOL: Bootstrap Your Own Latent". arXiv:2006.07733
+    [39] He et al. (2020). "MoCo: Momentum Contrast". arXiv:1911.05722
+    [53] (2021). "Semi-Supervised Learning for Wafer Map Defect Classification"
+    [78] Schroff et al. (2015). "FaceNet: Triplet Loss". arXiv:1503.03832
+    [82] Sohn (2016). "Improved Deep Metric Learning with Multi-Class N-Pair Loss". arXiv:1708.01682
+    [85] Caron et al. (2020). "SwAV: Unsupervised Multi-Crop Assignments". arXiv:2006.09882
+    [111] Sohn et al. (2020). "FixMatch". arXiv:2001.07685
+    [114] Berthelot et al. (2019). "MixMatch". arXiv:1905.02249
+    [115] Xie et al. (2020). "UDA: Unsupervised Data Augmentation". arXiv:1904.12848
+    [119] Tarvainen & Valpola (2017). "Mean Teacher". arXiv:1703.01780
 """
 
 import torch

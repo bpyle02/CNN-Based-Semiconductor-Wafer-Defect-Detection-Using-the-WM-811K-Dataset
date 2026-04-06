@@ -6,8 +6,11 @@ representation by enabling the network to focus on important channels and
 spatial regions adaptively.
 
 References:
-    - SENet: Hu et al., "Squeeze-and-Excitation Networks" (CVPR 2018)
-    - CBAM: Woo et al., "CBAM: Convolutional Block Attention Module" (ECCV 2018)
+    [21] Hu et al. (2018). "Squeeze-and-Excitation Networks". arXiv:1709.01507
+    [22] Woo et al. (2018). "CBAM: Convolutional Block Attention Module". arXiv:1807.06521
+    [24] Wang et al. (2018). "Non-local Neural Networks". arXiv:1711.07971
+    [87] Velickovic et al. (2018). "Graph Attention Networks". arXiv:1710.10903
+    [116] (2021). "Stand-Alone Self-Attention in Vision Models"
 """
 
 import torch
@@ -19,6 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# Ref [21]: Hu et al. (arXiv:1709.01507)
 class SEBlock(nn.Module):
     """
     Squeeze-and-Excitation Block for channel attention.
@@ -155,6 +159,7 @@ class SpatialAttention(nn.Module):
         return self.conv(x_concat)
 
 
+# Ref [22]: Woo et al. (arXiv:1807.06521)
 class CBAMBlock(nn.Module):
     """
     Convolutional Block Attention Module (CBAM).

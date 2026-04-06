@@ -6,6 +6,11 @@ via Gradient-based Localization" (ICCV 2017).
 
 Highlights spatial regions most important for model predictions, providing
 visual interpretability for black-box neural networks.
+
+References:
+    [25] Selvaraju et al. (2017). "Grad-CAM". arXiv:1610.02391
+    [26] Ribeiro et al. (2016). "LIME". arXiv:1602.04938
+    [27] Shrikumar et al. (2017). "DeepLIFT". arXiv:1704.02685
 """
 
 from typing import Tuple, Optional, List
@@ -112,7 +117,7 @@ class GradCAM:
         target = output[0, target_class]
         target.backward()
 
-        # Compute weights: average gradients over spatial dimensions
+        # Ref [25]: Global average pooling of gradients as importance weights (Eq. 1 in Selvaraju et al.)
         # (B, C, H, W) -> (B, C, 1, 1)
         weights = self.gradients.mean(dim=[2, 3], keepdim=True)
 

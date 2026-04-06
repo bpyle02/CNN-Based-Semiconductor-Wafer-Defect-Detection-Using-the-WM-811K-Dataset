@@ -11,9 +11,16 @@ Key concepts:
 - Aleatoric uncertainty: Data noise (parameter uncertainty, irreducible)
 - Epistemic uncertainty: Model uncertainty (reducible with more data)
 - Prediction entropy and variance as uncertainty measures
+
+References:
+    [28] Gal & Ghahramani (2016). "Dropout as Bayesian Approximation". arXiv:1506.02142
+    [29] Guo et al. (2017). "On Calibration of Modern Neural Networks". arXiv:1706.04599
+    [31] Kendall & Gal (2017). "What Uncertainties Do We Need?". arXiv:1703.04977
+    [48] Srivastava et al. (2014). "Dropout". JMLR
 """
 
 from typing import Tuple, Dict, List, Optional, Union
+import logging
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,6 +29,8 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import brier_score_loss
+
+logger = logging.getLogger(__name__)
 
 
 class MCDropoutModel:
@@ -65,6 +74,7 @@ class MCDropoutModel:
 
     def _enable_dropout(self) -> None:
         """Enable dropout during inference (Bayesian approximation)."""
+        # Ref [28]: Gal & Ghahramani — dropout at inference approximates Bayesian posterior
         for module in self.model.modules():
             if isinstance(module, nn.Dropout):
                 module.train()
@@ -212,7 +222,7 @@ class MCDropoutModel:
         return np.exp(x) / np.exp(x).sum(axis=axis, keepdims=True)
 
 
-class TemperatureScaler(nn.Module):
+class TemperatureScaler(nn.Module):  # Ref [29]: Guo et al. — temperature scaling for post-hoc calibration
     """
     Temperature scaling for probability calibration.
     Learns a single scalar parameter T to scale logits before softmax.

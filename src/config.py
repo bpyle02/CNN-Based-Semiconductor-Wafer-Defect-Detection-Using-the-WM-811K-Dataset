@@ -18,8 +18,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 logger = logging.getLogger(__name__)
 
-MODEL_ALIASES = {"effnet": "efficientnet", "vit_small": "vit", "vit_tiny": "vit"}
-SUPPORTED_MODELS = {"cnn", "resnet", "efficientnet", "vit"}
+MODEL_ALIASES = {"effnet": "efficientnet", "vit_small": "vit", "vit_tiny": "vit", "swin_tiny": "swin", "swin_micro": "swin"}
+SUPPORTED_MODELS = {"cnn", "cnn_fpn", "resnet", "efficientnet", "vit", "swin", "ride"}
 
 
 def canonicalize_model_name(value: str, allow_all: bool = False) -> str:
@@ -52,6 +52,13 @@ class AugmentationConfig(StrictConfigModel):
     horizontal_flip: bool = True
     vertical_flip: bool = False
     gaussian_noise: float = 0.01
+    gaussian_noise_std: float = 0.02
+    gaussian_blur: bool = True
+    random_erasing: bool = True
+    radial_jitter: bool = True
+    domain_specific: bool = True
+    random_erasing_prob: float = 0.3
+    radial_distortion_strength: float = 0.1
     brightness: float = 0.1
     contrast: float = 0.1
     synthetic: SyntheticAugConfig = Field(default_factory=SyntheticAugConfig)
@@ -103,8 +110,22 @@ class ModelConfig(StrictConfigModel):
     head_dropout: Optional[float] = None
     freeze_until: Optional[str] = None
     frozen_prefixes: Optional[List[str]] = None
+    fpn_out_channels: Optional[int] = None
     attention_type: Optional[str] = None  # None, "se", or "cbam"
     attention_reduction: int = 16
+    # Swin Transformer fields
+    embed_dim: Optional[int] = None
+    depths: Optional[List[int]] = None
+    num_heads: Optional[List[int]] = None
+    window_size: Optional[int] = None
+    mlp_ratio: Optional[float] = None
+    attention_dropout: Optional[float] = None
+    drop_path: Optional[float] = None
+    # RIDE fields
+    backbone: Optional[str] = None
+    num_experts: Optional[int] = None
+    reduction: Optional[int] = None
+    diversity_weight: Optional[float] = None
     parameters: ModelParameterConfig = Field(default_factory=ModelParameterConfig)
 
 
@@ -136,12 +157,39 @@ class ModelCollectionConfig(StrictConfigModel):
             freeze_until="features.6",
         )
     )
+    cnn_fpn: ModelConfig = Field(
+        default_factory=lambda: ModelConfig(
+            name="Custom CNN-FPN",
+            architecture="custom_fpn",
+            input_channels=3,
+            use_batch_norm=True,
+            feature_channels=[32, 64, 128, 256],
+            fpn_out_channels=128,
+            dropout_rate=0.5,
+        )
+    )
     vit: ModelConfig = Field(
         default_factory=lambda: ModelConfig(
             name="ViT-small",
             architecture="vit_small",
             input_channels=3,
             dropout_rate=0.1,
+        )
+    )
+    swin: ModelConfig = Field(
+        default_factory=lambda: ModelConfig(
+            name="Swin-Tiny",
+            architecture="swin_tiny",
+            input_channels=3,
+            dropout_rate=0.0,
+        )
+    )
+    ride: ModelConfig = Field(
+        default_factory=lambda: ModelConfig(
+            name="RIDE",
+            architecture="ride",
+            input_channels=3,
+            dropout_rate=0.5,
         )
     )
 
@@ -190,6 +238,47 @@ class SchedulerConfig(StrictConfigModel):
         return normalized
 
 
+class MixupConfig(StrictConfigModel):
+    """Mixup / CutMix batch augmentation configuration."""
+    enabled: bool = False
+    mixup_alpha: float = Field(default=0.2, ge=0.0)
+    cutmix_alpha: float = Field(default=1.0, ge=0.0)
+    mixup_prob: float = Field(default=0.5, ge=0.0, le=1.0)
+    cutmix_prob: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class EMAConfig(StrictConfigModel):
+    """Exponential Moving Average configuration.
+
+    Reference: Polyak & Juditsky (1992). "Acceleration of Stochastic Approximation"
+    """
+    enabled: bool = False
+    decay: float = Field(default=0.999, ge=0.0, lt=1.0)
+
+
+class TTAConfig(StrictConfigModel):
+    """Test-Time Augmentation configuration.
+
+    Reference: Shanmugam et al. (2021). "Better Aggregation in TTA". arXiv:2011.11156
+    """
+    enabled: bool = False
+    num_views: int = Field(default=5, ge=1)
+
+
+class SemiSupervisedConfig(StrictConfigModel):
+    """Semi-supervised learning (FixMatch) configuration.
+
+    Reference: [111] Sohn et al. (2020). "FixMatch". arXiv:2001.07685
+    """
+    enabled: bool = False
+    method: str = "fixmatch"
+    confidence_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
+    lambda_u: float = Field(default=1.0, ge=0.0)
+    strong_augment: bool = True
+    unlabeled_batch_size: int = Field(default=128, ge=1)
+    epochs: int = Field(default=50, ge=1)
+
+
 class LossConfig(StrictConfigModel):
     type: str = "CrossEntropyLoss"
     weighted: bool = True
@@ -197,13 +286,24 @@ class LossConfig(StrictConfigModel):
     label_smoothing: float = Field(default=0.0, ge=0.0, le=1.0)
     focal_gamma: float = Field(default=2.0, ge=0.0)
     reduction: str = "mean"
+    tversky_alpha: float = Field(default=0.3, ge=0.0, le=1.0)
+    tversky_beta: float = Field(default=0.7, ge=0.0, le=1.0)
+    logit_adjustment_tau: float = Field(default=1.0, gt=0.0)
 
     @field_validator("type")
     @classmethod
     def validate_loss_type(cls, value: str) -> str:
         normalized = str(value).strip()
-        if normalized not in {"CrossEntropyLoss", "FocalLoss"}:
-            raise ValueError("loss.type must be one of: CrossEntropyLoss, FocalLoss")
+        allowed = {
+            "CrossEntropyLoss",
+            "FocalLoss",
+            "DiceLoss",
+            "TverskyLoss",
+            "LogitAdjustedLoss",
+        }
+        if normalized not in allowed:
+            allowed_display = ", ".join(sorted(allowed))
+            raise ValueError(f"loss.type must be one of: {allowed_display}")
         return normalized
 
     @field_validator("reduction")
@@ -257,6 +357,11 @@ class TrainingConfig(StrictConfigModel):
     use_focal_loss: bool = False
     mixed_precision: bool = False
     seed: int = 42
+    balanced_sampling: bool = False
+    drw_epoch: int = Field(default=0, ge=0)
+    adaptive_rebalance: bool = False
+    mixup: MixupConfig = Field(default_factory=MixupConfig)
+    ema: EMAConfig = Field(default_factory=EMAConfig)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     loss: LossConfig = Field(default_factory=LossConfig)
     early_stopping: EarlyStoppingConfig = Field(default_factory=EarlyStoppingConfig)
@@ -320,6 +425,7 @@ class InferenceConfig(StrictConfigModel):
     device: str = "cuda"
     use_half_precision: bool = False
     gradcam: GradCAMConfig = Field(default_factory=GradCAMConfig)
+    tta: TTAConfig = Field(default_factory=TTAConfig)
 
 
 class EnsembleConfig(StrictConfigModel):
@@ -440,6 +546,22 @@ class DistributedConfig(StrictConfigModel):
     master_port: int = 29500
 
 
+class CalibrationConfig(StrictConfigModel):
+    """Post-hoc probability calibration via temperature scaling or asymmetric."""
+    enabled: bool = False
+    method: str = "temperature_scaling"
+
+    @field_validator("method")
+    @classmethod
+    def validate_method(cls, value: str) -> str:
+        normalized = str(value).strip().lower()
+        allowed = {"temperature_scaling", "asymmetric"}
+        if normalized not in allowed:
+            allowed_display = ", ".join(sorted(allowed))
+            raise ValueError(f"calibration.method must be one of: {allowed_display}")
+        return normalized
+
+
 class UncertaintyConfig(StrictConfigModel):
     enabled: bool = False
     method: str = "monte_carlo_dropout"
@@ -478,6 +600,34 @@ class ExportConfig(StrictConfigModel):
     quantize_for_export: bool = False
 
 
+class SupConConfig(StrictConfigModel):
+    """Supervised Contrastive Learning configuration.
+
+    Reference: Khosla et al. (2020). "Supervised Contrastive Learning". arXiv:2004.11362
+    """
+    enabled: bool = False
+    temperature: float = Field(default=0.07, gt=0.0)
+    projection_dim: int = Field(default=128, gt=0)
+    pretrain_epochs: int = Field(default=50, gt=0)
+    pretrain_lr: float = Field(default=0.05, gt=0.0)
+    finetune_epochs: int = Field(default=25, gt=0)
+    finetune_lr: float = Field(default=0.01, gt=0.0)
+
+
+class SemiSupervisedConfig(StrictConfigModel):
+    """Semi-supervised learning (FixMatch) configuration.
+
+    Reference: Sohn et al. (2020). "FixMatch". arXiv:2001.07685
+    """
+    enabled: bool = False
+    method: str = "fixmatch"
+    confidence_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
+    lambda_u: float = Field(default=1.0, ge=0.0)
+    strong_augment: bool = True
+    unlabeled_batch_size: int = Field(default=128, gt=0)
+    epochs: int = Field(default=50, gt=0)
+
+
 class Config(StrictConfigModel):
     """Master configuration class."""
 
@@ -494,10 +644,13 @@ class Config(StrictConfigModel):
     cross_validation: CrossValidationConfig = Field(default_factory=CrossValidationConfig)
     progressive_training: ProgressiveTrainingConfig = Field(default_factory=ProgressiveTrainingConfig)
     distributed: DistributedConfig = Field(default_factory=DistributedConfig)
+    calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
     uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     export: ExportConfig = Field(default_factory=ExportConfig)
+    supcon: SupConConfig = Field(default_factory=SupConConfig)
+    semi_supervised: SemiSupervisedConfig = Field(default_factory=SemiSupervisedConfig)
     device: str = "cuda"
     seed: int = 42
     log_dir: str = "logs"

@@ -2,6 +2,11 @@
 Weights & Biases integration for experiment tracking.
 
 Logs training metrics, hyperparameters, model checkpoints, and evaluation results.
+
+References:
+    [147] Biewald (2020). "Experiment Tracking with Weights and Biases"
+    [148] Zaharia et al. (2018). "Accelerating the ML Lifecycle with MLflow". DOI:10.1109/DSAA.2018.00032
+    [149] Amershi et al. (2019). "Software Engineering for ML". arXiv:1904.07204
 """
 
 from pathlib import Path

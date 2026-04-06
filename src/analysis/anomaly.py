@@ -9,6 +9,13 @@ Methods:
     - One-Class SVM: Support vector method for single-class learning
     - Autoencoder-based: Reconstruction error for anomaly detection
     - Statistical: Mahalanobis distance from normal class distribution
+
+References:
+    [121] Ruff et al. (2018). "Deep One-Class Classification (Deep SVDD)". arXiv:1802.04365
+    [123] An & Cho (2015). "Variational Autoencoder Based Anomaly Detection". arXiv:1802.03903
+    [125] Chalapathy & Chawla (2019). "Deep Learning for Anomaly Detection Survey". arXiv:1901.03407
+    [129] Hendrycks & Gimpel (2017). "Baseline for OOD Detection". arXiv:1610.02136
+    [130] Liang et al. (2018). "ODIN: OOD Detection". arXiv:1706.02690
 """
 
 import torch

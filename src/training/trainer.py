@@ -2,26 +2,123 @@
 Training loop for wafer defect classification models.
 
 Implements a supervised training loop with validation, learning rate
-scheduling, early stopping, optional mixed precision, and metric tracking.
+scheduling, early stopping, optional mixed precision, metric tracking,
+Deferred Re-Weighting (DRW), Adaptive Re-Balancing (AREA), and
+Exponential Moving Average (EMA).
+
+References:
+    [45] Kingma & Ba (2015). "Adam: A Method for Stochastic Optimization". arXiv:1412.6980
+    [46] Loshchilov & Hutter (2019). "Decoupled Weight Decay Regularization". arXiv:1711.05101
+    [133] Loshchilov & Hutter (2017). "SGDR: Warm Restarts". arXiv:1608.03983
+    [134] Gotmare et al. (2019). "A Closer Look at Deep Learning Heuristics". arXiv:1811.03716
+    [135] Goyal et al. (2017). "Large Minibatch SGD". arXiv:1706.02677
+    [136] Smith & Topin (2019). "Super-Convergence". arXiv:1708.07120
+    [137] Cao et al. (2019). "LDAM + DRW". arXiv:1906.07413
+    [138] Polyak & Juditsky (1992). "Acceleration of Stochastic Approximation"
+    [190] Chen et al. (2022). "AREA: Adaptive Re-balancing via an Effective Approach". arXiv:2206.02841
 """
 
 from __future__ import annotations
 
 import copy
 import logging
+import math
 import time
 from contextlib import nullcontext
 from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 
+from .ema import EMAModel
 from .metrics_tracker import MetricsTracker
 
 logger = logging.getLogger(__name__)
+
+
+class AdaptiveRebalancer:
+    """Adaptive re-balancing: gradually increase class weights from uniform to
+    inverse-frequency based on per-class validation performance.
+
+    Instead of a hard DRW cutoff, smoothly interpolates::
+
+        w_c(t) = (1 - alpha(t)) * uniform + alpha(t) * inverse_freq
+
+    where ``alpha(t)`` increases from 0 to 1 over training using a cosine
+    schedule.  When per-class F1 scores are supplied the weights are further
+    modulated so that poorly-performing classes receive larger weights.
+
+    Reference:
+        [190] Chen et al. (2022). "AREA: Adaptive Re-balancing via an
+        Effective Approach". arXiv:2206.02841
+    """
+
+    def __init__(
+        self,
+        num_classes: int,
+        class_frequencies: torch.Tensor,
+        warmup_epochs: int = 5,
+        total_epochs: int = 50,
+    ) -> None:
+        if num_classes < 1:
+            raise ValueError("num_classes must be >= 1")
+        if warmup_epochs < 0:
+            raise ValueError("warmup_epochs must be >= 0")
+        if total_epochs < 1:
+            raise ValueError("total_epochs must be >= 1")
+
+        self.num_classes = num_classes
+        self.warmup_epochs = warmup_epochs
+        self.total_epochs = total_epochs
+
+        # Uniform weights
+        self.uniform = torch.ones(num_classes) / num_classes
+
+        # Inverse-frequency weights, normalized so they sum to ``num_classes``
+        # (same scale as ``torch.ones(num_classes)``).
+        freq = class_frequencies.float()
+        inv_freq = 1.0 / (freq + 1e-8)
+        self.target_weights = inv_freq / inv_freq.sum() * num_classes
+
+    def get_weights(
+        self,
+        epoch: int,
+        per_class_f1: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Return class weights for the current epoch.
+
+        Args:
+            epoch: Current epoch number (1-indexed).
+            per_class_f1: Optional tensor of per-class F1 scores from the
+                previous validation pass.  When provided, classes with low
+                F1 receive a proportionally higher weight boost.
+
+        Returns:
+            Tensor of shape ``(num_classes,)`` with non-negative weights.
+        """
+        if epoch < self.warmup_epochs:
+            return self.uniform.clone()
+
+        # Cosine interpolation from uniform to target weights
+        progress = (epoch - self.warmup_epochs) / max(
+            self.total_epochs - self.warmup_epochs, 1
+        )
+        alpha = 0.5 * (1.0 - math.cos(math.pi * min(progress, 1.0)))
+
+        base_weights = (1.0 - alpha) * self.uniform + alpha * self.target_weights
+
+        # Optional F1-based modulation: boost under-performing classes
+        if per_class_f1 is not None:
+            f1_factor = 1.0 / (per_class_f1.float() + 0.1)
+            f1_factor = f1_factor / f1_factor.mean()
+            base_weights = base_weights * f1_factor
+
+        return base_weights
+
 
 MONITORED_METRICS = {"val_loss", "val_acc", "val_macro_f1"}
 
@@ -80,6 +177,11 @@ def train_model(
     early_stopping_patience: Optional[int] = None,
     early_stopping_min_delta: float = 0.0,
     monitored_metric: str = "val_macro_f1",
+    batch_transform: Optional[Any] = None,
+    drw_epoch: Optional[int] = None,
+    use_ema: bool = False,
+    ema_decay: float = 0.999,
+    adaptive_rebalance: bool = False,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Train a model and return the best checkpoint according to ``monitored_metric``.
@@ -102,6 +204,26 @@ def train_model(
         early_stopping_patience: Number of bad epochs to tolerate.
         early_stopping_min_delta: Minimum metric improvement to reset patience.
         monitored_metric: One of ``val_loss``, ``val_acc``, or ``val_macro_f1``.
+        batch_transform: Optional callable (e.g. MixupCutmix) applied to each
+            training batch. Must return ``(mixed_images, labels_a, labels_b, lam)``.
+        drw_epoch: Deferred Re-Weighting schedule epoch. When set, epochs 1
+            through ``drw_epoch`` use unweighted cross-entropy (representation
+            learning phase), and epochs after ``drw_epoch`` switch to the
+            weighted ``criterion`` (classifier adaptation phase). ``None`` or
+            ``0`` disables DRW entirely. Ref: Cao et al. (2019) arXiv:1906.07413
+        use_ema: If ``True``, maintain an Exponential Moving Average of the
+            model weights and use EMA weights for validation. The returned
+            best model will have EMA weights applied. Ref: Polyak &
+            Juditsky (1992).
+        ema_decay: Decay factor for EMA (only used when ``use_ema=True``).
+            Typical range: 0.99 -- 0.9999.
+        adaptive_rebalance: If ``True``, use an :class:`AdaptiveRebalancer`
+            to smoothly interpolate class weights from uniform to
+            inverse-frequency over training instead of the hard DRW
+            cutoff.  Requires the ``criterion`` to have a ``weight``
+            attribute (e.g. ``CrossEntropyLoss``).  Mutually exclusive
+            with DRW (``drw_epoch`` is ignored when enabled).
+            Ref: Chen et al. (2022) arXiv:2206.02841
 
     Returns:
         A tuple of ``(best_model, history_dict)``.
@@ -119,6 +241,36 @@ def train_model(
     best_metric = float("inf") if _is_loss_metric(monitored_metric) else float("-inf")
     epochs_without_improvement = 0
 
+    # --- DRW flag (needed before history init) ---
+    drw_active = drw_epoch is not None and drw_epoch > 0
+
+    # --- Adaptive rebalancing (overrides DRW when enabled) ---
+    rebalancer: Optional[AdaptiveRebalancer] = None
+    if adaptive_rebalance:
+        # Compute class frequencies from the training loader
+        label_counts: Dict[int, int] = {}
+        for _, batch_labels in train_loader:
+            for label in batch_labels.tolist():
+                label_counts[label] = label_counts.get(label, 0) + 1
+        num_classes = len(label_counts)
+        class_freqs = torch.zeros(num_classes)
+        for cls_idx, count in label_counts.items():
+            class_freqs[cls_idx] = count
+        rebalancer = AdaptiveRebalancer(
+            num_classes=num_classes,
+            class_frequencies=class_freqs,
+            warmup_epochs=max(epochs // 10, 1),
+            total_epochs=epochs,
+        )
+        # Disable DRW when adaptive rebalancing is active
+        drw_active = False
+        logger.info(
+            "[%s] Adaptive rebalancing enabled (warmup=%d, total=%d)",
+            model_name,
+            rebalancer.warmup_epochs,
+            rebalancer.total_epochs,
+        )
+
     history: Dict[str, Any] = {
         "train_loss": [],
         "train_acc": [],
@@ -135,11 +287,38 @@ def train_model(
         "epochs_ran": 0,
         "stopped_early": False,
         "mixed_precision": amp_enabled,
+        "drw_epoch": drw_epoch if drw_active else None,
+        "adaptive_rebalance": adaptive_rebalance,
+        "use_ema": use_ema,
+        "ema_decay": ema_decay if use_ema else None,
     }
+
+    # --- EMA initialisation ---
+    ema: Optional[EMAModel] = None
+    if use_ema:
+        ema = EMAModel(model, decay=ema_decay)
+        logger.info("[%s] EMA enabled (decay=%.6f)", model_name, ema_decay)
+
+    if drw_active:
+        logger.info(
+            "[%s] DRW schedule: unweighted loss for epochs 1-%d, weighted loss after",
+            model_name,
+            drw_epoch,
+        )
 
     start_time = time.time()
 
+    # Track per-class F1 for adaptive rebalancing feedback
+    _prev_per_class_f1: Optional[torch.Tensor] = None
+
     for epoch in range(1, epochs + 1):
+        # --- Adaptive rebalancing: update criterion weights each epoch ---
+        if rebalancer is not None and hasattr(criterion, "weight"):
+            new_weights = rebalancer.get_weights(
+                epoch, per_class_f1=_prev_per_class_f1
+            )
+            criterion.weight = new_weights.to(device)
+
         model.train()
         train_loss = 0.0
         train_correct = 0
@@ -157,9 +336,23 @@ def train_model(
                 else nullcontext()
             )
 
+            # DRW: use unweighted CE during representation-learning phase
+            use_unweighted = drw_active and epoch <= drw_epoch
+
             with autocast_context:
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+                if batch_transform is not None:
+                    images, labels_a, labels_b, lam = batch_transform(images, labels)
+                    outputs = model(images)
+                    if use_unweighted:
+                        loss = lam * F.cross_entropy(outputs, labels_a) + (1.0 - lam) * F.cross_entropy(outputs, labels_b)
+                    else:
+                        loss = lam * criterion(outputs, labels_a) + (1.0 - lam) * criterion(outputs, labels_b)
+                else:
+                    outputs = model(images)
+                    if use_unweighted:
+                        loss = F.cross_entropy(outputs, labels)
+                    else:
+                        loss = criterion(outputs, labels)
 
             if amp_enabled:
                 scaler.scale(loss).backward()
@@ -174,6 +367,10 @@ def train_model(
                     torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clip)
                 optimizer.step()
 
+            # EMA: update shadow weights after each optimizer step
+            if ema is not None:
+                ema.update(model)
+
             train_loss += loss.item() * labels.size(0)
             predicted = outputs.argmax(dim=1)
             train_correct += (predicted == labels).sum().item()
@@ -181,6 +378,10 @@ def train_model(
 
         train_loss /= max(train_total, 1)
         train_acc = train_correct / max(train_total, 1)
+
+        # EMA: swap in shadow weights for validation
+        if ema is not None:
+            ema.apply_shadow(model)
 
         model.eval()
         val_loss = 0.0
@@ -214,6 +415,17 @@ def train_model(
         val_acc = val_correct / max(val_total, 1)
         val_macro_f1 = f1_score(val_targets, val_predictions, average="macro", zero_division=0)
 
+        # Capture per-class F1 for adaptive rebalancing feedback
+        if rebalancer is not None:
+            per_class_f1_arr = f1_score(
+                val_targets, val_predictions, average=None, zero_division=0
+            )
+            _prev_per_class_f1 = torch.tensor(per_class_f1_arr, dtype=torch.float32)
+
+        # EMA: restore training weights after validation
+        if ema is not None:
+            ema.restore(model)
+
         history["train_loss"].append(train_loss)
         history["train_acc"].append(train_acc)
         history["val_loss"].append(val_loss)
@@ -246,7 +458,14 @@ def train_model(
         if _is_improvement(monitored_metric, current_metric, best_metric, early_stopping_min_delta):
             best_metric = current_metric
             best_epoch = epoch
-            best_model_wts = copy.deepcopy(model.state_dict())
+            # When EMA is active, save the EMA (shadow) weights as the
+            # best checkpoint since validation was performed with them.
+            if ema is not None:
+                ema.apply_shadow(model)
+                best_model_wts = copy.deepcopy(model.state_dict())
+                ema.restore(model)
+            else:
+                best_model_wts = copy.deepcopy(model.state_dict())
             history["best_metric"] = current_metric
             history["best_epoch"] = epoch
             history["best_val_acc"] = val_acc

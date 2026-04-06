@@ -3,6 +3,13 @@ Pretrained model architectures for transfer learning on wafer defect classificat
 
 Implements ResNet-18 and EfficientNet-B0 with configurable freezing and
 classifier-head construction utilities.
+
+References:
+    [1] He et al. (2016). "Deep Residual Learning for Image Recognition". arXiv:1512.03385
+    [2] Tan & Le (2019). "EfficientNet: Rethinking Model Scaling". arXiv:1905.11946
+    [56] (2020). "DL Approaches for Wafer Map Defect Pattern Recognition"
+    [60] (2020). "Wafer Defect Pattern Recognition Using Transfer Learning"
+    [74] Kornblith et al. (2019). "Do Better ImageNet Models Transfer Better?". arXiv:1805.08974
 """
 
 from __future__ import annotations
@@ -113,6 +120,7 @@ def resolve_frozen_prefixes(
     return ordered[: boundary_index + 1]
 
 
+# Ref [1]: He et al. (arXiv:1512.03385) — ResNet-18 with ImageNet pretraining
 def get_resnet18(
     num_classes: int = 9,
     pretrained: bool = True,
@@ -157,6 +165,7 @@ def get_resnet18(
     return model
 
 
+# Ref [2]: Tan & Le (arXiv:1905.11946) — EfficientNet-B0 compound scaling
 def get_efficientnet_b0(
     num_classes: int = 9,
     pretrained: bool = True,

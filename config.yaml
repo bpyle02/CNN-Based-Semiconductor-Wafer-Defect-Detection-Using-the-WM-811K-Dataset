@@ -19,9 +19,16 @@ data:
     random_rotation: 15
     horizontal_flip: true
     vertical_flip: false
-    gaussian_noise: 0.01
+    gaussian_noise_std: 0.02
+    gaussian_blur: true
+    random_erasing: true
+    radial_jitter: true
     brightness: 0.1
     contrast: 0.1
+    # Domain-specific augmentations for semiconductor wafer maps
+    domain_specific: true
+    random_erasing_prob: 0.3
+    radial_distortion_strength: 0.1
     synthetic:
       enabled: false
       target_per_class: null  # null = match max class count
@@ -43,6 +50,19 @@ models:
     parameters:
       total: 1234567
       trainable: 1234567
+
+  cnn_fpn:
+    name: "Custom CNN-FPN"
+    architecture: custom_fpn
+    input_channels: 3
+    num_classes: 9
+    fpn_out_channels: 128
+    dropout_rate: 0.5
+    feature_channels: [32, 64, 128, 256]
+    use_batch_norm: true
+    parameters:
+      total: 0
+      trainable: 0
 
   resnet:
     name: "ResNet-18"
@@ -80,6 +100,33 @@ models:
       total: 0
       trainable: 0
 
+  swin:
+    name: "Swin-Tiny"
+    architecture: "swin_tiny"
+    input_channels: 3
+    num_classes: 9
+    embed_dim: 96
+    depths: [2, 2, 6, 2]
+    num_heads: [3, 6, 12, 24]
+    window_size: 6
+    mlp_ratio: 4.0
+    dropout_rate: 0.0
+    attention_dropout: 0.0
+    drop_path: 0.1
+    parameters:
+      total: 27515043
+      trainable: 27515043
+
+  ride:
+    name: "RIDE"
+    architecture: "ride"
+    backbone: "cnn"
+    num_classes: 9
+    num_experts: 3
+    reduction: 4
+    diversity_weight: 0.1
+    dropout_rate: 0.5
+
 # ============================================================================
 # TRAINING CONFIGURATION
 # ============================================================================
@@ -89,11 +136,23 @@ training:
   batch_size: 64
   learning_rate:
     cnn: 1e-3
+    cnn_fpn: 1e-3
     resnet: 1e-4
     efficientnet: 1e-4
   weight_decay: 1e-4
   gradient_clip_max_norm: 1.0
   mixed_precision: false
+
+  # Class-balanced batch sampling (oversamples rare classes per epoch)
+  balanced_sampling: false
+
+  # Mixup / CutMix batch augmentation
+  mixup:
+    enabled: false
+    mixup_alpha: 0.2
+    cutmix_alpha: 1.0
+    mixup_prob: 0.5
+    cutmix_prob: 0.5
 
   # Optimizer
   optimizer: "adam"  # "adam", "sgd", "adamw"
@@ -116,12 +175,33 @@ training:
 
   # Loss function
   loss:
-    type: "CrossEntropyLoss"
+    type: "CrossEntropyLoss"  # Options: CrossEntropyLoss, FocalLoss, DiceLoss, TverskyLoss, LogitAdjustedLoss
     weighted: true
     class_weights: null  # Computed from data if null
     label_smoothing: 0.0
     focal_gamma: 2.0
     reduction: "mean"
+    tversky_alpha: 0.3
+    tversky_beta: 0.7
+    logit_adjustment_tau: 1.0
+
+  # Deferred Re-Weighting (DRW) schedule
+  # 0 = disabled; set to e.g. 15 to use unweighted loss for first 15 epochs
+  # then switch to class-weighted loss for remaining epochs.
+  # Reference: Cao et al. (2019). "LDAM + DRW". arXiv:1906.07413
+  drw_epoch: 0
+
+  # Adaptive Re-Balancing (AREA) — smooth interpolation from uniform to
+  # inverse-frequency weights with per-class F1 feedback.
+  # Overrides DRW when enabled.
+  # Reference: Chen et al. (2022). "AREA". arXiv:2206.02841
+  adaptive_rebalance: false
+
+  # Exponential Moving Average of model weights
+  # Reference: Polyak & Juditsky (1992)
+  ema:
+    enabled: false
+    decay: 0.999
 
   # Early stopping
   early_stopping:
@@ -161,6 +241,19 @@ inference:
     enabled: true
     target_layer: null  # Auto-selected if null
     colormap: "jet"
+
+  # Test-Time Augmentation
+  # Reference: Shanmugam et al. (2021). "Better Aggregation in TTA"
+  tta:
+    enabled: false
+    num_views: 5
+
+# ============================================================================
+# CALIBRATION CONFIGURATION
+# ============================================================================
+calibration:
+  enabled: false
+  method: "temperature_scaling"  # or "asymmetric" for per-class temperatures (ABC)
 
 # ============================================================================
 # ENSEMBLE CONFIGURATION
@@ -345,3 +438,29 @@ export:
   output_dir: "exported_models"
   optimize: true  # Optimize for inference
   quantize_for_export: false
+
+# ============================================================================
+# SUPERVISED CONTRASTIVE LEARNING (SupCon)
+# Reference: Khosla et al. (2020). arXiv:2004.11362
+# ============================================================================
+supcon:
+  enabled: false
+  temperature: 0.07        # Contrastive loss temperature (lower = sharper)
+  projection_dim: 128      # Projection head output dimension
+  pretrain_epochs: 50       # Stage 1: contrastive pretraining epochs
+  pretrain_lr: 0.05         # Stage 1: SGD learning rate
+  finetune_epochs: 25       # Stage 2: linear probe epochs
+  finetune_lr: 0.01         # Stage 2: Adam learning rate
+
+# ============================================================================
+# SEMI-SUPERVISED LEARNING (FixMatch)
+# Reference: Sohn et al. (2020). arXiv:2001.07685
+# ============================================================================
+semi_supervised:
+  enabled: false
+  method: "fixmatch"
+  confidence_threshold: 0.95  # Pseudo-label acceptance threshold (tau)
+  lambda_u: 1.0               # Unsupervised loss weight
+  strong_augment: true         # Use strong augmentation for student branch
+  unlabeled_batch_size: 128    # Batch size for unlabeled data
+  epochs: 50                   # Training epochs for semi-supervised stage

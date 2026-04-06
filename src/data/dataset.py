@@ -3,6 +3,10 @@ Dataset loading and management for WM-811K semiconductor wafer defect detection.
 
 Handles loading, parsing, and basic quality checks for the WM-811K dataset,
 including extraction of failure class labels from nested structures.
+
+References:
+    [7] Wu et al. (2014). "Wafer Map Failure Pattern Recognition". DOI:10.1109/TSM.2014.2364237
+    [61] (2020). "Yield Prediction Using ML in Semiconductor Manufacturing"
 """
 
 from pathlib import Path
@@ -15,6 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Ref [7]: 9 failure classes from WM-811K dataset (Wu et al., IEEE TSM 2014)
 KNOWN_CLASSES = [
     'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
     'Loc', 'Near-full', 'Random', 'Scratch', 'none'

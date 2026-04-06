@@ -3,6 +3,17 @@ Vision Transformer (ViT) architecture for wafer defect classification.
 
 Adapts the Vision Transformer from Dosovitskiy et al. to work with 96x96 wafer maps.
 Includes patch embedding, transformer encoder, and classification head.
+
+References:
+    [3] Dosovitskiy et al. (2021). "An Image is Worth 16x16 Words". arXiv:2010.11929
+    [23] Vaswani et al. (2017). "Attention Is All You Need". arXiv:1706.03762
+    [102] Touvron et al. (2021). "DeiT: Data-Efficient Image Transformers". arXiv:2012.12877
+    [103] Liu et al. (2021). "Swin Transformer". arXiv:2103.14030
+    [105] Yuan et al. (2021). "Tokens-to-Token ViT". arXiv:2101.11986
+    [107] Wu et al. (2021). "CvT: Convolutional Vision Transformer". arXiv:2103.15808
+    [108] Dai et al. (2021). "CoAtNet". arXiv:2106.04803
+    [109] Mehta & Rastegari (2022). "MobileViT". arXiv:2110.02178
+    [110] Graham et al. (2021). "LeViT: Vision Transformer in ConvNet's Clothing". arXiv:2104.01136
 """
 
 import torch
@@ -11,6 +22,7 @@ import math
 from typing import Optional, Tuple
 
 
+# Ref [3]: Dosovitskiy et al. — patch embedding via Conv2d projection
 class PatchEmbedding(nn.Module):
     """
     Convert image to patch embeddings.
@@ -66,6 +78,7 @@ class PatchEmbedding(nn.Module):
         return x
 
 
+# Ref [23]: Vaswani et al. — multi-head self-attention + FFN
 class TransformerEncoder(nn.Module):
     """
     Transformer encoder block with multi-head attention and feed-forward.
@@ -179,7 +192,7 @@ class ViT(nn.Module):
             embed_dim=embed_dim,
         )
 
-        # Learnable class token
+        # Ref [3]: Learnable [CLS] token for classification (Dosovitskiy et al.)
         self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
         nn.init.trunc_normal_(self.cls_token, std=0.02)
 

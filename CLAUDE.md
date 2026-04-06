@@ -502,7 +502,11 @@ All code in this repository must be complete, correct, and functional. The follo
 
 5. **Verification before assertion**: Before marking any feature, test, or module as complete, verify by running the relevant code path. The only acceptable states are "verified working", "known broken with documented issue", or "not yet implemented".
 
+6. **No incomplete implementations**: Every function must contain complete, working logic. If a function is too complex to implement in one pass, break it into smaller functions that ARE complete. Never leave a function body with `TODO`, `FIXME`, `...`, `pass`, or `raise NotImplementedError`. This applies to ALL contributors including AI assistants.
+
+7. **AI-generated code standard**: Code produced by AI tools must meet the same standard as human-written code. No shortcuts, no placeholders, no "left as exercise" patterns. If the AI cannot produce a complete implementation, it must explicitly state what is missing rather than producing stub code.
+
 ---
 
-**Last Updated**: 2026-04-06 (Comprehensive audit and remediation; all 23 improvements complete, 165 tests passing)
-**Version**: 4.0
+**Last Updated**: 2026-04-06 (Phase A/B/C optimizations; 150 paper references; Mixup/CutMix, SupCon, FPN, balanced sampling)
+**Version**: 5.0

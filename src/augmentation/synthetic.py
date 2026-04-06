@@ -1,4 +1,16 @@
-"""Synthetic wafer map generation for data augmentation."""
+"""Synthetic wafer map generation for data augmentation.
+
+References:
+    [18] Chawla et al. (2002). "SMOTE: Synthetic Minority Over-sampling". arXiv:1106.1813
+    [7] Wu et al. (2014). "WM-811K Failure Patterns". DOI:10.1109/TSM.2014.2364237
+    [54] (2019). "Data Augmentation Using Learned Transformations"
+    [65] (2020). "Generative Data Augmentation for Semiconductor Defect Detection"
+    [66] Zhang et al. (2018). "mixup". arXiv:1710.09412
+    [67] Yun et al. (2019). "CutMix". arXiv:1905.04899
+    [68] He et al. (2008). "ADASYN: Adaptive Synthetic Sampling"
+    [69] Han et al. (2005). "Borderline-SMOTE"
+    [72] Zhong et al. (2020). "Random Erasing Data Augmentation". arXiv:1708.04896
+"""
 
 from typing import Tuple, Optional
 import numpy as np

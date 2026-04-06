@@ -19,6 +19,13 @@ This implementation supports:
     - Learning rate scheduling
     - Model checkpointing
     - Evaluation on validation/test sets
+
+References:
+    [33] McMahan et al. (2017). "FedAvg". arXiv:1602.05629
+    [34] Blanchard et al. (2017). "Krum: Byzantine Tolerant Gradient Descent". arXiv:1703.02757
+    [35] Yin et al. (2018). "Byzantine-Robust Distributed Learning". arXiv:1803.10032
+    [36] Kairouz et al. (2021). "Advances in Federated Learning". arXiv:1912.04977
+    [143] (2021). "Federated Learning for Semiconductor Manufacturing"
 """
 
 import copy
@@ -297,7 +304,7 @@ class ByzantineRobustAggregator:
             raise ValueError(f"Unknown aggregation method: {self.method}")
 
     def _median_aggregation(self, weights_list: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
-        """Median aggregation - robust to 50% poisoned clients."""
+        """Median aggregation - robust to 50% poisoned clients."""  # Ref [35]: Yin et al. — coordinate-wise median
         aggregated = {}
         for key in weights_list[0].keys():
             values = torch.stack([w[key] for w in weights_list])
@@ -305,7 +312,7 @@ class ByzantineRobustAggregator:
         return aggregated
 
     def _trimmed_mean_aggregation(self, weights_list: List[Dict[str, torch.Tensor]], trim_ratio: float = 0.2) -> Dict[str, torch.Tensor]:
-        """Trimmed mean aggregation - removes outlier updates."""
+        """Trimmed mean aggregation - removes outlier updates."""  # Ref [35]: Yin et al. — coordinate-wise trimmed mean
         aggregated = {}
         trim_count = int(len(weights_list) * trim_ratio)
         if trim_count * 2 >= len(weights_list):
@@ -334,7 +341,7 @@ class ByzantineRobustAggregator:
         weights_list: List[Dict[str, torch.Tensor]],
         byzantine_tolerance: int = 0,
     ) -> Dict[str, torch.Tensor]:
-        """Krum aggregation using nearest-neighbor distance scoring."""
+        """Krum aggregation using nearest-neighbor distance scoring."""  # Ref [34]: Blanchard et al. — Krum selects model closest to neighbors
         num_clients = len(weights_list)
         min_required_clients = 2 * byzantine_tolerance + 3
         if num_clients < min_required_clients:

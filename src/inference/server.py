@@ -8,6 +8,9 @@ Provides REST endpoints for model serving with support for:
 - Comprehensive request validation and error handling
 - CORS support for web clients
 - Performance metrics tracking
+
+References:
+    [141] (2021). "Deploying ML Models in Semiconductor Manufacturing"
 """
 
 import base64

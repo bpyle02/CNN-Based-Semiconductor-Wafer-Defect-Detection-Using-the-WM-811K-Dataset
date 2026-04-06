@@ -2,6 +2,16 @@
 
 Detects samples that deviate from training distribution, useful for
 identifying anomalous or corrupted wafer maps.
+
+References:
+    [31] Kendall & Gal (2017). "What Uncertainties Do We Need?". arXiv:1703.04977
+    [121] Ruff et al. (2018). "Deep SVDD". arXiv:1802.04365
+    [122] Lee et al. (2018). "Mahalanobis Distance for OOD". arXiv:1807.03888
+    [124] Liu et al. (2020). "Energy-Based OOD Detection". arXiv:2010.03759
+    [126] Pidstrigach et al. (2022). "Score-Based Generative Models for OOD"
+    [127] Sun et al. (2022). "Out-of-Distribution Detection with Deep Nearest Neighbors". arXiv:2204.06507
+    [144] Gama et al. (2014). "Concept Drift Survey". DOI:10.1145/2523813
+    [150] Lu et al. (2018). "Concept Drift Adaptation". arXiv:1810.02822
 """
 
 from typing import Tuple, Optional

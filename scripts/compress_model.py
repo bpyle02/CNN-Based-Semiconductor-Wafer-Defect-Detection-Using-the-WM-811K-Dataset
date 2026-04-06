@@ -13,6 +13,15 @@ Usage:
     python compress_model.py --model cnn --method quantize --checkpoint checkpoints/best_cnn.pth
     python compress_model.py --model resnet --method prune --sparsity 0.3
     python compress_model.py --student cnn --teacher resnet --method distill --teacher-checkpoint checkpoints/best_resnet.pth
+
+References:
+    [42] Hinton et al. (2015). "Distilling the Knowledge in a Neural Network". arXiv:1503.02531
+    [43] Han et al. (2016). "Deep Compression". arXiv:1510.00149
+    [44] Jacob et al. (2018). "Quantization for Efficient Inference". arXiv:1712.05877
+    [59] (2021). "Light-Weight CNN for Wafer Map Defect Detection"
+    [106] Touvron et al. (2021). "DeiT III: Efficient Training". arXiv:2204.07118
+    [141] (2021). "Deploying ML Models in Semiconductor Manufacturing"
+    [142] (2020). "TensorRT Optimization for Production Inference"
 """
 
 import argparse

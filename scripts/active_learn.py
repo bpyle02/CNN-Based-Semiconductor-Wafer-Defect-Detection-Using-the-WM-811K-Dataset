@@ -27,6 +27,9 @@ Usage:
     python active_learn.py --model cnn --initial-labeled 0.1 --acquisition-size 100
     python active_learn.py --model all --n-iterations 5 --strategy entropy
     python active_learn.py --model cnn --prioritized --alpha 0.6 --beta-start 0.4
+
+References:
+    [50] Gal et al. (2017). "Deep Bayesian Active Learning with Image Data". arXiv:1703.02910
 """
 
 import argparse

@@ -5,13 +5,21 @@ Supports multiple aggregation strategies:
 - Voting: Majority vote from predictions
 - Averaging: Average of softmax probabilities
 - Weighted Averaging: Weighted combination of probabilities
+- Learned Weights: Optimized per-model weights via validation macro F1
+- Stacking: Meta-learner trained on base model softmax outputs
+
+References:
+    [30] Lakshminarayanan et al. (2017). "Deep Ensembles". arXiv:1612.01474
 """
 
 from typing import Callable, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
-from torch.utils.data import DataLoader
+from scipy.optimize import minimize
+from sklearn.metrics import f1_score
+from torch.utils.data import DataLoader, TensorDataset
 import logging
 
 logger = logging.getLogger(__name__)
@@ -280,6 +288,370 @@ def create_ensemble_from_checkpoints(
         models.append(model)
 
     return EnsembleModel(models, aggregation=aggregation)
+
+
+class LearnedWeightEnsemble(nn.Module):
+    """Ensemble with weights learned to maximize macro F1 on validation data.
+
+    Optimizes per-model weights using the validation set's macro F1 score.
+    Uses scipy.optimize.minimize to find optimal weights under a simplex constraint.
+
+    Reference: [30] Lakshminarayanan et al. (2017). arXiv:1612.01474
+    """
+
+    def __init__(self, models: List[nn.Module], device: str = "cpu") -> None:
+        super().__init__()
+        self.models = nn.ModuleList(models)
+        self.num_models = len(models)
+        self.device = torch.device(device)
+        # Initialize uniform weights
+        self.register_buffer(
+            "weights",
+            torch.ones(self.num_models, dtype=torch.float32) / self.num_models,
+        )
+
+    @torch.no_grad()
+    def _collect_predictions(
+        self, loader: DataLoader
+    ) -> Tuple[List[np.ndarray], np.ndarray]:
+        """Collect softmax predictions from every base model on a data loader.
+
+        Returns:
+            all_probs: list of length num_models, each (N, C) numpy array of softmax probs
+            all_labels: (N,) numpy array of ground-truth labels
+        """
+        self.eval()
+        self.to(self.device)
+
+        per_model_probs: List[List[np.ndarray]] = [[] for _ in range(self.num_models)]
+        all_labels: List[np.ndarray] = []
+
+        for images, labels in loader:
+            images = images.to(self.device)
+            all_labels.append(labels.cpu().numpy())
+
+            for i, model in enumerate(self.models):
+                logits = model(images)
+                probs = torch.softmax(logits, dim=1).cpu().numpy()
+                per_model_probs[i].append(probs)
+
+        all_probs = [np.concatenate(p, axis=0) for p in per_model_probs]
+        labels_arr = np.concatenate(all_labels, axis=0)
+        return all_probs, labels_arr
+
+    def optimize_weights(
+        self, val_loader: DataLoader, class_names: List[str]
+    ) -> np.ndarray:
+        """Find weights that maximize macro F1 on validation set.
+
+        Uses Nelder-Mead optimization over the probability simplex.
+        The objective function computes the negative macro F1 of the
+        weighted-average softmax predictions.
+
+        Args:
+            val_loader: Validation data loader.
+            class_names: List of class name strings (used for logging).
+
+        Returns:
+            Optimal weight vector as a numpy array of shape (num_models,).
+        """
+        all_probs, labels = self._collect_predictions(val_loader)
+
+        def _softmax_weights(raw: np.ndarray) -> np.ndarray:
+            """Project raw parameters onto the probability simplex via softmax."""
+            shifted = raw - raw.max()
+            exp_w = np.exp(shifted)
+            return exp_w / exp_w.sum()
+
+        def objective(raw: np.ndarray) -> float:
+            """Negative macro F1 of weighted-average predictions."""
+            w = _softmax_weights(raw)
+            blended = sum(w[i] * all_probs[i] for i in range(self.num_models))
+            preds = blended.argmax(axis=1)
+            score = f1_score(labels, preds, average="macro", zero_division=0)
+            return -score
+
+        # Start from uniform (raw zeros -> softmax -> uniform)
+        x0 = np.zeros(self.num_models)
+        result = minimize(objective, x0, method="Nelder-Mead", options={"maxiter": 1000, "xatol": 1e-5, "fatol": 1e-6})
+        optimal_weights = _softmax_weights(result.x)
+
+        # Store optimized weights in the buffer
+        self.weights.copy_(torch.tensor(optimal_weights, dtype=torch.float32))
+
+        best_f1 = -result.fun
+        logger.info(
+            "LearnedWeightEnsemble optimized weights: %s (macro F1=%.4f)",
+            [f"{w:.4f}" for w in optimal_weights],
+            best_f1,
+        )
+        return optimal_weights
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Weighted ensemble forward pass.
+
+        Args:
+            x: Input tensor (batch_size, channels, height, width).
+
+        Returns:
+            Log-probabilities (batch_size, num_classes).
+        """
+        probs_list = []
+        with torch.no_grad():
+            for model in self.models:
+                logits = model(x)
+                probs_list.append(torch.softmax(logits, dim=1))
+
+        weighted_probs = sum(
+            self.weights[i] * probs_list[i] for i in range(self.num_models)
+        )
+        return torch.log(weighted_probs + 1e-10)
+
+    def predict(self, images: torch.Tensor) -> torch.Tensor:
+        """Weighted ensemble prediction (class indices).
+
+        Args:
+            images: Input tensor (batch_size, channels, height, width).
+
+        Returns:
+            Predicted class indices (batch_size,).
+        """
+        log_probs = self.forward(images)
+        return log_probs.argmax(dim=1)
+
+    def evaluate(
+        self, test_loader: DataLoader, class_names: List[str]
+    ) -> Dict[str, float]:
+        """Evaluate ensemble on a test set.
+
+        Args:
+            test_loader: Test data loader.
+            class_names: List of class name strings.
+
+        Returns:
+            Dictionary with accuracy, macro_f1, and weighted_f1.
+        """
+        from sklearn.metrics import accuracy_score
+
+        self.eval()
+        self.to(self.device)
+
+        all_preds: List[np.ndarray] = []
+        all_labels: List[np.ndarray] = []
+
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images = images.to(self.device)
+                preds = self.predict(images).cpu().numpy()
+                all_preds.append(preds)
+                all_labels.append(labels.cpu().numpy())
+
+        preds_arr = np.concatenate(all_preds)
+        labels_arr = np.concatenate(all_labels)
+
+        accuracy = accuracy_score(labels_arr, preds_arr)
+        macro_f1 = f1_score(labels_arr, preds_arr, average="macro", zero_division=0)
+        weighted_f1 = f1_score(labels_arr, preds_arr, average="weighted", zero_division=0)
+
+        logger.info(
+            "LearnedWeightEnsemble test — Accuracy: %.4f, Macro F1: %.4f, Weighted F1: %.4f",
+            accuracy,
+            macro_f1,
+            weighted_f1,
+        )
+        return {
+            "accuracy": accuracy,
+            "macro_f1": macro_f1,
+            "weighted_f1": weighted_f1,
+        }
+
+
+class StackingEnsemble(nn.Module):
+    """Stacking ensemble: train a meta-learner on base model predictions.
+
+    Each base model produces softmax outputs on validation data.
+    A small neural network (meta-learner) is trained to combine these predictions.
+
+    Architecture: Linear(num_models * num_classes, num_classes).
+    """
+
+    def __init__(
+        self,
+        models: List[nn.Module],
+        num_classes: int = 9,
+        device: str = "cpu",
+    ) -> None:
+        super().__init__()
+        self.base_models = nn.ModuleList(models)
+        self.num_models = len(models)
+        self.num_classes = num_classes
+        self.device = torch.device(device)
+
+        input_dim = self.num_models * num_classes
+        self.meta_learner = nn.Linear(input_dim, num_classes)
+
+    @torch.no_grad()
+    def _collect_base_features(
+        self, loader: DataLoader
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Run base models on a loader, concatenate softmax outputs.
+
+        Returns:
+            features: (N, num_models * num_classes) tensor
+            labels: (N,) tensor
+        """
+        self.eval()
+        for m in self.base_models:
+            m.to(self.device)
+            m.eval()
+
+        feat_chunks: List[torch.Tensor] = []
+        label_chunks: List[torch.Tensor] = []
+
+        for images, labels in loader:
+            images = images.to(self.device)
+            batch_feats = []
+            for model in self.base_models:
+                logits = model(images)
+                probs = torch.softmax(logits, dim=1)
+                batch_feats.append(probs)
+            # Concatenate along class dimension -> (batch, num_models * num_classes)
+            combined = torch.cat(batch_feats, dim=1)
+            feat_chunks.append(combined.cpu())
+            label_chunks.append(labels)
+
+        return torch.cat(feat_chunks, dim=0), torch.cat(label_chunks, dim=0)
+
+    def fit(
+        self,
+        val_loader: DataLoader,
+        epochs: int = 50,
+        lr: float = 0.01,
+    ) -> List[float]:
+        """Train meta-learner on validation predictions.
+
+        Args:
+            val_loader: Validation data loader.
+            epochs: Training epochs for the meta-learner.
+            lr: Learning rate for the meta-learner optimizer.
+
+        Returns:
+            List of per-epoch training losses.
+        """
+        features, labels = self._collect_base_features(val_loader)
+
+        meta_dataset = TensorDataset(features, labels)
+        meta_loader = DataLoader(meta_dataset, batch_size=256, shuffle=True)
+
+        self.meta_learner.to(self.device)
+        self.meta_learner.train()
+        optimizer = torch.optim.Adam(self.meta_learner.parameters(), lr=lr, weight_decay=1e-4)
+        criterion = nn.CrossEntropyLoss()
+
+        epoch_losses: List[float] = []
+        for epoch in range(epochs):
+            running_loss = 0.0
+            n_batches = 0
+            for feat_batch, label_batch in meta_loader:
+                feat_batch = feat_batch.to(self.device)
+                label_batch = label_batch.to(self.device)
+
+                optimizer.zero_grad()
+                logits = self.meta_learner(feat_batch)
+                loss = criterion(logits, label_batch)
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+                n_batches += 1
+            avg_loss = running_loss / max(n_batches, 1)
+            epoch_losses.append(avg_loss)
+
+        logger.info(
+            "StackingEnsemble meta-learner trained for %d epochs (final loss=%.4f)",
+            epochs,
+            epoch_losses[-1] if epoch_losses else float("nan"),
+        )
+        return epoch_losses
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Stacked ensemble forward pass.
+
+        Args:
+            x: Input tensor (batch_size, channels, height, width).
+
+        Returns:
+            Logits from meta-learner (batch_size, num_classes).
+        """
+        batch_feats = []
+        with torch.no_grad():
+            for model in self.base_models:
+                logits = model(x)
+                probs = torch.softmax(logits, dim=1)
+                batch_feats.append(probs)
+        combined = torch.cat(batch_feats, dim=1)
+        return self.meta_learner(combined)
+
+    def predict(self, images: torch.Tensor) -> torch.Tensor:
+        """Stacked ensemble prediction (class indices).
+
+        Args:
+            images: Input tensor (batch_size, channels, height, width).
+
+        Returns:
+            Predicted class indices (batch_size,).
+        """
+        logits = self.forward(images)
+        return logits.argmax(dim=1)
+
+    def evaluate(
+        self, test_loader: DataLoader, class_names: List[str]
+    ) -> Dict[str, float]:
+        """Evaluate stacking ensemble on a test set.
+
+        Args:
+            test_loader: Test data loader.
+            class_names: List of class name strings.
+
+        Returns:
+            Dictionary with accuracy, macro_f1, and weighted_f1.
+        """
+        from sklearn.metrics import accuracy_score
+
+        self.to(self.device)
+        for m in self.base_models:
+            m.to(self.device)
+            m.eval()
+        self.meta_learner.eval()
+
+        all_preds: List[np.ndarray] = []
+        all_labels: List[np.ndarray] = []
+
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images = images.to(self.device)
+                preds = self.predict(images).cpu().numpy()
+                all_preds.append(preds)
+                all_labels.append(labels.cpu().numpy())
+
+        preds_arr = np.concatenate(all_preds)
+        labels_arr = np.concatenate(all_labels)
+
+        accuracy = accuracy_score(labels_arr, preds_arr)
+        macro_f1 = f1_score(labels_arr, preds_arr, average="macro", zero_division=0)
+        weighted_f1 = f1_score(labels_arr, preds_arr, average="weighted", zero_division=0)
+
+        logger.info(
+            "StackingEnsemble test — Accuracy: %.4f, Macro F1: %.4f, Weighted F1: %.4f",
+            accuracy,
+            macro_f1,
+            weighted_f1,
+        )
+        return {
+            "accuracy": accuracy,
+            "macro_f1": macro_f1,
+            "weighted_f1": weighted_f1,
+        }
 
 
 if __name__ == "__main__":

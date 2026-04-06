@@ -8,6 +8,10 @@ Methods:
     - Fine-tuning: Simple transfer learning on target domain
     - CORAL: Correlation Alignment for domain-invariant features
     - Domain-adversarial training: Adversarial loss to align source and target
+
+References:
+    [40] Sun & Saenko (2016). "Deep CORAL". arXiv:1607.01719
+    [41] Ganin et al. (2016). "Domain-Adversarial Training". arXiv:1505.07818
 """
 
 import torch

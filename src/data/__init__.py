@@ -14,6 +14,8 @@ try:
         WaferMapDataset,
         get_imagenet_normalize,
         seed_worker,
+        MixupCutmix,
+        ClassBalancedSampler,
     )
 except ImportError as exc:
     _PREPROCESSING_IMPORT_ERROR = exc
@@ -42,6 +44,14 @@ except ImportError as exc:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             _raise_preprocessing_import_error()
 
+    class MixupCutmix:  # type: ignore[override]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            _raise_preprocessing_import_error()
+
+    class ClassBalancedSampler:  # type: ignore[override]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            _raise_preprocessing_import_error()
+
 __all__ = [
     'load_dataset',
     'extract_failure_label',
@@ -52,4 +62,6 @@ __all__ = [
     'get_image_transforms',
     'get_imagenet_normalize',
     'seed_worker',
+    'MixupCutmix',
+    'ClassBalancedSampler',
 ]
