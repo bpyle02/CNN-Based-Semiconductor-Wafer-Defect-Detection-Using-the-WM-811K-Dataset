@@ -18,8 +18,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 logger = logging.getLogger(__name__)
 
-MODEL_ALIASES = {"effnet": "efficientnet"}
-SUPPORTED_MODELS = {"cnn", "resnet", "efficientnet"}
+MODEL_ALIASES = {"effnet": "efficientnet", "vit_small": "vit", "vit_tiny": "vit"}
+SUPPORTED_MODELS = {"cnn", "resnet", "efficientnet", "vit"}
 
 
 def canonicalize_model_name(value: str, allow_all: bool = False) -> str:
@@ -40,6 +40,12 @@ class StrictConfigModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class SyntheticAugConfig(StrictConfigModel):
+    """Config for synthetic defect generation to balance rare classes."""
+    enabled: bool = False
+    target_per_class: Optional[int] = None  # None = match max class count
+
+
 class AugmentationConfig(StrictConfigModel):
     enabled: bool = True
     random_rotation: float = 15.0
@@ -48,6 +54,7 @@ class AugmentationConfig(StrictConfigModel):
     gaussian_noise: float = 0.01
     brightness: float = 0.1
     contrast: float = 0.1
+    synthetic: SyntheticAugConfig = Field(default_factory=SyntheticAugConfig)
 
 
 class DataConfig(StrictConfigModel):
@@ -91,7 +98,13 @@ class ModelConfig(StrictConfigModel):
     num_classes: int = 9
     dropout_rate: float = 0.5
     use_batch_norm: bool = False
+    feature_channels: List[int] = Field(default_factory=list)
+    head_hidden_dim: Optional[int] = None
+    head_dropout: Optional[float] = None
     freeze_until: Optional[str] = None
+    frozen_prefixes: Optional[List[str]] = None
+    attention_type: Optional[str] = None  # None, "se", or "cbam"
+    attention_reduction: int = 16
     parameters: ModelParameterConfig = Field(default_factory=ModelParameterConfig)
 
 
@@ -100,8 +113,11 @@ class ModelCollectionConfig(StrictConfigModel):
         default_factory=lambda: ModelConfig(
             name="Custom CNN",
             architecture="custom",
-            input_channels=1,
+            input_channels=3,
             use_batch_norm=True,
+            feature_channels=[32, 64, 128, 256],
+            head_hidden_dim=128,
+            head_dropout=0.3,
         )
     )
     resnet: ModelConfig = Field(
@@ -120,6 +136,14 @@ class ModelCollectionConfig(StrictConfigModel):
             freeze_until="features.6",
         )
     )
+    vit: ModelConfig = Field(
+        default_factory=lambda: ModelConfig(
+            name="ViT-small",
+            architecture="vit_small",
+            input_channels=3,
+            dropout_rate=0.1,
+        )
+    )
 
 
 class SchedulerConfig(StrictConfigModel):
@@ -128,13 +152,65 @@ class SchedulerConfig(StrictConfigModel):
     factor: float = 0.5
     patience: int = 3
     min_lr: float = 1e-6
+    step_size: int = 5
+    t_max: Optional[int] = None
+    eta_min: float = 0.0
     verbose: bool = True
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, value: str) -> str:
+        normalized = str(value).strip()
+        aliases = {
+            "plateau": "ReduceLROnPlateau",
+            "reducelronplateau": "ReduceLROnPlateau",
+            "step": "StepLR",
+            "steplr": "StepLR",
+            "cosine": "CosineAnnealingLR",
+            "cosineannealinglr": "CosineAnnealingLR",
+            "none": "none",
+            "off": "none",
+            "disabled": "none",
+        }
+        canonical = aliases.get(normalized.lower(), normalized)
+        if canonical not in {"ReduceLROnPlateau", "StepLR", "CosineAnnealingLR", "none"}:
+            raise ValueError(
+                "scheduler.type must be one of: ReduceLROnPlateau, StepLR, CosineAnnealingLR, none"
+            )
+        return canonical
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, value: str) -> str:
+        normalized = str(value).strip().lower()
+        if normalized not in {"min", "max"}:
+            raise ValueError("scheduler.mode must be one of: min, max")
+        return normalized
 
 
 class LossConfig(StrictConfigModel):
     type: str = "CrossEntropyLoss"
     weighted: bool = True
     class_weights: Optional[List[float]] = None
+    label_smoothing: float = Field(default=0.0, ge=0.0, le=1.0)
+    focal_gamma: float = Field(default=2.0, ge=0.0)
+    reduction: str = "mean"
+
+    @field_validator("type")
+    @classmethod
+    def validate_loss_type(cls, value: str) -> str:
+        normalized = str(value).strip()
+        if normalized not in {"CrossEntropyLoss", "FocalLoss"}:
+            raise ValueError("loss.type must be one of: CrossEntropyLoss, FocalLoss")
+        return normalized
+
+    @field_validator("reduction")
+    @classmethod
+    def validate_reduction(cls, value: str) -> str:
+        normalized = str(value).strip().lower()
+        if normalized not in {"mean", "sum", "none"}:
+            raise ValueError("loss.reduction must be one of: mean, sum, none")
+        return normalized
 
 
 class EarlyStoppingConfig(StrictConfigModel):
@@ -148,6 +224,14 @@ class CheckpointingConfig(StrictConfigModel):
     save_dir: str = "checkpoints"
     save_best_only: bool = True
     metric: str = "val_loss"
+
+    @field_validator("metric")
+    @classmethod
+    def validate_metric(cls, value: str) -> str:
+        normalized = str(value).strip()
+        if normalized not in {"val_loss", "val_acc", "val_macro_f1"}:
+            raise ValueError("checkpointing.metric must be one of: val_loss, val_acc, val_macro_f1")
+        return normalized
 
 
 class TrainingConfig(StrictConfigModel):
@@ -166,7 +250,10 @@ class TrainingConfig(StrictConfigModel):
     weight_decay: float = Field(default=1e-4, ge=0)
     gradient_clip_max_norm: float = 1.0
     optimizer: str = "adam"
+    momentum: float = Field(default=0.9, ge=0.0)
+    nesterov: bool = True
     use_focal_loss: bool = False
+    mixed_precision: bool = False
     seed: int = 42
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     loss: LossConfig = Field(default_factory=LossConfig)

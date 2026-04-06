@@ -25,8 +25,8 @@ from collections import Counter
 from src.data.dataset import load_dataset, KNOWN_CLASSES
 from src.data.preprocessing import preprocess_wafer_maps
 from src.augmentation.synthetic import (
-    SyntheticDataAugmenter,
-    WaferMapGenerator,
+    DefectSimulator,
+    SyntheticDataGenerator,
     balance_dataset_with_synthetic,
 )
 import logging
@@ -152,7 +152,7 @@ def main() -> None:
     if args.visualize_only:
         # ---- Visualization Only ----
         logger.info("\n=== Generating and Visualizing Samples ===")
-        augmenter = SyntheticDataAugmenter(
+        augmenter = SyntheticDataGenerator(
             generator_type=args.generator,
             image_size=96,
             device=device
@@ -167,7 +167,7 @@ def main() -> None:
     # ---- Train GAN (if applicable) ----
     if args.generator == 'gan':
         logger.info("\n=== Training GAN ===")
-        augmenter = SyntheticDataAugmenter(
+        augmenter = SyntheticDataGenerator(
             generator_type='gan',
             image_size=96,
             device=device
@@ -206,7 +206,7 @@ def main() -> None:
 
     # ---- Visualization ----
     logger.info("\n=== Visualizing Generated Samples ===")
-    augmenter = SyntheticDataAugmenter(
+    augmenter = SyntheticDataGenerator(
         generator_type=args.generator,
         image_size=96,
         device=device

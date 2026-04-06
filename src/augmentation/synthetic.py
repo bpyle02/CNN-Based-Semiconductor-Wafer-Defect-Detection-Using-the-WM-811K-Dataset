@@ -57,6 +57,43 @@ class DefectSimulator:
         return np.clip(wafer, 0, 1)
 
 
+def balance_dataset_with_synthetic(
+    wafer_maps: np.ndarray,
+    labels: np.ndarray,
+    target_per_class: Optional[int] = None,
+    size: int = 96,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Balance a dataset by generating synthetic samples for underrepresented classes.
+
+    Args:
+        wafer_maps: Array of preprocessed (H, W) wafer maps
+        labels: 1D array of integer class labels
+        target_per_class: Target count per class (None = match max class)
+        size: Size of generated maps
+
+    Returns:
+        Tuple of (augmented_maps, augmented_labels)
+    """
+    from collections import Counter
+    counts = Counter(labels)
+    if target_per_class is None:
+        target_per_class = max(counts.values())
+
+    gen = SyntheticDataGenerator(method='rule_based')
+    new_maps = list(wafer_maps)
+    new_labels = list(labels)
+
+    for cls_id, count in sorted(counts.items()):
+        deficit = target_per_class - count
+        if deficit <= 0:
+            continue
+        synthetic = gen.generate(deficit, cls_id, size)
+        new_maps.extend(synthetic)
+        new_labels.extend([cls_id] * deficit)
+
+    return np.array(new_maps, dtype=np.float32), np.array(new_labels)
+
+
 class SyntheticDataGenerator:
     """High-level interface for synthetic data generation."""
 

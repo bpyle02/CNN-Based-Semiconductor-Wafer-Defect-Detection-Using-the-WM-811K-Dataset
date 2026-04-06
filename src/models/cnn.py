@@ -5,11 +5,13 @@ Implements a lightweight convolutional neural network optimized for CPU inferenc
 on 96x96 wafer map images.
 """
 
-from typing import Tuple
+from __future__ import annotations
+
+import logging
+from typing import Sequence, Tuple
 
 import torch
 import torch.nn as nn
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,77 +22,103 @@ class WaferCNN(nn.Module):
 
     Architecture:
         - Input: 3x96x96 (replicated grayscale channels)
-        - Conv blocks with ReLU, BatchNorm, MaxPool
-        - Dropout for regularization
-        - Fully connected layers with Dropout
-        - Output: 9-class logits (8 defect types + 'none')
+        - Configurable convolutional feature stages
+        - Global average pooling
+        - Configurable classifier head depth and dropout
+        - Output: logits for ``num_classes``
 
-    Design rationale:
-        - Lightweight (suitable for CPU training)
-        - BatchNorm for training stability
-        - Dropout (0.3-0.5) to prevent overfitting
-        - No pre-training needed (task-specific architecture)
+    The defaults preserve the existing architecture, but the feature widths and
+    classifier head can now be adjusted from training code without changing the
+    model definition itself.
     """
 
-    def __init__(self, num_classes: int = 9) -> None:
+    def __init__(
+        self,
+        num_classes: int = 9,
+        input_channels: int = 3,
+        feature_channels: Sequence[int] | None = (32, 64, 128, 256),
+        dropout_rate: float = 0.5,
+        head_hidden_dim: int | None = 128,
+        head_dropout: float | None = 0.3,
+        use_batch_norm: bool = True,
+    ) -> None:
         """
         Initialize the custom CNN.
 
         Args:
             num_classes: Number of output classes (default 9 for wafer defects)
+            input_channels: Number of input channels. Default keeps the current
+                replicated grayscale convention.
+            feature_channels: Output width for each convolutional stage.
+            dropout_rate: Dropout probability before the classifier head.
+            head_hidden_dim: Optional hidden width for the classifier head. Set
+                to ``None`` for a single linear layer.
+            head_dropout: Dropout probability between hidden and output layers
+                when ``head_hidden_dim`` is enabled.
+            use_batch_norm: Whether to apply BatchNorm after each convolution.
         """
         super().__init__()
 
+        if feature_channels is None:
+            feature_channels = (32, 64, 128, 256)
+        feature_channels = tuple(feature_channels)
+        if not feature_channels:
+            raise ValueError("feature_channels must contain at least one stage")
+        if any(channel <= 0 for channel in feature_channels):
+            raise ValueError("feature_channels values must be positive")
+        if num_classes <= 0:
+            raise ValueError("num_classes must be positive")
+        if input_channels <= 0:
+            raise ValueError("input_channels must be positive")
+        if not 0.0 <= dropout_rate < 1.0:
+            raise ValueError("dropout_rate must be in the interval [0, 1)")
+        if head_hidden_dim is not None and head_hidden_dim <= 0:
+            raise ValueError("head_hidden_dim must be positive when provided")
+        if head_dropout is None:
+            head_dropout = 0.3
+        if not 0.0 <= head_dropout < 1.0:
+            raise ValueError("head_dropout must be in the interval [0, 1)")
+
+        self.num_classes = num_classes
+        self.input_channels = input_channels
+        self.feature_channels = feature_channels
+        self.dropout_rate = dropout_rate
+        self.head_hidden_dim = head_hidden_dim
+        self.head_dropout = head_dropout
+        self.use_batch_norm = use_batch_norm
+
         # Feature extraction (conv blocks)
-        self.features = nn.Sequential(
-            # Block 1: 3 -> 32 channels
-            nn.Conv2d(3, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),  # 96 -> 48
+        layers: list[nn.Module] = []
+        in_channels = input_channels
+        for out_channels in feature_channels:
+            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1))
+            if use_batch_norm:
+                layers.append(nn.BatchNorm2d(out_channels))
+            layers.append(nn.ReLU(inplace=True))
+            layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1))
+            if use_batch_norm:
+                layers.append(nn.BatchNorm2d(out_channels))
+            layers.append(nn.ReLU(inplace=True))
+            layers.append(nn.MaxPool2d(2, 2))
+            in_channels = out_channels
 
-            # Block 2: 32 -> 64 channels
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),  # 48 -> 24
-
-            # Block 3: 64 -> 128 channels
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),  # 24 -> 12
-
-            # Block 4: 128 -> 256 channels
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),  # 12 -> 6
-        )
-
-        # Global average pooling: (B, 256, 6, 6) -> (B, 256)
+        self.features = nn.Sequential(*layers)
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
         # Classification head
-        self.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(256, 128),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-            nn.Linear(128, num_classes),
-        )
+        classifier_layers: list[nn.Module] = [nn.Dropout(dropout_rate)]
+        if head_hidden_dim is None:
+            classifier_layers.append(nn.Linear(feature_channels[-1], num_classes))
+        else:
+            classifier_layers.extend(
+                [
+                    nn.Linear(feature_channels[-1], head_hidden_dim),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(head_dropout),
+                    nn.Linear(head_hidden_dim, num_classes),
+                ]
+            )
+        self.classifier = nn.Sequential(*classifier_layers)
 
         self._init_weights()
 
@@ -98,14 +126,14 @@ class WaferCNN(nn.Module):
         """Initialize weights using He initialization for ReLU networks."""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -113,7 +141,7 @@ class WaferCNN(nn.Module):
         Forward pass through the network.
 
         Args:
-            x: Input tensor (B, 3, 96, 96)
+            x: Input tensor (B, C, H, W)
 
         Returns:
             Output logits (B, num_classes)
@@ -143,7 +171,7 @@ def count_parameters(model: nn.Module) -> Tuple[int, int]:
 if __name__ == "__main__":
     model = WaferCNN(num_classes=9)
     total, trainable = count_parameters(model)
-    logger.info(f"WaferCNN:")
+    logger.info("WaferCNN:")
     logger.info(f"  Total parameters: {total:,}")
     logger.info(f"  Trainable parameters: {trainable:,}")
 

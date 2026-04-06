@@ -1,53 +1,56 @@
 # Makefile for CNN-Based Semiconductor Wafer Defect Detection
 
+CONDA_ENV ?= base
+CONDA_RUN := conda run --no-capture-output -n $(CONDA_ENV)
+
 .PHONY: install bootstrap doctor train dashboard test test-cov defense demo federated active_learn compress progressive ood docs
 
 # 1. Installation
 install:
-	python -m pip install -e ".[dev]"
+	$(CONDA_RUN) python -s -m pip install -e ".[dev]"
 
 bootstrap:
-	python scripts/bootstrap_env.py
+	$(CONDA_RUN) python -s scripts/bootstrap_env.py
 
 doctor:
-	python scripts/doctor.py
+	$(CONDA_RUN) python -s scripts/doctor.py
 
 # 2. Main Training Pipeline (Refactored)
 train:
-	python train.py --model all --epochs 5
+	$(CONDA_RUN) python -s train.py --model all --epochs 5
 
 # 3. Interactive Dashboard (Streamlit)
 dashboard:
-	streamlit run scripts/dashboard.py
+	$(CONDA_RUN) python -s -m streamlit run scripts/dashboard.py
 
 # 4. Advanced ML Workflows
 federated:
-	pytest tests/unit/test_federated.py -v
+	$(CONDA_RUN) python -s -m pytest tests/unit/test_federated.py -v
 
 active_learn:
-	python scripts/active_learn.py --model cnn --n-iterations 3
+	$(CONDA_RUN) python -s scripts/active_learn.py --model cnn --n-iterations 3
 
 compress:
-	python scripts/compress_model.py --model cnn --method quantize
+	$(CONDA_RUN) python -s scripts/compress_model.py --model cnn --method quantize
 
 progressive:
-	python scripts/progressive_train.py --model cnn
+	$(CONDA_RUN) python -s scripts/progressive_train.py --model cnn
 
 # 5. Testing & Validation
 test:
-	pytest -q
+	$(CONDA_RUN) python -s -m pytest -q
 
 test-cov:
-	pytest --cov=src --cov-report=term-missing
+	$(CONDA_RUN) python -s -m pytest --cov=src --cov-report=term-missing
 
 ood:
-	pytest tests/test_improvements.py::test_ood_detection -v
+	$(CONDA_RUN) python -s -m pytest tests/test_improvements.py::test_ood_detection -v
 
 demo:
-	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_defense_demo.ps1
+	$(CONDA_RUN) powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_defense_demo.ps1
 
 defense:
-	python scripts/finalize_submission.py
+	$(CONDA_RUN) python -s scripts/finalize_submission.py
 
 # 6. Documentation
 docs:

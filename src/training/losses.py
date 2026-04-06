@@ -1,4 +1,4 @@
-"""Custom loss functions for training models on imbalanced datasets."""
+"""Custom loss functions and builders for training on imbalanced datasets."""
 
 from __future__ import annotations
 
@@ -22,15 +22,23 @@ class FocalLoss(nn.Module):
         weight: Optional[torch.Tensor] = None,
         gamma: float = 2.0,
         reduction: str = "mean",
+        label_smoothing: float = 0.0,
     ) -> None:
         super().__init__()
-        self.weight = weight
+        self.register_buffer("weight", weight.clone().detach() if weight is not None else None)
         self.gamma = gamma
         self.reduction = reduction
+        self.label_smoothing = label_smoothing
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        ce_loss = F.cross_entropy(inputs, targets, weight=self.weight, reduction="none")
-        pt = torch.exp(-ce_loss)
+        ce_loss = F.cross_entropy(
+            inputs,
+            targets,
+            weight=self.weight,
+            reduction="none",
+            label_smoothing=self.label_smoothing,
+        )
+        pt = torch.softmax(inputs, dim=1).gather(1, targets.unsqueeze(1)).squeeze(1)
         focal_loss = ((1 - pt) ** self.gamma) * ce_loss
 
         if self.reduction == "mean":
@@ -38,3 +46,30 @@ class FocalLoss(nn.Module):
         if self.reduction == "sum":
             return focal_loss.sum()
         return focal_loss
+
+
+def build_classification_loss(
+    loss_name: str = "CrossEntropyLoss",
+    *,
+    class_weights: Optional[torch.Tensor] = None,
+    label_smoothing: float = 0.0,
+    focal_gamma: float = 2.0,
+    reduction: str = "mean",
+) -> nn.Module:
+    """Create a classification loss function from normalized config values."""
+    if loss_name == "FocalLoss":
+        return FocalLoss(
+            weight=class_weights,
+            gamma=focal_gamma,
+            reduction=reduction,
+            label_smoothing=label_smoothing,
+        )
+
+    if loss_name != "CrossEntropyLoss":
+        raise ValueError(f"Unsupported loss function: {loss_name}")
+
+    return nn.CrossEntropyLoss(
+        weight=class_weights,
+        reduction=reduction,
+        label_smoothing=label_smoothing,
+    )

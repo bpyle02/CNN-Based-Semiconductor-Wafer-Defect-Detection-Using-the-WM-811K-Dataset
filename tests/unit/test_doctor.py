@@ -64,7 +64,11 @@ def test_build_summary_reports_healthy_env(monkeypatch, workspace_tmp_path):
     monkeypatch.setattr(doctor, "DEFAULT_CONFIG_PATH", config_path)
     monkeypatch.setattr(doctor, "DEFAULT_DATASET_PATH", dataset_path)
     monkeypatch.setattr(doctor, "_check_python_compatibility", lambda: True)
+    monkeypatch.setenv("CONDA_DEFAULT_ENV", "base")
     python_parent = Path(doctor.sys.executable).resolve().parent
+    monkeypatch.setenv("CONDA_PREFIX", str(python_parent))
+    monkeypatch.setenv("CONDA_EXE", str((python_parent / "Scripts" / "conda.exe").resolve()))
+    package_root = python_parent / "Lib" / "site-packages"
 
     def fake_which(name: str):
         if name == "pytest":
@@ -74,7 +78,7 @@ def test_build_summary_reports_healthy_env(monkeypatch, workspace_tmp_path):
         return None
 
     monkeypatch.setattr(doctor.shutil, "which", fake_which)
-    monkeypatch.setattr(doctor.metadata, "distribution", _fake_distribution_factory(workspace_tmp_path))
+    monkeypatch.setattr(doctor.metadata, "distribution", _fake_distribution_factory(package_root))
 
     summary = doctor.build_summary()
 
@@ -94,6 +98,11 @@ def test_build_summary_flags_python_pytest_split(monkeypatch, workspace_tmp_path
     monkeypatch.setattr(doctor, "DEFAULT_CONFIG_PATH", config_path)
     monkeypatch.setattr(doctor, "DEFAULT_DATASET_PATH", dataset_path)
     monkeypatch.setattr(doctor, "_check_python_compatibility", lambda: True)
+    monkeypatch.setenv("CONDA_DEFAULT_ENV", "base")
+    python_parent = Path(doctor.sys.executable).resolve().parent
+    monkeypatch.setenv("CONDA_PREFIX", str(python_parent))
+    monkeypatch.setenv("CONDA_EXE", str((python_parent / "Scripts" / "conda.exe").resolve()))
+    package_root = python_parent / "Lib" / "site-packages"
 
     def fake_which(name: str):
         if name == "pytest":
@@ -103,12 +112,43 @@ def test_build_summary_flags_python_pytest_split(monkeypatch, workspace_tmp_path
         return None
 
     monkeypatch.setattr(doctor.shutil, "which", fake_which)
-    monkeypatch.setattr(doctor.metadata, "distribution", _fake_distribution_factory(workspace_tmp_path))
+    monkeypatch.setattr(doctor.metadata, "distribution", _fake_distribution_factory(package_root))
 
     summary = doctor.build_summary()
 
     assert summary.status == "warning"
     assert any("environment split" in issue for issue in summary.issues)
+
+
+def test_build_summary_flags_nonstandard_conda_env(monkeypatch, workspace_tmp_path):
+    config_path = workspace_tmp_path / "config.yaml"
+    dataset_path = workspace_tmp_path / "LSWMD_new.pkl"
+    dataset_path.write_text("dataset", encoding="utf-8")
+    _write_config(config_path, dataset_path)
+
+    monkeypatch.setattr(doctor, "DEFAULT_CONFIG_PATH", config_path)
+    monkeypatch.setattr(doctor, "DEFAULT_DATASET_PATH", dataset_path)
+    monkeypatch.setattr(doctor, "_check_python_compatibility", lambda: True)
+    monkeypatch.setenv("CONDA_DEFAULT_ENV", "py311")
+    python_parent = Path(doctor.sys.executable).resolve().parent
+    monkeypatch.setenv("CONDA_PREFIX", str(python_parent))
+    monkeypatch.setenv("CONDA_EXE", str((python_parent / "Scripts" / "conda.exe").resolve()))
+    package_root = python_parent / "Lib" / "site-packages"
+
+    def fake_which(name: str):
+        if name == "pytest":
+            return str((python_parent / "pytest.exe").resolve())
+        if name == "pip":
+            return str((python_parent / "pip.exe").resolve())
+        return None
+
+    monkeypatch.setattr(doctor.shutil, "which", fake_which)
+    monkeypatch.setattr(doctor.metadata, "distribution", _fake_distribution_factory(package_root))
+
+    summary = doctor.build_summary()
+
+    assert summary.status == "warning"
+    assert any("Standardize on 'base'" in issue for issue in summary.issues)
 
 
 def test_json_mode_emits_machine_readable_summary(monkeypatch, capsys):

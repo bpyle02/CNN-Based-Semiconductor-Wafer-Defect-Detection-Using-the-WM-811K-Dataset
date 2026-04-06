@@ -76,6 +76,12 @@ class TestWaferCNN:
                 assert torch.allclose(module.bias.data, torch.zeros_like(module.bias.data))
                 break
 
+    def test_can_disable_batchnorm(self, batch):
+        model = WaferCNN(num_classes=9, use_batch_norm=False)
+        out = model(batch)
+        assert out.shape == (2, 9)
+        assert not any(isinstance(module, nn.BatchNorm2d) for module in model.modules())
+
 
 # ---------------------------------------------------------------------------
 # ResNet-18
@@ -109,6 +115,10 @@ class TestResNet18:
         for name, param in model.named_parameters():
             if name.startswith('fc'):
                 assert param.requires_grad, f"{name} should be unfrozen"
+
+    def test_no_freezing_when_boundary_disabled(self):
+        model = get_resnet18(num_classes=9, pretrained=False, freeze_until=None)
+        assert len(get_frozen_params(model)) == 0
 
 
 # ---------------------------------------------------------------------------

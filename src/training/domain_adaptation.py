@@ -368,8 +368,14 @@ class DomainAdaptationTrainer:
         lambda_domain: float,
     ) -> Dict[str, Any]:
         """Domain-adversarial training."""
-        # Initialize discriminator
-        feature_dim = 512  # Typical feature dimension
+        # Infer feature dimension from model's final layer
+        feature_dim = getattr(self.model, 'fc', getattr(self.model, 'classifier', [None]))
+        if hasattr(feature_dim, 'in_features'):
+            feature_dim = feature_dim.in_features
+        elif isinstance(feature_dim, nn.Sequential) and len(feature_dim) > 0:
+            feature_dim = feature_dim[-1].in_features if hasattr(feature_dim[-1], 'in_features') else 512
+        else:
+            feature_dim = 512
         self.discriminator = DomainAdversarialLoss(
             feature_dim=feature_dim,
         ).to(self.device)
@@ -421,7 +427,7 @@ class DomainAdaptationTrainer:
                     target_feats = self.model.features(target_images)
                 else:
                     source_feats = source_outputs
-                    target_feats = target_outputs
+                    target_feats = self.model(target_images)
 
                 # Adversarial loss: fool discriminator
                 adv_loss = -lambda_domain * self.discriminator(source_feats, target_feats)

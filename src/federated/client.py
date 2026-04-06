@@ -174,7 +174,7 @@ class ClientManager:
                 f"FAILED for {path}. File may be corrupted or tampered with."
             )
 
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, map_location="cpu", weights_only=False)  # composite checkpoint
         self.client.model.load_state_dict(checkpoint['model'])
         self.round_num = checkpoint['round']
         self.metadata = checkpoint['metadata']

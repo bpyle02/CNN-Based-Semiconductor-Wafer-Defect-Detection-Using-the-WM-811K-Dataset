@@ -8,11 +8,13 @@ Usage:
 """
 
 import argparse
+import inspect
 import json
 import sys
 import time
 from pathlib import Path
 from collections import Counter
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -36,8 +38,10 @@ from src.model_registry import save_checkpoint_with_hash
 from src.config import canonicalize_model_name, load_config, load_merged_config
 from src.data import load_dataset, preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize, seed_worker
 from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+from src.models.vit import get_vit_small
 from src.analysis import evaluate_model
-from src.training.losses import FocalLoss
+from src.mlops import MLFlowLogger, WandBLogger
+from src.training.losses import build_classification_loss
 
 
 from src.data.dataset import KNOWN_CLASSES
@@ -55,8 +59,18 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def load_and_preprocess_data(dataset_path, test_size=0.15, val_size=0.15, seed=SEED):
+def load_and_preprocess_data(
+    dataset_path,
+    train_size=0.70,
+    test_size=0.15,
+    val_size=0.15,
+    seed=SEED,
+    synthetic=False,
+):
     """Load and split data."""
+    if not np.isclose(train_size + val_size + test_size, 1.0):
+        raise ValueError("train_size + val_size + test_size must sum to 1.0")
+
     logger.info(f"\n{'='*70}")
     logger.info("LOADING AND PREPROCESSING DATA")
     logger.info(f"{'='*70}")
@@ -95,6 +109,15 @@ def load_and_preprocess_data(dataset_path, test_size=0.15, val_size=0.15, seed=S
     val_maps = np.array([wafer_maps[i] for i in X_val])
     test_maps = np.array([wafer_maps[i] for i in X_test])
 
+    # Optional: balance training set with synthetic augmentation
+    if synthetic:
+        from src.augmentation.synthetic import balance_dataset_with_synthetic
+        logger.info("Applying synthetic augmentation to balance training set...")
+        train_maps, y_train = balance_dataset_with_synthetic(
+            train_maps, y_train, target_per_class=None, size=target_size[0]
+        )
+        logger.info(f"  Training set after augmentation: {len(y_train):,} samples")
+
     # Compute class weights from training set
     class_counts_train = Counter(y_train)
     total_train = len(y_train)
@@ -116,16 +139,167 @@ def load_and_preprocess_data(dataset_path, test_size=0.15, val_size=0.15, seed=S
 
 from src.training.trainer import train_model
 
+DEFAULT_SCHEDULER_CONFIG = SimpleNamespace(
+    type="ReduceLROnPlateau",
+    mode="min",
+    factor=0.5,
+    patience=3,
+    min_lr=1e-6,
+)
+
+
+def _call_with_supported_kwargs(factory, **kwargs):
+    """Call a factory while ignoring unsupported keyword arguments."""
+    supported = inspect.signature(factory).parameters
+    filtered = {name: value for name, value in kwargs.items() if name in supported}
+    return factory(**filtered)
+
+
+def _apply_attention(model: nn.Module, model_cfg) -> nn.Module:
+    """Inject SE or CBAM attention blocks if configured."""
+    attention_type = getattr(model_cfg, "attention_type", None) if model_cfg else None
+    if not attention_type:
+        return model
+    reduction = getattr(model_cfg, "attention_reduction", 16)
+    if attention_type == "se":
+        from src.models.attention import add_se_to_model
+        return add_se_to_model(model, reduction=reduction)
+    if attention_type == "cbam":
+        from src.models.attention import add_cbam_to_model
+        return add_cbam_to_model(model, reduction=reduction)
+    logger.warning(f"Unknown attention_type '{attention_type}', skipping")
+    return model
+
+
+def build_model(model_name: str, model_cfg, num_classes: int, device: str) -> tuple[nn.Module, str]:
+    """Construct a model using config-backed settings when supported."""
+    common_kwargs = {"num_classes": num_classes}
+    dropout_rate = getattr(model_cfg, "dropout_rate", 0.5)
+    head_dropout = getattr(model_cfg, "head_dropout", None)
+    head_hidden_dim = getattr(model_cfg, "head_hidden_dim", None)
+    feature_channels = getattr(model_cfg, "feature_channels", None)
+    frozen_prefixes = getattr(model_cfg, "frozen_prefixes", None)
+
+    if model_name == "cnn":
+        cnn_kwargs = {
+            **common_kwargs,
+            "input_channels": getattr(model_cfg, "input_channels", 3),
+            "dropout_rate": dropout_rate,
+            "use_batch_norm": getattr(model_cfg, "use_batch_norm", True),
+        }
+        if feature_channels is not None:
+            cnn_kwargs["feature_channels"] = feature_channels
+        if model_cfg is not None and hasattr(model_cfg, "head_hidden_dim"):
+            cnn_kwargs["head_hidden_dim"] = head_hidden_dim
+        if model_cfg is not None and hasattr(model_cfg, "head_dropout") and head_dropout is not None:
+            cnn_kwargs["head_dropout"] = head_dropout
+
+        model = _call_with_supported_kwargs(WaferCNN, **cnn_kwargs).to(device)
+        return _apply_attention(model, model_cfg), getattr(model_cfg, "name", "Custom CNN")
+
+    if model_name == "resnet":
+        model = _call_with_supported_kwargs(
+            get_resnet18,
+            **common_kwargs,
+            pretrained=getattr(model_cfg, "pretrained", True),
+            freeze_until=getattr(model_cfg, "freeze_until", "layer3"),
+            frozen_prefixes=frozen_prefixes,
+            head_dropout=head_dropout if head_dropout is not None else dropout_rate,
+            head_hidden_dim=head_hidden_dim,
+        ).to(device)
+        return _apply_attention(model, model_cfg), getattr(model_cfg, "name", "ResNet-18")
+
+    if model_name == "vit":
+        model = _call_with_supported_kwargs(
+            get_vit_small,
+            **common_kwargs,
+            image_size=96,
+            in_channels=getattr(model_cfg, "input_channels", 3),
+            dropout=dropout_rate,
+        ).to(device)
+        return _apply_attention(model, model_cfg), getattr(model_cfg, "name", "ViT-small")
+
+    model = _call_with_supported_kwargs(
+        get_efficientnet_b0,
+        **common_kwargs,
+        pretrained=getattr(model_cfg, "pretrained", True),
+        freeze_until=getattr(model_cfg, "freeze_until", "features.6"),
+        frozen_prefixes=frozen_prefixes,
+        head_dropout=head_dropout if head_dropout is not None else dropout_rate,
+        head_hidden_dim=head_hidden_dim,
+    ).to(device)
+    return _apply_attention(model, model_cfg), getattr(model_cfg, "name", "EfficientNet-B0")
+
+
+def build_optimizer(
+    model: nn.Module,
+    optimizer_name: str,
+    learning_rate: float,
+    weight_decay: float,
+    momentum: float = 0.9,
+    nesterov: bool = True,
+):
+    """Create the configured optimizer."""
+    name = optimizer_name.lower()
+    trainable_params = [param for param in model.parameters() if param.requires_grad]
+    if name == "adam":
+        return optim.Adam(trainable_params, lr=learning_rate, weight_decay=weight_decay)
+    if name == "adamw":
+        return optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
+    if name == "sgd":
+        return optim.SGD(
+            trainable_params,
+            lr=learning_rate,
+            weight_decay=weight_decay,
+            momentum=momentum,
+            nesterov=nesterov,
+        )
+    raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
+
+def build_scheduler(optimizer, scheduler_cfg, epochs: int):
+    """Create the configured scheduler."""
+    scheduler_type = scheduler_cfg.type.lower()
+    if scheduler_type in {"none", "off", "disabled"}:
+        return None
+    if scheduler_type == "reducelronplateau":
+        return optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode=scheduler_cfg.mode,
+            factor=scheduler_cfg.factor,
+            patience=scheduler_cfg.patience,
+            min_lr=scheduler_cfg.min_lr,
+        )
+    if scheduler_type == "steplr":
+        return optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=max(1, getattr(scheduler_cfg, "step_size", scheduler_cfg.patience)),
+            gamma=scheduler_cfg.factor,
+        )
+    if scheduler_type == "cosineannealinglr":
+        return optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=max(1, getattr(scheduler_cfg, "t_max", None) or epochs),
+            eta_min=getattr(scheduler_cfg, "min_lr", 0.0),
+        )
+    raise ValueError(f"Unsupported scheduler type: {scheduler_cfg.type}")
+
 def main():
     """Main training entry point."""
     parser = argparse.ArgumentParser(description='Train wafer defect detection models')
-    parser.add_argument('--model', choices=['cnn', 'resnet', 'efficientnet', 'effnet', 'all'], default=None)
+    parser.add_argument('--model', choices=['cnn', 'resnet', 'efficientnet', 'effnet', 'vit', 'all'], default=None)
     parser.add_argument('--epochs', type=int, default=None)
     parser.add_argument('--batch-size', type=int, default=None)
     parser.add_argument('--lr', type=float, default=None)
     parser.add_argument('--device', choices=['cuda', 'cpu'], default=None)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--data-path', type=Path, default=None)
+    parser.add_argument('--synthetic', action='store_true', help='Balance rare classes with synthetic augmentation')
+    parser.add_argument('--distributed', action='store_true', help='Enable DataParallel multi-GPU')
+    parser.add_argument('--uncertainty', action='store_true', help='Run MC Dropout uncertainty estimation after training')
+    parser.add_argument('--pretrained-checkpoint', type=Path, default=None, help='Load pretrained backbone (e.g. from SimCLR)')
+    parser.add_argument('--wandb', action='store_true', help='Enable Weights & Biases logging')
+    parser.add_argument('--mlflow', action='store_true', help='Enable MLflow logging')
     parser.add_argument(
         '--config',
         type=Path,
@@ -186,7 +360,15 @@ def main():
                 f"model={args.model}, seed={args.seed}")
 
     # Load data
-    data = load_and_preprocess_data(args.data_path, seed=args.seed)
+    use_synthetic = args.synthetic or bool(config and config.data.augmentation.synthetic.enabled)
+    data = load_and_preprocess_data(
+        args.data_path,
+        train_size=(config.data.train_size if config else 0.70),
+        val_size=(config.data.val_size if config else 0.15),
+        test_size=(config.data.test_size if config else 0.15),
+        seed=args.seed,
+        synthetic=use_synthetic,
+    )
     train_maps = data['train_maps']
     y_train = data['y_train']
     val_maps = data['val_maps']
@@ -196,12 +378,40 @@ def main():
     loss_weights = data['loss_weights'].to(device)
     class_names = data['class_names']
 
-    use_focal_loss = config.training.use_focal_loss if config else False
-    if use_focal_loss:
-        logger.info("Using Focal Loss with class weights.")
-        criterion = FocalLoss(weight=loss_weights)
-    else:
-        criterion = nn.CrossEntropyLoss(weight=loss_weights)
+    training_cfg = config.training if config else None
+    data_cfg = config.data if config else None
+
+    loss_cfg = training_cfg.loss if training_cfg else None
+    loss_name = loss_cfg.type if loss_cfg else "CrossEntropyLoss"
+    if training_cfg and training_cfg.use_focal_loss:
+        loss_name = "FocalLoss"
+
+    configured_class_weights = None
+    if loss_cfg and loss_cfg.class_weights:
+        if len(loss_cfg.class_weights) != len(class_names):
+            raise ValueError(
+                f"Expected {len(class_names)} class weights, got {len(loss_cfg.class_weights)}"
+            )
+        configured_class_weights = torch.tensor(
+            loss_cfg.class_weights,
+            dtype=torch.float32,
+            device=device,
+        )
+
+    criterion_weights = None
+    if configured_class_weights is not None:
+        criterion_weights = configured_class_weights
+    elif loss_cfg is None or loss_cfg.weighted:
+        criterion_weights = configured_class_weights if configured_class_weights is not None else loss_weights
+
+    criterion = build_classification_loss(
+        loss_name,
+        class_weights=criterion_weights,
+        label_smoothing=(loss_cfg.label_smoothing if loss_cfg else 0.0),
+        focal_gamma=(loss_cfg.focal_gamma if loss_cfg else 2.0),
+        reduction=(loss_cfg.reduction if loss_cfg else "mean"),
+    )
+    logger.info("Using loss function: %s", loss_name)
 
     # Create transforms
     try:
@@ -209,7 +419,7 @@ def main():
     except ImportError:
         tv_transforms = None
 
-    train_aug = get_image_transforms()
+    train_aug = get_image_transforms(augment=(data_cfg.augmentation.enabled if data_cfg else True))
     imagenet_norm = get_imagenet_normalize()
 
     # Compose augmentation + ImageNet norm for pretrained training
@@ -224,12 +434,12 @@ def main():
         pretrained_val_transform = imagenet_norm
 
     # Output directories
-    ckpt_dir = Path('checkpoints')
-    results_dir = Path('results')
-    ckpt_dir.mkdir(exist_ok=True)
-    results_dir.mkdir(exist_ok=True)
+    ckpt_dir = Path(config.checkpoint_dir if config else 'checkpoints')
+    results_dir = Path(config.paths.result_dir if config else 'results')
+    ckpt_dir.mkdir(exist_ok=True, parents=True)
+    results_dir.mkdir(exist_ok=True, parents=True)
 
-    models_to_train = ['cnn', 'resnet', 'efficientnet'] if args.model == 'all' else [args.model]
+    models_to_train = ['cnn', 'resnet', 'efficientnet', 'vit'] if args.model == 'all' else [args.model]
     results = {}
 
     # Resolve learning rate: CLI --lr > config.yaml per-model > hardcoded default
@@ -242,40 +452,71 @@ def main():
             return float(config.training.learning_rate)
         return hardcoded
 
+    # Initialize loggers
+    wb_logger = None
+    wandb_enabled = args.wandb or bool(config and config.mlops.wandb.enabled)
+    if wandb_enabled:
+        wb_logger = WandBLogger(
+            name=f"wafer-train-{int(time.time())}",
+            project=config.mlops.wandb.project if config else "wafer-defect-detection",
+            entity=config.mlops.wandb.entity if config else None,
+            config=vars(args),
+        )
+    
+    mf_logger = None
+    mlflow_enabled = args.mlflow or bool(config and config.mlops.mlflow.enabled)
+    if mlflow_enabled:
+        mf_logger = MLFlowLogger(
+            experiment_name=config.mlops.mlflow.experiment_name if config else "wafer-defect-detection",
+            tracking_uri=config.mlops.mlflow.tracking_uri if config else "http://localhost:5000",
+        )
+        mf_logger.log_params(vars(args))
+
     for model_name in models_to_train:
         logger.info(f"\n{'='*70}")
         logger.info(f"TRAINING {model_name.upper()}")
         logger.info(f"{'='*70}")
 
-        # Create model with correct normalization per architecture
-        if model_name == 'cnn':
-            model = WaferCNN(num_classes=len(class_names)).to(device)
-            display_name = "Custom CNN"
-            lr = _resolve_lr('cnn', 1e-3)
-            transforms_train = train_aug         # augmentation only
-            transforms_val = None                # raw [0,1] images
-        elif model_name == 'resnet':
-            model = get_resnet18(num_classes=len(class_names)).to(device)
-            display_name = "ResNet-18"
-            lr = _resolve_lr('resnet', 1e-4)
-            transforms_train = pretrained_train_transform  # augmentation + ImageNet norm
-            transforms_val = pretrained_val_transform      # ImageNet norm only
+        model_cfg = getattr(config.models, model_name) if config else None
+        model, display_name = build_model(model_name, model_cfg, len(class_names), device)
+
+        # Load pretrained backbone if provided (e.g. from SimCLR)
+        if args.pretrained_checkpoint:
+            state = torch.load(args.pretrained_checkpoint, map_location=device, weights_only=True)
+            model.load_state_dict(state, strict=False)
+            logger.info(f"  Loaded pretrained weights from {args.pretrained_checkpoint}")
+
+        # Wrap with DataParallel if distributed
+        if args.distributed and torch.cuda.device_count() > 1:
+            from src.training.distributed import wrap_model_dataparallel
+            model = wrap_model_dataparallel(model)
+            logger.info(f"  Wrapped model with DataParallel ({torch.cuda.device_count()} GPUs)")
+
+        default_lr = {"cnn": 1e-3, "vit": 3e-4}.get(model_name, 1e-4)
+        lr = _resolve_lr(model_name, default_lr)
+        if model_name in ('cnn', 'vit'):
+            transforms_train = train_aug
+            transforms_val = None
         else:
-            model = get_efficientnet_b0(num_classes=len(class_names)).to(device)
-            display_name = "EfficientNet-B0"
-            lr = _resolve_lr('efficientnet', 1e-4)
-            transforms_train = pretrained_train_transform  # augmentation + ImageNet norm
-            transforms_val = pretrained_val_transform      # ImageNet norm only
+            transforms_train = pretrained_train_transform
+            transforms_val = pretrained_val_transform
 
         # Create loaders
         train_dataset = WaferMapDataset(train_maps, y_train, transform=transforms_train)
         val_dataset = WaferMapDataset(val_maps, y_val, transform=transforms_val)
         test_dataset = WaferMapDataset(test_maps, y_test, transform=transforms_val)
 
-        g = torch.Generator().manual_seed(42)
-        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g)
-        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g)
-        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0, worker_init_fn=seed_worker, generator=g)
+        g = torch.Generator().manual_seed(args.seed)
+        loader_kwargs = {
+            "batch_size": args.batch_size,
+            "num_workers": data_cfg.num_workers if data_cfg else 0,
+            "pin_memory": bool(data_cfg.pin_memory if data_cfg else False) and str(device).startswith("cuda"),
+            "worker_init_fn": seed_worker,
+            "generator": g,
+        }
+        train_loader = DataLoader(train_dataset, shuffle=True, **loader_kwargs)
+        val_loader = DataLoader(val_dataset, shuffle=False, **loader_kwargs)
+        test_loader = DataLoader(test_dataset, shuffle=False, **loader_kwargs)
 
         logger.info(f"Model: {display_name}")
         logger.info(f"Learning rate: {lr}")
@@ -283,9 +524,37 @@ def main():
         logger.info(f"Batch size: {args.batch_size}")
 
         # Train
-        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
+        optimizer = build_optimizer(
+            model,
+            optimizer_name=(training_cfg.optimizer if training_cfg else "adam"),
+            learning_rate=lr,
+            weight_decay=(training_cfg.weight_decay if training_cfg else 1e-4),
+            momentum=(training_cfg.momentum if training_cfg else 0.9),
+            nesterov=(training_cfg.nesterov if training_cfg else True),
+        )
+        scheduler = build_scheduler(
+            optimizer,
+            scheduler_cfg=(training_cfg.scheduler if training_cfg else DEFAULT_SCHEDULER_CONFIG),
+            epochs=args.epochs,
+        ) if training_cfg else None
         t0 = time.time()
-        model, epoch_history = train_model(model, train_loader, val_loader, criterion, optimizer, epochs=args.epochs, model_name=display_name, device=device)
+        model, epoch_history = train_model(
+            model,
+            train_loader,
+            val_loader,
+            criterion,
+            optimizer,
+            scheduler=scheduler,
+            epochs=args.epochs,
+            model_name=display_name,
+            device=device,
+            gradient_clip=(training_cfg.gradient_clip_max_norm if training_cfg else None),
+            mixed_precision=(training_cfg.mixed_precision if training_cfg else False),
+            early_stopping_enabled=(training_cfg.early_stopping.enabled if training_cfg else False),
+            early_stopping_patience=(training_cfg.early_stopping.patience if training_cfg else None),
+            early_stopping_min_delta=(training_cfg.early_stopping.min_delta if training_cfg else 0.0),
+            monitored_metric=(training_cfg.checkpointing.metric if training_cfg else "val_acc"),
+        )
         train_time = time.time() - t0
 
         # Save checkpoint with integrity hash
@@ -296,6 +565,13 @@ def main():
         # Evaluate
         logger.info(f"\nEvaluating on test set...")
         preds, labels_arr, metrics = evaluate_model(model, test_loader, class_names, display_name, device)
+
+        # Log to W&B / MLflow
+        if wb_logger:
+            wb_logger.log_metrics(metrics)
+            wb_logger.log_confusion_matrix(labels_arr, preds, class_names)
+        if mf_logger:
+            mf_logger.log_metrics(metrics)
 
         # Per-class metrics
         prec, rec, f1_per, support = precision_recall_fscore_support(
@@ -315,6 +591,9 @@ def main():
             'accuracy': float(metrics['accuracy']),
             'macro_f1': float(metrics['macro_f1']),
             'weighted_f1': float(metrics['weighted_f1']),
+            'ece': float(metrics.get('ece', 0.0)),
+            'negative_log_likelihood': float(metrics.get('negative_log_likelihood', 0.0)),
+            'brier_score': float(metrics.get('brier_score', 0.0)),
             'time_sec': float(train_time),
             'per_class': per_class,
             'epoch_history': epoch_history,
@@ -323,7 +602,27 @@ def main():
         logger.info(f"  Accuracy    : {metrics['accuracy']:.4f}")
         logger.info(f"  Macro F1    : {metrics['macro_f1']:.4f}")
         logger.info(f"  Weighted F1 : {metrics['weighted_f1']:.4f}")
+        if 'ece' in metrics:
+            logger.info(f"  ECE         : {metrics['ece']:.4f}")
         logger.info(f"  Time        : {train_time:.1f}s")
+
+        # Optional: MC Dropout uncertainty estimation
+        if args.uncertainty:
+            try:
+                from src.inference.uncertainty import UncertaintyEstimator
+                unc_cfg = config.uncertainty if config else None
+                n_samples = getattr(unc_cfg, 'n_samples', 10) if unc_cfg else 10
+                unc_est = UncertaintyEstimator(model, num_iterations=n_samples, device=device)
+                unc_results = unc_est.estimate_dataset_uncertainty(test_loader, return_predictions=True)
+                mean_unc = float(unc_results['uncertainty'].mean())
+                mean_ent = float(unc_results['entropy'].mean())
+                results[model_name]['uncertainty'] = {
+                    'mean_uncertainty': mean_unc,
+                    'mean_entropy': mean_ent,
+                }
+                logger.info(f"  MC Dropout uncertainty: {mean_unc:.4f}, entropy: {mean_ent:.4f}")
+            except Exception as e:
+                logger.warning(f"  Uncertainty estimation failed: {e}")
 
     # Summary
     logger.info(f"\n{'='*70}")
@@ -340,6 +639,11 @@ def main():
     with open(metrics_path, 'w') as f:
         json.dump(results, f, indent=2)
     logger.info(f"\nMetrics saved to {metrics_path}")
+
+    if wb_logger:
+        wb_logger.finish()
+    if mf_logger:
+        mf_logger.finish()
 
     return 0
 

@@ -11,7 +11,10 @@ class TestConfigSchema:
         cfg = load_config("config.yaml")
 
         assert cfg.training.default_model == "all"
+        assert cfg.training.mixed_precision is False
+        assert cfg.training.loss.label_smoothing == 0.0
         assert cfg.models.efficientnet.architecture == "efficientnet_b0"
+        assert cfg.models.cnn.input_channels == 3
         assert cfg.validation.compute_gradcam is True
         assert cfg.inference.gradcam.enabled is True
         assert cfg.paths.checkpoint_dir == cfg.checkpoint_dir == "checkpoints"

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import logging
 import platform
@@ -18,7 +19,8 @@ from typing import Iterable, Optional
 
 logger = logging.getLogger("doctor")
 
-SUPPORTED_PYTHON_RANGE = ">=3.10,<3.13"
+SUPPORTED_PYTHON_RANGE = ">=3.10,<3.14"
+RECOMMENDED_CONDA_ENV = "base"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "config.yaml"
 DEFAULT_DATASET_PATH = REPO_ROOT / "data" / "LSWMD_new.pkl"
@@ -42,6 +44,10 @@ class DoctorSummary:
     pytest_executable: Optional[str]
     pip_executable: Optional[str]
     env_prefix: str
+    conda_env_name: Optional[str] = None
+    conda_prefix: Optional[str] = None
+    conda_executable: Optional[str] = None
+    recommended_conda_env: str = RECOMMENDED_CONDA_ENV
     package_resolution: list[PackageStatus] = field(default_factory=list)
     config_path: str = ""
     config_exists: bool = False
@@ -74,11 +80,15 @@ def _python_prefix(path: str) -> Path:
     return resolved.parent
 
 
-def _executable_parent(path: Optional[str]) -> Optional[Path]:
+def _environment_root(path: Optional[str]) -> Optional[Path]:
     if not path:
         return None
     try:
-        return Path(path).expanduser().resolve().parent
+        resolved = Path(path).expanduser().resolve()
+        parent = resolved.parent
+        if parent.name.lower() in {"scripts", "bin"} and parent.parent != parent:
+            return parent.parent
+        return parent
     except Exception:
         return None
 
@@ -110,7 +120,7 @@ def _read_config_dataset_path(config_path: Path) -> Optional[Path]:
 
 def _check_python_compatibility() -> bool:
     major, minor = sys.version_info[:2]
-    return (major, minor) >= (3, 10) and (major, minor) < (3, 13)
+    return (major, minor) >= (3, 10) and (major, minor) < (3, 14)
 
 
 def _detect_path_split(pytest_executable: Optional[str]) -> Optional[str]:
@@ -118,15 +128,33 @@ def _detect_path_split(pytest_executable: Optional[str]) -> Optional[str]:
     if not pytest_executable:
         return None
 
-    python_prefix = _python_prefix(sys.executable)
-    pytest_parent = _executable_parent(pytest_executable)
-    if pytest_parent is None:
+    python_root = _environment_root(sys.executable)
+    pytest_root = _environment_root(pytest_executable)
+    if python_root is None or pytest_root is None:
         return None
 
-    if python_prefix == pytest_parent:
+    if python_root == pytest_root:
         return None
 
-    return f"python lives under {python_prefix}, pytest lives under {pytest_parent}"
+    return f"python lives under {python_root}, pytest lives under {pytest_root}"
+
+
+def _conda_context() -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """Collect conda runtime details if available."""
+    env_name = os.environ.get("CONDA_DEFAULT_ENV")
+    prefix = os.environ.get("CONDA_PREFIX")
+    executable = os.environ.get("CONDA_EXE") or shutil.which("conda")
+    return env_name, prefix, executable
+
+
+def _is_under_prefix(path: str, prefix: str) -> bool:
+    """Return True when path resolves inside the given prefix."""
+    try:
+        resolved_path = Path(path).expanduser().resolve()
+        resolved_prefix = Path(prefix).expanduser().resolve()
+        return resolved_path.is_relative_to(resolved_prefix)
+    except Exception:
+        return False
 
 
 def run_command(command: Iterable[str]) -> tuple[int, str]:
@@ -146,6 +174,7 @@ def build_summary() -> DoctorSummary:
     """Collect environment diagnostics."""
     pytest_executable = shutil.which("pytest")
     pip_executable = shutil.which("pip")
+    conda_env_name, conda_prefix, conda_executable = _conda_context()
     config_path = DEFAULT_CONFIG_PATH
     dataset_path = _read_config_dataset_path(config_path) or DEFAULT_DATASET_PATH
 
@@ -154,6 +183,10 @@ def build_summary() -> DoctorSummary:
         python_version=sys.version.replace("\n", " "),
         supported_python_range=SUPPORTED_PYTHON_RANGE,
         platform=platform.platform(),
+        conda_env_name=conda_env_name,
+        conda_prefix=conda_prefix,
+        conda_executable=conda_executable,
+        recommended_conda_env=RECOMMENDED_CONDA_ENV,
         pytest_executable=pytest_executable,
         pip_executable=pip_executable,
         env_prefix=str(_python_prefix(sys.executable)),
@@ -181,6 +214,22 @@ def build_summary() -> DoctorSummary:
             f"Python {sys.version_info.major}.{sys.version_info.minor} is outside the supported range {SUPPORTED_PYTHON_RANGE}."
         )
 
+    if not summary.conda_executable:
+        summary.status = "warning"
+        summary.issues.append(
+            f"Conda was not detected on PATH. Standardize on `conda run -n {RECOMMENDED_CONDA_ENV} ...` for repo commands."
+        )
+    elif summary.conda_env_name is None:
+        summary.status = "warning"
+        summary.issues.append(
+            f"No active conda environment detected. Use `conda run -n {RECOMMENDED_CONDA_ENV} ...` for repo commands."
+        )
+    elif summary.conda_env_name != RECOMMENDED_CONDA_ENV:
+        summary.status = "warning"
+        summary.issues.append(
+            f"Active conda env is '{summary.conda_env_name}'. Standardize on '{RECOMMENDED_CONDA_ENV}' with `conda run -n {RECOMMENDED_CONDA_ENV} ...`."
+        )
+
     path_split = _detect_path_split(pytest_executable)
     if path_split:
         summary.status = "warning"
@@ -190,6 +239,12 @@ def build_summary() -> DoctorSummary:
         if not package.installed:
             summary.status = "warning"
             summary.issues.append(f"Package {package.name} is not installed.")
+            continue
+
+        if summary.conda_prefix and package.location and not _is_under_prefix(package.location, summary.conda_prefix):
+            summary.notes.append(
+                f"Package {package.name} resolves outside the conda prefix: {package.location}"
+            )
 
     if not summary.config_exists:
         summary.status = "warning"
@@ -209,6 +264,11 @@ def print_human_report(summary: DoctorSummary) -> None:
     logger.info("Python version: %s", summary.python_version)
     logger.info("Supported Python range: %s", summary.supported_python_range)
     logger.info("Platform: %s", summary.platform)
+    logger.info("Conda env: %s", summary.conda_env_name or "not detected")
+    logger.info("Conda prefix: %s", summary.conda_prefix or "not detected")
+    logger.info("Conda executable: %s", summary.conda_executable or "not found")
+    logger.info("Recommended conda env: %s", summary.recommended_conda_env)
+    logger.info("Recommended command prefix: conda run -n %s", summary.recommended_conda_env)
     logger.info("pytest executable: %s", summary.pytest_executable or "not found")
     logger.info("pip executable: %s", summary.pip_executable or "not found")
     logger.info("Python prefix: %s", summary.env_prefix)

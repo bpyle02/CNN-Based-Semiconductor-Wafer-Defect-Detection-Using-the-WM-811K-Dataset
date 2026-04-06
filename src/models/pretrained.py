@@ -1,92 +1,205 @@
 """
 Pretrained model architectures for transfer learning on wafer defect classification.
 
-Implements ResNet-18 and EfficientNet-B0 with proper layer-boundary freezing strategy.
+Implements ResNet-18 and EfficientNet-B0 with configurable freezing and
+classifier-head construction utilities.
 """
+
+from __future__ import annotations
+
+import logging
+from typing import Optional, Sequence, Tuple
 
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from typing import Tuple
-import logging
 
 logger = logging.getLogger(__name__)
 
+RESNET18_BACKBONE_PREFIXES: Tuple[str, ...] = (
+    "conv1",
+    "bn1",
+    "layer1",
+    "layer2",
+    "layer3",
+    "layer4",
+)
+EFFICIENTNET_B0_BACKBONE_PREFIXES: Tuple[str, ...] = tuple(
+    f"features.{index}" for index in range(9)
+)
 
-def get_resnet18(num_classes: int = 9, pretrained: bool = True) -> nn.Module:
+
+def build_classifier_head(
+    in_features: int,
+    num_classes: int,
+    dropout_rate: float = 0.5,
+    hidden_dim: Optional[int] = None,
+    hidden_dropout: Optional[float] = None,
+) -> nn.Sequential:
     """
-    ResNet-18 pretrained on ImageNet with fine-tuning on final residual block.
-
-    Freezing strategy:
-        - Freezes: conv1, bn1, layer1, layer2, layer3
-        - Unfreezes: layer4 (last residual block), fc (classification head)
-        - Replaces fc with new head with Dropout(0.5)
-
-    This approach:
-        - Preserves low-level ImageNet features (edges, textures)
-        - Allows task-specific adaptation in final layers
-        - Respects architectural block boundaries (not "last N params")
+    Build a small classifier head with optional hidden layer.
 
     Args:
-        num_classes: Number of output classes (default 9)
+        in_features: Input feature dimension from the backbone.
+        num_classes: Number of output classes.
+        dropout_rate: Dropout before the head.
+        hidden_dim: Optional hidden width. When omitted, a single linear layer is used.
+        hidden_dropout: Dropout after the hidden layer. Defaults to ``dropout_rate``.
+    """
+    if in_features <= 0:
+        raise ValueError("in_features must be positive")
+    if num_classes <= 0:
+        raise ValueError("num_classes must be positive")
+    if not 0.0 <= dropout_rate < 1.0:
+        raise ValueError("dropout_rate must be in the interval [0, 1)")
+    if hidden_dim is not None and hidden_dim <= 0:
+        raise ValueError("hidden_dim must be positive when provided")
+
+    if hidden_dropout is None:
+        hidden_dropout = dropout_rate
+    if not 0.0 <= hidden_dropout < 1.0:
+        raise ValueError("hidden_dropout must be in the interval [0, 1)")
+
+    layers: list[nn.Module] = [nn.Dropout(dropout_rate)]
+    if hidden_dim is None:
+        layers.append(nn.Linear(in_features, num_classes))
+    else:
+        layers.extend(
+            [
+                nn.Linear(in_features, hidden_dim),
+                nn.ReLU(inplace=True),
+                nn.Dropout(hidden_dropout),
+                nn.Linear(hidden_dim, num_classes),
+            ]
+        )
+    return nn.Sequential(*layers)
+
+
+def set_frozen_prefixes(model: nn.Module, frozen_prefixes: Sequence[str]) -> None:
+    """Freeze parameters whose names start with any of the provided prefixes."""
+    prefixes = tuple(prefix for prefix in frozen_prefixes if prefix)
+    if not prefixes:
+        return
+
+    for name, param in model.named_parameters():
+        param.requires_grad = not any(name.startswith(prefix) for prefix in prefixes)
+
+
+def resolve_frozen_prefixes(
+    freeze_until: Optional[str],
+    backbone_prefixes: Sequence[str],
+) -> Tuple[str, ...]:
+    """
+    Resolve a ``freeze_until`` boundary into a tuple of frozen prefixes.
+
+    ``freeze_until="layer3"`` means freeze everything up to and including
+    ``layer3`` and leave later blocks plus the classifier trainable.
+    """
+    if freeze_until is None:
+        return tuple()
+
+    normalized = str(freeze_until).strip().lower()
+    if normalized in {"", "none"}:
+        return tuple()
+
+    ordered = tuple(backbone_prefixes)
+    if normalized not in ordered:
+        allowed = ", ".join(ordered)
+        raise ValueError(
+            f"Unknown freeze boundary '{freeze_until}'. Expected one of: none, {allowed}"
+        )
+
+    boundary_index = ordered.index(normalized)
+    return ordered[: boundary_index + 1]
+
+
+def get_resnet18(
+    num_classes: int = 9,
+    pretrained: bool = True,
+    freeze_until: Optional[str] = "layer3",
+    frozen_prefixes: Optional[Sequence[str]] = None,
+    head_dropout: float = 0.5,
+    head_hidden_dim: Optional[int] = None,
+) -> nn.Module:
+    """
+    ResNet-18 pretrained on ImageNet with configurable fine-tuning.
+
+    Args:
+        num_classes: Number of output classes.
+        pretrained: Load ImageNet weights when available.
+        freeze_until: Freeze backbone blocks up to this boundary. Set to
+            ``None`` or ``"none"`` to leave the backbone trainable.
+        frozen_prefixes: Explicit frozen parameter prefixes. When provided,
+            this overrides ``freeze_until``.
+        head_dropout: Dropout probability applied before the classifier head.
+        head_hidden_dim: Optional hidden width for a two-layer classifier head.
 
     Returns:
-        ResNet-18 model with unfrozen layer4 and custom fc
+        A ResNet-18 model with a configurable classifier head and freeze strategy.
     """
     weights = models.ResNet18_Weights.DEFAULT if pretrained else None
     model = models.resnet18(weights=weights)
 
-    # Freeze early layers at block boundaries
-    for name, param in model.named_parameters():
-        if not (name.startswith('layer4') or name.startswith('fc')):
-            param.requires_grad = False
-
-    # Replace classification head
     in_features = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(0.5),
-        nn.Linear(in_features, num_classes)
+    model.fc = build_classifier_head(
+        in_features=in_features,
+        num_classes=num_classes,
+        dropout_rate=head_dropout,
+        hidden_dim=head_hidden_dim,
     )
+
+    if frozen_prefixes is not None:
+        set_frozen_prefixes(model, frozen_prefixes)
+    else:
+        resolved_frozen = resolve_frozen_prefixes(freeze_until, RESNET18_BACKBONE_PREFIXES)
+        set_frozen_prefixes(model, resolved_frozen)
 
     return model
 
 
-def get_efficientnet_b0(num_classes: int = 9, pretrained: bool = True) -> nn.Module:
+def get_efficientnet_b0(
+    num_classes: int = 9,
+    pretrained: bool = True,
+    freeze_until: Optional[str] = "features.6",
+    frozen_prefixes: Optional[Sequence[str]] = None,
+    head_dropout: float = 0.5,
+    head_hidden_dim: Optional[int] = None,
+) -> nn.Module:
     """
-    EfficientNet-B0 pretrained on ImageNet with fine-tuning on final feature blocks.
-
-    Freezing strategy:
-        - Freezes: features.0-6 (early MBConv blocks)
-        - Unfreezes: features.7, features.8 (last MBConv blocks), classifier
-        - Replaces classifier with new head with Dropout(0.5)
-
-    EfficientNet uses compound scaling with 8 feature blocks. Final two blocks
-    (features.7-8) are most task-specific; earlier blocks capture generic features.
+    EfficientNet-B0 pretrained on ImageNet with configurable fine-tuning.
 
     Args:
-        num_classes: Number of output classes (default 9)
+        num_classes: Number of output classes.
+        pretrained: Load ImageNet weights when available.
+        freeze_until: Freeze backbone blocks up to this boundary. Set to
+            ``None`` or ``"none"`` to leave the backbone trainable.
+        frozen_prefixes: Explicit frozen parameter prefixes. When provided,
+            this overrides ``freeze_until``.
+        head_dropout: Dropout probability applied before the classifier head.
+        head_hidden_dim: Optional hidden width for a two-layer classifier head.
 
     Returns:
-        EfficientNet-B0 model with unfrozen features.7-8 and custom classifier
+        An EfficientNet-B0 model with a configurable classifier head and freeze strategy.
     """
     weights = models.EfficientNet_B0_Weights.DEFAULT if pretrained else None
     model = models.efficientnet_b0(weights=weights)
 
-    # Freeze early feature blocks at architectural boundaries
-    for name, param in model.named_parameters():
-        if not (
-            name.startswith('features.7') or
-            name.startswith('features.8') or
-            name.startswith('classifier')
-        ):
-            param.requires_grad = False
-
-    # Replace classification head
     in_features = model.classifier[1].in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(0.5),
-        nn.Linear(in_features, num_classes)
+    model.classifier = build_classifier_head(
+        in_features=in_features,
+        num_classes=num_classes,
+        dropout_rate=head_dropout,
+        hidden_dim=head_hidden_dim,
     )
+
+    if frozen_prefixes is not None:
+        set_frozen_prefixes(model, frozen_prefixes)
+    else:
+        resolved_frozen = resolve_frozen_prefixes(
+            freeze_until,
+            EFFICIENTNET_B0_BACKBONE_PREFIXES,
+        )
+        set_frozen_prefixes(model, resolved_frozen)
 
     return model
 
