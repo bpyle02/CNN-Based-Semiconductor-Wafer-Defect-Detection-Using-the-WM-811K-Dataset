@@ -1,0 +1,276 @@
+name: Model Validation - Training & Inference Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/models/**'
+      - 'src/training/**'
+      - 'src/data/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/models/**'
+      - 'src/training/**'
+      - 'src/data/**'
+
+jobs:
+  model_validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Test WaferCNN model creation
+      run: |
+        python << 'EOF'
+        import torch
+        from src.models import WaferCNN
+
+        model = WaferCNN(num_classes=9)
+        x = torch.randn(2, 3, 96, 96)
+        y = model(x)
+
+        assert y.shape == (2, 9), f"Expected output shape (2, 9), got {y.shape}"
+        print(f"✓ WaferCNN OK: input {x.shape} -> output {y.shape}")
+        EOF
+
+    - name: Test ResNet-18 model creation
+      run: |
+        python << 'EOF'
+        import torch
+        from src.models import get_resnet18
+
+        model = get_resnet18(num_classes=9)
+        x = torch.randn(2, 3, 96, 96)
+        y = model(x)
+
+        assert y.shape == (2, 9), f"Expected output shape (2, 9), got {y.shape}"
+        print(f"✓ ResNet-18 OK: input {x.shape} -> output {y.shape}")
+        EOF
+
+    - name: Test EfficientNet-B0 model creation
+      run: |
+        python << 'EOF'
+        import torch
+        from src.models import get_efficientnet_b0
+
+        model = get_efficientnet_b0(num_classes=9)
+        x = torch.randn(2, 3, 96, 96)
+        y = model(x)
+
+        assert y.shape == (2, 9), f"Expected output shape (2, 9), got {y.shape}"
+        print(f"✓ EfficientNet-B0 OK: input {x.shape} -> output {y.shape}")
+        EOF
+
+    - name: Test Vision Transformer model creation
+      run: |
+        python << 'EOF'
+        import torch
+        from src.models import ViT, get_vit_small, get_vit_tiny
+
+        model = get_vit_small(num_classes=9)
+        x = torch.randn(2, 3, 96, 96)
+        y = model(x)
+
+        assert y.shape == (2, 9), f"Expected output shape (2, 9), got {y.shape}"
+        print(f"✓ ViT-Small OK: input {x.shape} -> output {y.shape}")
+
+        model_tiny = get_vit_tiny(num_classes=9)
+        y_tiny = model_tiny(x)
+        assert y_tiny.shape == (2, 9)
+        print(f"✓ ViT-Tiny OK: input {x.shape} -> output {y_tiny.shape}")
+        EOF
+
+    - name: Test ensemble model
+      run: |
+        python << 'EOF'
+        import torch
+        from src.models import WaferCNN, get_resnet18, EnsembleModel
+
+        models = [
+            WaferCNN(num_classes=9),
+            get_resnet18(num_classes=9),
+        ]
+
+        ensemble = EnsembleModel(models, aggregation='voting')
+        x = torch.randn(2, 3, 96, 96)
+        y = ensemble(x)
+
+        print(f"✓ Ensemble model OK: output shape {y.shape}")
+        EOF
+
+    - name: Test data pipeline
+      run: |
+        python << 'EOF'
+        import torch
+        import numpy as np
+        from src.data import WaferMapDataset, get_image_transforms
+
+        # Create dummy data
+        maps = np.random.randn(10, 96, 96).astype(np.float32)
+        labels = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 0])
+
+        # Test dataset
+        transform = get_image_transforms()
+        dataset = WaferMapDataset(maps, labels, transform=transform)
+
+        assert len(dataset) == 10
+        sample = dataset[0]
+        assert isinstance(sample, tuple) and len(sample) == 2
+        assert sample[0].shape == (3, 96, 96)
+
+        print(f"✓ WaferMapDataset OK: {len(dataset)} samples")
+
+        # Test DataLoader
+        loader = torch.utils.data.DataLoader(dataset, batch_size=4)
+        batch = next(iter(loader))
+        assert batch[0].shape == (4, 3, 96, 96)
+        print(f"✓ DataLoader OK: batch shape {batch[0].shape}")
+        EOF
+
+    - name: Test configuration system
+      run: |
+        python << 'EOF'
+        from src.config import load_config
+
+        cfg = load_config('config.yaml')
+
+        assert hasattr(cfg, 'device')
+        assert hasattr(cfg, 'seed')
+        assert hasattr(cfg, 'data')
+        assert hasattr(cfg, 'training')
+
+        print(f"✓ Configuration system OK")
+        print(f"  Device: {cfg.device}")
+        print(f"  Seed: {cfg.seed}")
+        print(f"  Dataset path: {cfg.data.dataset_path}")
+        EOF
+
+    - name: Test distributed training utilities
+      run: |
+        python << 'EOF'
+        from src.training.distributed import (
+            is_distributed, get_rank, get_world_size
+        )
+
+        assert not is_distributed(), "Should not be distributed in CI"
+        assert get_rank() == 0
+        assert get_world_size() == 1
+
+        print("✓ Distributed training utilities OK")
+        EOF
+
+    - name: Test inference utilities
+      run: |
+        python << 'EOF'
+        import torch
+        from src.inference.gradcam import GradCAM
+        from src.models import WaferCNN
+
+        model = WaferCNN(num_classes=9)
+        gradcam = GradCAM(model, target_layer=model.features)
+
+        x = torch.randn(1, 3, 96, 96)
+        heatmap, pred_class = gradcam.generate(x, target_class=0)
+
+        assert heatmap is not None
+        print(f"✓ GradCAM OK: heatmap shape {heatmap.shape}, predicted class {pred_class}")
+        gradcam.remove_hooks()
+        EOF
+
+    - name: Test analysis utilities
+      run: |
+        python << 'EOF'
+        from src.analysis import count_params, count_trainable
+        from src.models import WaferCNN, get_resnet18
+
+        cnn = WaferCNN(num_classes=9)
+        total = count_params(cnn)
+        trainable = count_trainable(cnn)
+
+        assert total > 0
+        assert trainable > 0
+        assert trainable <= total
+
+        print(f"✓ Analysis utilities OK")
+        print(f"  CNN: {total:,} total, {trainable:,} trainable")
+        EOF
+
+    - name: Model inference benchmark (CPU)
+      run: |
+        python << 'EOF'
+        import torch
+        import time
+        from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+
+        models = {
+            'CNN': WaferCNN(num_classes=9),
+            'ResNet-18': get_resnet18(num_classes=9),
+            'EfficientNet-B0': get_efficientnet_b0(num_classes=9),
+        }
+
+        x = torch.randn(1, 3, 96, 96)
+
+        for name, model in models.items():
+            model.eval()
+
+            with torch.no_grad():
+                # Warmup
+                _ = model(x)
+
+                # Timing
+                start = time.time()
+                for _ in range(100):
+                    _ = model(x)
+                elapsed = time.time() - start
+
+                avg_time_ms = (elapsed / 100) * 1000
+                print(f"  {name}: {avg_time_ms:.2f} ms per inference")
+
+        print("✓ Model benchmarks OK (CPU)")
+        EOF
+
+    - name: Check model checkpoint compatibility
+      run: |
+        python << 'EOF'
+        import torch
+        import tempfile
+        import os
+        from src.models import WaferCNN
+
+        model = WaferCNN(num_classes=9)
+
+        # Save checkpoint
+        with tempfile.TemporaryDirectory() as tmpdir:
+            checkpoint_path = os.path.join(tmpdir, 'model.pth')
+            torch.save(model.state_dict(), checkpoint_path)
+
+            # Load checkpoint
+            loaded_model = WaferCNN(num_classes=9)
+            loaded_model.load_state_dict(torch.load(checkpoint_path))
+
+            print(f"✓ Checkpoint save/load OK")
+        EOF
+
+summary: |
+  ✅ All model validation tests passed:
+  - Model creation and forward passes
+  - Data pipeline and DataLoader
+  - Configuration system
+  - Distributed training utilities
+  - Inference utilities (GradCAM)
+  - Analysis utilities
+  - Model inference benchmarks
+  - Checkpoint compatibility

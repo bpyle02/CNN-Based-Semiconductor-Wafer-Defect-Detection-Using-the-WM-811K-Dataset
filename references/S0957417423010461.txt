@@ -1,0 +1,11 @@
+Shouhong Chen, Meiqi Liu, Xingna Hou, Ziren Zhu, Zhentao Huang, Tao Wang,
+Wafer map defect pattern detection method based on improved attention mechanism,
+Expert Systems with Applications,
+Volume 230,
+2023,
+120544,
+ISSN 0957-4174,
+https://doi.org/10.1016/j.eswa.2023.120544.
+(https://www.sciencedirect.com/science/article/pii/S0957417423010461)
+Abstract: Wafer map defect pattern recognition is an indispensable part in the semiconductor manufacturing process. Wafer map defect pattern recognition and classification can locate the cause of failures in the manufacturing process. In this study, we propose a deep convolutional neural network architecture incorporating improved convolutional block attention module (I-CBAM) for pattern recognition and classification of single-type wafer map defects. The proposed method consists of three steps: First, a multi-branch attention module is designed, which focuses more on the main information of defect clusters, extracts richer feature information, and improves feature extraction capabilities. Secondly, I-CBAM is integrated into the ResneXt50 backbone network to extract wafer map defect features. Finally, the extracted features are fed to a support vector machine combined with an error-correcting output code to classify the wafer map defect pattern. The experimental results on the real-world datasets WM-811K show that the accuracy rate of the I-CBAM-ResneXt50 can reach 96.96%. Compared with the existing algorithms, the proposed model can achieve better recognition and classification results.
+Keywords: Wafer map; Identification and classification; DCNN; I-CBAM

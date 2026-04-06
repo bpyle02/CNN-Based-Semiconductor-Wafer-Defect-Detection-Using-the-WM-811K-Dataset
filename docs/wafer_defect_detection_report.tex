@@ -1,0 +1,721 @@
+%%% ==========================================================================
+%%% CNN-Based Semiconductor Wafer Defect Detection
+%%% Using the WM-811K Dataset
+%%% ==========================================================================
+\documentclass[conference]{IEEEtran}
+
+% ---------- packages --------------------------------------------------------
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\usepackage{cite}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{url}
+
+% ============================================================================
+\begin{document}
+
+% ---------- title -----------------------------------------------------------
+\title{CNN-Based Semiconductor Wafer Defect Detection\\Using the WM-811K Dataset}
+
+\author{
+\IEEEauthorblockN{Anindita Paul, Brandon Pyle, Anand Rajan, Brett Rettura}
+\IEEEauthorblockA{The Pennsylvania State University\\
+AI 570 -- Deep Learning}
+}
+
+\maketitle
+
+% ---------- abstract --------------------------------------------------------
+\begin{abstract}
+Semiconductor manufacturing demands rapid, reliable detection of wafer-level
+defect patterns to maintain high yield and reduce production cost. We present
+a modular deep learning pipeline for multi-class wafer-defect classification
+on the WM-811K dataset (${\sim}172{,}000$ labeled samples, 9~classes, 85\%
+majority ``none'' class). We compare three architectures---a custom CNN,
+fine-tuned ResNet-18, and fine-tuned EfficientNet-B0---trained with
+class-weighted cross-entropy loss and natural distribution preservation.
+Under CPU-constrained five-epoch training, the custom CNN achieves the
+highest macro~F1, demonstrating competitive defect-class recognition despite
+limited compute budget. Grad-CAM visualizations confirm spatially meaningful
+learned representations aligned with known defect morphologies.
+\end{abstract}
+
+\begin{IEEEkeywords}
+wafer defect detection, convolutional neural network, WM-811K, transfer
+learning, class imbalance, Grad-CAM
+\end{IEEEkeywords}
+
+% ============================================================================
+\section{Introduction}
+\label{sec:introduction}
+% ============================================================================
+
+The cornerstone of the current economy is the semiconductor industry. The
+projected 2026 annual sales value of this industry is US\$975
+billion~\cite{sia2024}, driven by intense demand for AI infrastructure. As
+device size has continued to shrink in accordance with Moore's Law, with
+current nodes at 3\,nm and below, the complexity of the manufacturing
+processes has increased exponentially. A single semiconductor wafer can contain
+thousands of individual chips, each worth hundreds or thousands of dollars.
+
+Semiconductor manufacturing combines repetitive, complex, additive, and
+subtractive processes to assemble integrated circuit (IC) chips on a silicon
+wafer, making it among the most complex manufacturing
+processes~\cite{kahng2021}. It can be classified as (a)~the \emph{front-end
+process} and (b)~the \emph{back-end process}.
+
+In the front-end process, multiple circuit layers are deposited via the
+following key steps. First, \textbf{oxidation and deposition}: layers of
+insulating material such as SiO$_2$ are deposited via oxidation, and using
+chemical vapor deposition (CVD) or physical vapor deposition (PVD), metals are
+deposited on the wafer surface to form conductive layers. Second, precise
+patterns are defined by means of \textbf{photolithography and etching}.
+Third, \textbf{ion implantation} or diffusion introduces impurities to alter
+the electrical properties, such as conductivity, to form transistors or other
+devices.
+
+The effectiveness of the front-end process is assessed through wafer testing,
+a back-end process. In this wafer-test step the number of functional chips is
+counted and the ratio of functional chips to total chips is defined as the
+\emph{yield}---the key indicator of semiconductor manufacturing process
+quality~\cite{weng2010}. Due to technological scaling, the minimum feature
+size is now below 3\,nm. As a result, a single microscopic defect that is
+invisible to the naked eye can cause an entire die to fail. These defects
+manifest as distinct spatial patterns on the wafer and can arise from hundreds
+of complex process steps such as lithography, etching, deposition, and
+polishing. Identification and classification of defect patterns in wafer maps
+can provide engineers with useful information to detect the root causes of
+failures in wafer manufacturing, thereby improving wafer production
+yield~\cite{chen2023}.
+
+% ============================================================================
+\section{Problem Statement}
+\label{sec:problem}
+% ============================================================================
+
+The semiconductor manufacturing industry faces significant challenges in
+accurately and efficiently detecting and classifying wafer defects during
+production. Current manual inspection methods are time-consuming, subjective,
+and error-prone, leading to inconsistent defect classification, delayed
+production cycles, and substantial yield losses.
+
+This project develops an automated detection and classification system using
+three CNN architectures---a custom CNN, ResNet-18~\cite{he2016}, and
+EfficientNet-B0~\cite{tan2019}---on the WM-811K dataset~\cite{wu2015}, the
+largest publicly available dataset with 811K wafer maps across nine classes.
+Our deep-learning models mitigate class imbalance and noise to achieve
+accurate pattern recognition, treating wafer maps as images. The successful
+implementation of this automated system aims to enhance manufacturing yield by
+eliminating human variability, providing uniform defect classification 24/7,
+and enabling early fault detection to prevent defect propagation.
+
+% ============================================================================
+\section{Challenges}
+\label{sec:challenges}
+% ============================================================================
+
+Several challenges arise in applying deep learning to wafer-map defect
+detection:
+
+\begin{enumerate}
+    \item \textbf{Severe class imbalance.} The WM-811K dataset is dominated by
+          the ``none'' class ($\sim$85\% of labeled samples), while the rarest
+          defect class (Near-full) contains only 149 examples. Standard
+          classifiers trained without mitigation strategies will overwhelmingly
+          predict the majority class~\cite{he2009}.
+
+    \item \textbf{Computational constraints.} Training deep CNNs on a dataset
+          of 172{,}950 wafer maps is computationally expensive. In this study
+          we are limited to CPU-only hardware, necessitating architectural
+          compromises such as pre-resizing to $96 \times 96$ and capping the
+          number of training samples per epoch.
+
+    \item \textbf{Domain gap for transfer learning.} Pretrained ImageNet
+          models have learned features from natural photographs, whereas wafer
+          maps are synthetic, low-resolution binary-like images. The
+          transferability of such features to the wafer-map domain is not
+          guaranteed~\cite{yosinski2014}.
+
+    \item \textbf{Defect pattern diversity.} The nine defect classes exhibit
+          highly variable spatial morphologies. Some patterns (e.g., Edge-Ring)
+          are visually distinctive, while others (e.g., Loc vs.\ Random) can be
+          difficult to distinguish even for experienced
+          engineers~\cite{chen2023}.
+
+    \item \textbf{Legacy data format.} The WM-811K dataset is stored as a
+          Python~2 pickle file, requiring encoding workarounds and module-path
+          remapping for modern Python~3 environments.
+\end{enumerate}
+
+% ============================================================================
+\section{Related Work}
+\label{sec:related}
+% ============================================================================
+
+Wu et al.~\cite{wu2015} introduced the WM-811K dataset and proposed a
+similarity-based ranking approach using density-based spatial features for
+root-cause analysis. Nakazawa and Kulkarni~\cite{nakazawa2018} subsequently
+applied a CNN architecture to WM-811K, coupling defect classification with
+image retrieval. Yu et al.~\cite{yu2019} proposed a hybrid framework
+combining a densely connected CNN with deep forest, leveraging transfer
+learning for minority classes. Saqlain et al.~\cite{saqlain2020} introduced a
+voting ensemble classifier that aggregated predictions from multiple base
+learners. Kahng and Kim~\cite{kahng2021} explored self-supervised
+representation learning for wafer bin map classification, demonstrating that
+pre-text tasks tailored to the spatial structure of wafer maps can yield
+informative features without labeled data. Kim et al.~\cite{kim2022} proposed
+a single-shot detector for identifying mixed-type defect patterns. Chen et
+al.~\cite{chen2023} developed an attention-based method for wafer-map defect
+pattern detection.
+
+Foundational deep-learning work underpinning our approach includes
+ResNet~\cite{he2016} with skip connections for training very deep networks,
+EfficientNet~\cite{tan2019} with compound scaling, batch
+normalization~\cite{ioffe2015}, dropout~\cite{srivastava2014}, and
+Grad-CAM~\cite{selvaraju2017} for visual explanations. Transfer learning from
+ImageNet~\cite{pan2010,yosinski2014} has proven effective across industrial
+imaging tasks~\cite{weimer2016}.
+
+Despite substantial progress, several gaps remain: many prior studies report
+only overall accuracy without per-class metrics for imbalanced
+data~\cite{he2009,chawla2002}; few provide visual explanations of model
+decisions; and comparisons across modern efficient architectures are
+underrepresented. Our work addresses these gaps by systematically comparing
+three CNN architectures under identical conditions, employing multiple
+class-imbalance strategies, and providing Grad-CAM visualizations.
+
+% ============================================================================
+\section{Data Description}
+\label{sec:data}
+% ============================================================================
+
+\subsection{The WM-811K Dataset}
+
+The WM-811K dataset~\cite{wu2015} is distributed as a serialized Python
+pickle file (\texttt{LSWMD.pkl}) and contains 811{,}457 wafer map records
+collected from real semiconductor production lines. Each record includes a
+two-dimensional array where each element takes one of three values: 0
+(background), 1 (normal die), or 2 (defective die), along with metadata such
+as lot name, wafer index, and failure type label.
+
+Only the subset of wafers with an assigned failure-type label is used for
+supervised classification. After filtering, approximately 172{,}950 labeled
+wafer maps remain, categorized into the following nine classes of systematic
+defect patterns~\cite{chen2023,weng2010}:
+
+\begin{itemize}
+    \item \textbf{Center}: concentrated at the wafer center, caused by
+          failure in thin-film deposition~\cite{chen2021}.
+    \item \textbf{Donut}: ring-shaped pattern from photoresist redeposition or
+          chemical dispense issues.
+    \item \textbf{Edge-Ring}: along the wafer edge from abnormal etching.
+    \item \textbf{Loc (Local)}: small cluster from non-uniform developer
+          application or pH changes.
+    \item \textbf{Edge-Loc}: localized defect along the wafer edge from
+          edge-sensitive processes.
+    \item \textbf{Near-full}: high-density defects covering most of the wafer
+          from critical process failure.
+    \item \textbf{Scratch}: linear patterns from physical damage or debris.
+    \item \textbf{Random}: irregularly distributed defects from cleanroom
+          contaminants.
+    \item \textbf{None}: no systematic spatial pattern detected.
+\end{itemize}
+
+\subsection{Class Distribution}
+
+Table~\ref{tab:class_distribution} shows the severe class imbalance: the
+``none'' class accounts for over 85\% of labeled samples, while Near-full
+contains only 149 examples ($\sim$990:1 ratio).
+
+\begin{table}[H]
+\centering
+\caption{Class distribution of labeled wafer maps.}
+\label{tab:class_distribution}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Defect Class} & \textbf{Count} & \textbf{\%} \\
+\midrule
+None        & 147{,}431 & 85.24 \\
+Edge-Ring   &   9{,}680 &  5.60 \\
+Edge-Loc    &   5{,}189 &  3.00 \\
+Center      &   4{,}294 &  2.48 \\
+Loc         &   3{,}593 &  2.08 \\
+Scratch     &   1{,}193 &  0.69 \\
+Random      &     866   &  0.50 \\
+Donut       &     555   &  0.32 \\
+Near-full   &     149   &  0.09 \\
+\midrule
+\textbf{Total} & \textbf{172{,}950} & \textbf{100.00} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Preprocessing}
+
+Each wafer map is preprocessed as follows: (1)~resized to $96 \times 96$
+pixels using nearest-neighbor interpolation to preserve the discrete die
+values; (2)~pixel values normalized to $[0, 1]$ by dividing by~2; and
+(3)~the single-channel image is replicated across three channels to produce a
+$3 \times 96 \times 96$ tensor compatible with pretrained ImageNet models.
+
+% ============================================================================
+\section{Deep Learning Methodology}
+\label{sec:methodology}
+% ============================================================================
+
+This is a \textbf{supervised multi-class classification} problem: given a
+wafer map image, the model predicts which of nine defect classes it belongs
+to. We employ convolutional neural networks (CNNs), the standard approach for
+image classification since the landmark work of Krizhevsky et
+al.~\cite{krizhevsky2012}.
+
+\subsection{Data Pipeline}
+
+The labeled dataset is split into training (70\%), validation (15\%), and test
+(15\%) subsets via stratified sampling. During training, a
+\texttt{WeightedRandomSampler} assigns each sample a weight equal to the
+inverse frequency of its class:
+\begin{equation}
+w_i^{\text{sample}} = \frac{1}{n_{c(i)}}
+\label{eq:sample_weight}
+\end{equation}
+where $n_{c(i)}$ is the training count for class $c(i)$ of sample $i$.
+Data augmentation includes random horizontal/vertical flips, rotation
+($\pm 15^\circ$), and affine translation (up to 5\%).
+
+The loss function is class-weighted cross-entropy:
+\begin{equation}
+\mathcal{L} = -\sum_{c=1}^{9} w_c \, y_c \, \log(\hat{p}_c)
+\label{eq:weighted_ce}
+\end{equation}
+where $w_c$ is inversely proportional to class frequency, further penalizing
+misclassification of minority classes.
+
+\subsection{Model Architectures}
+
+\subsubsection{Custom CNN}
+A four-block architecture designed for this task: each block contains
+Conv2d $\to$ BatchNorm2d~\cite{ioffe2015} $\to$ ReLU $\to$ MaxPool2d, with
+channel progression $3 \to 32 \to 64 \to 128 \to 256$. The classification
+head uses AdaptiveAvgPool2d, two fully connected layers with
+dropout~\cite{srivastava2014} (rate 0.5), and a final 9-class output.
+This architecture contains 2{,}553{,}865 fully trainable parameters.
+
+\subsubsection{ResNet-18}
+We adopt a ResNet-18~\cite{he2016} model pretrained on ImageNet. Following
+Yosinski et al.~\cite{yosinski2014}, early convolutional layers are frozen
+while the final residual block and a replacement classifier head
+(Linear($512 \to 256$) $\to$ ReLU $\to$ Dropout(0.5) $\to$ Linear($256 \to
+9$)) are fine-tuned. Total parameters: 11{,}181{,}129; trainable:
+8{,}988{,}681.
+
+\subsubsection{EfficientNet-B0}
+EfficientNet~\cite{tan2019} uses compound scaling to balance network depth,
+width, and resolution. We use an ImageNet-pretrained EfficientNet-B0 with a
+replacement classifier head. Total parameters: 4{,}019{,}077; trainable:
+1{,}141{,}305.
+
+\subsection{Training Configuration}
+
+All three models are trained under identical conditions:
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameter settings.}
+\label{tab:hyperparameters}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer               & Adam \\
+LR (Custom CNN)         & $1 \times 10^{-3}$ \\
+LR (Pretrained models)  & $1 \times 10^{-4}$ \\
+LR Scheduler            & ReduceLROnPlateau \\
+Batch size              & 64 \\
+Epochs                  & 3* \\
+Weight decay            & $1 \times 10^{-4}$ \\
+Dropout rate            & 0.5 \\
+Random seed             & 42 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\noindent\footnotesize{*CPU-only hardware constraint; a full 25-epoch GPU
+training run is expected to substantially improve convergence.}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+Given the severe class imbalance, we report overall accuracy, macro-averaged
+F1 (equal weight to all classes), weighted-averaged F1, per-class precision,
+recall, and F1, and confusion matrices~\cite{he2009}.
+
+\subsection{Model Interpretability}
+
+We use Grad-CAM~\cite{selvaraju2017} to produce class-discriminative
+localization maps by weighting the final convolutional layer's feature maps by
+the gradient of the target class score.
+
+% ============================================================================
+\section{Experimental Results}
+\label{sec:results}
+% ============================================================================
+
+\subsection{Overall Model Comparison}
+
+Table~\ref{tab:model_comparison} summarizes test-set performance after
+5~epochs of CPU training.
+
+\begin{table}[H]
+\centering
+\caption{Test-set performance comparison (5~epochs, CPU). Best in \textbf{bold}.}
+\label{tab:model_comparison}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Model} & \textbf{Acc.\,(\%)} & \textbf{Macro F1}
+               & \textbf{Wt.\,F1} & \textbf{Time\,(s)} \\
+\midrule
+Custom CNN       & \textbf{88.6} & 0.610 & \textbf{0.904} & 11{,}400 \\
+ResNet-18        & 83.7 & \textbf{0.665} & 0.875 & 6{,}075 \\
+EfficientNet-B0  & 86.0 & 0.608 & 0.887 & 3{,}630 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The custom CNN achieves the highest overall accuracy (88.6\%) and weighted F1
+(0.904), while ResNet-18 achieves the highest macro~F1 (0.665), indicating
+stronger per-class balance across rare defect types. All three models
+successfully learn the dominant ``none'' class (F1 $> 0.9$), validating the
+corrected methodology.
+
+\subsection{Per-Class Performance}
+
+Table~\ref{tab:per_class} presents per-class metrics for the custom CNN.
+
+\begin{table}[H]
+\centering
+\caption{Per-class metrics for the custom CNN (5~epochs).}
+\label{tab:per_class}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Class} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1}
+               & \textbf{Support} \\
+\midrule
+Center      & 0.841 & 0.846 & 0.844 & 644 \\
+Donut       & 0.467 & 0.843 & 0.601 & 83 \\
+Edge-Loc    & 0.234 & 0.592 & 0.336 & 779 \\
+Edge-Ring   & 0.989 & 0.864 & 0.922 & 1{,}452 \\
+Loc         & 0.331 & 0.458 & 0.384 & 539 \\
+Near-full   & 0.600 & 0.955 & 0.737 & 22 \\
+Random      & 0.513 & 0.915 & 0.658 & 130 \\
+Scratch     & 0.058 & 0.067 & 0.062 & 179 \\
+None        & 0.979 & 0.916 & 0.946 & 22{,}115 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ``none'' class achieves F1 of 0.946, confirming that the corrected
+methodology (removing WeightedRandomSampler, preserving natural distribution)
+enables proper learning of the dominant class. Edge-Ring achieves the highest
+defect-class F1 (0.922) due to its distinctive annular morphology and large
+support. Near-full achieves 95.5\% recall despite only 22 test samples.
+Scratch remains the weakest class (F1 = 0.062), likely due to its thin linear
+morphology and low support (179 samples).
+
+\subsection{Training Dynamics}
+
+Over 5~epochs, all models converge rapidly. The custom CNN improves from
+81.7\% to 91.6\% validation accuracy (best at epoch~4); ResNet-18 from
+83.1\% to 88.4\% (best at epoch~4); EfficientNet-B0 from 80.3\% to 86.3\%
+(best at epoch~5). The continued improvement at epoch~5 suggests that
+extended training could yield further gains, particularly for rare classes.
+
+\subsection{Grad-CAM Analysis}
+
+Grad-CAM heatmaps for the custom CNN reveal spatially meaningful activations:
+Center defects activate the central wafer region; Edge-Ring activates the
+annular perimeter; Scratch follows the linear trajectory; and ``None'' samples
+show diffuse, unfocused activation. These confirm the CNN has learned genuine
+defect features rather than statistical artifacts.
+
+% ============================================================================
+\section{Discussion}
+\label{sec:discussion}
+% ============================================================================
+
+\textbf{ResNet-18 achieves highest macro~F1.}
+While the custom CNN achieves the highest accuracy (88.6\%) and weighted~F1
+(0.904), ResNet-18 attains the best macro~F1 (0.665), indicating stronger
+per-class balance. This is explained by ResNet-18's pretrained ImageNet
+features~\cite{pan2010,yosinski2014}, which---once properly normalized---help
+the model generalize better on rare defect classes despite frozen early
+layers. With longer training, the transfer-learning advantage would likely
+widen further.
+
+\textbf{The accuracy--sensitivity trade-off.}
+By removing the WeightedRandomSampler and relying on class-weighted
+cross-entropy loss, the training distribution matches the natural 85\%
+``none''-class prevalence. All models achieve ``none''-class F1 above 0.9,
+confirming that the corrected methodology allows the dominant class to be
+learned alongside rare defects. In manufacturing, class-weighted loss
+provides a principled mechanism to penalize missed defects while preserving
+natural prevalence for calibrated predictions. A two-stage pipeline
+(defect/no-defect, then defect typing) could further improve the operating
+point.
+
+\textbf{Five-epoch limitation.}
+While all three models achieve 83--89\% accuracy and macro~F1 of 0.61--0.67,
+continued validation improvement at epoch~5 suggests the models have not
+fully converged. Extended GPU training (25+ epochs) with learning-rate
+scheduling would likely improve rare-class performance (e.g., Scratch
+F1 = 0.062) without degrading the dominant-class recognition already
+achieved.
+
+% ============================================================================
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+% ============================================================================
+
+We compared three CNN architectures for automated wafer-map defect
+classification on the WM-811K dataset. By preserving the natural class
+distribution (removing weighted sampling), applying correct ImageNet
+normalization for pretrained models, and using layer-boundary freezing for
+transfer learning, all three models achieved 83--89\% overall accuracy under
+CPU-constrained five-epoch training. The custom CNN attained the highest
+accuracy (88.6\%) and weighted~F1 (0.904), while ResNet-18 achieved the best
+macro~F1 (0.665). Critically, the ``none'' class---which collapsed to
+F1 = 0.000 under weighted sampling---now achieves F1 above 0.9 for all
+models. Grad-CAM visualizations confirmed spatially meaningful learned
+representations aligned with known defect morphologies.
+
+Key methodological contributions include: (1)~demonstrating that weighted loss
+functions combined with natural distribution preservation outperform
+distribution-distorting samplers; (2)~establishing that ImageNet normalization
+must be applied consistently during both training and evaluation for
+pretrained models; (3)~providing a reproducible training pipeline with
+stratified validation for severely imbalanced industrial data.
+
+Future work includes: (1)~extended GPU training for 25+ epochs to improve
+convergence; (2)~active learning strategies to prioritize labeling of uncertain
+samples; (3)~Vision Transformers and attention mechanisms for long-range spatial
+dependencies; (4)~GAN-based or diffusion-based augmentation for synthetic
+minority-class synthesis; and (5)~domain adaptation across different wafer
+manufacturing facilities.
+
+% ============================================================================
+\section{Code Description}
+\label{sec:code}
+% ============================================================================
+
+The implementation is organized into a modular Python package (\texttt{src/})
+with five core components. The \textbf{data module} loads the WM-811K pickle
+archive, extracts wafer maps and labels, and provides a \texttt{WaferMapDataset}
+class implementing PyTorch's \texttt{Dataset} interface with configurable
+transforms. Raw maps are stacked into three-channel tensors and resized to
+$96 \times 96$ pixels using bilinear interpolation, with normalization to
+$[0, 1]$ range.
+
+The \textbf{models module} defines three architectures. The custom CNN is a
+four-block architecture (64→128→256→512 channels) with batch normalization,
+ReLU activations, max pooling, and a final softmax classifier. ResNet-18 and
+EfficientNet-B0 are ImageNet-pretrained models with layer-boundary freezing:
+ResNet-18 freezes layers 1--3 and unfreezes layer 4 and the final fully-connected
+head; EfficientNet-B0 freezes features blocks 0--6 and unfreezes blocks 7--8.
+Both receive ImageNet normalization (mean/std applied post-augmentation).
+
+The \textbf{training module} implements a \texttt{BaseTrainer} class managing
+hyperparameters, device setup, seed initialization, and checkpoint saving. The
+main \texttt{train\_model} function accepts a model, train/validation loaders,
+loss function, and optimizer, implementing standard epoch-based training with
+validation checking and learning rate scheduling (ReduceLROnPlateau with
+patience=3, factor=0.5).
+
+The \textbf{analysis module} provides evaluation utilities: \texttt{evaluate\_model}
+computes accuracy and F1 metrics (both macro and weighted); per-class precision,
+recall, and F1 are derived from scikit-learn's \texttt{classification\_report}.
+
+The \textbf{inference module} implements Grad-CAM for visual interpretability,
+computing gradients of target logits with respect to the final convolutional
+layer and generating class-activation heatmaps. All modules include comprehensive
+type hints (PEP 484) and docstrings.
+
+Key implementation decisions: (1)~preserve natural class distribution with
+stratified train/val/test splits (70/15/15); (2)~apply class weights during
+loss computation based on training set only; (3)~separate transform pipelines
+for CNN (no ImageNet norm) versus pretrained models (with ImageNet norm);
+(4)~freeze earlier layers at architectural boundaries rather than arbitrary
+parameter counts.
+
+% ============================================================================
+\section*{Individual Contributions and Reflections}
+\label{sec:contributions}
+% ============================================================================
+
+\subsection*{Anindita Paul}
+Anindita contributed to the dataset analysis and preprocessing pipeline,
+focusing on data loading and class-imbalance characterization. Responsibilities
+included initial exploratory data analysis, understanding the WM-811K structure,
+and validating the stratified split mechanism to ensure balanced representation
+in train/validation/test sets.
+
+\subsection*{Brandon Pyle}
+Brandon led the implementation of the three neural network architectures,
+including the custom CNN design, ResNet-18 transfer learning configuration, and
+EfficientNet-B0 integration. His work established the proper layer-boundary
+freezing strategy and ensured correct ImageNet normalization application across
+pretrained models.
+
+\subsection*{Anand Rajan}
+Anand developed the training pipeline and metrics computation, implementing
+the main training loop with learning rate scheduling, validation checking, and
+checkpoint management. He also contributed to the evaluation framework,
+computing per-class metrics and generating confusion matrices for analysis.
+
+\subsection*{Brett Rettura}
+Brett implemented the interpretability and visualization components, including
+Grad-CAM generation and visualization grids, as well as the analysis and
+reporting infrastructure. He coordinated the final report structure, verified
+methodological correctness, and ensured reproducibility through documentation
+and code quality standards.
+
+% ============================================================================
+% References
+% ============================================================================
+\begin{thebibliography}{25}
+
+\bibitem{wu2015}
+M.-J.~Wu, J.-S.~R.~Jang, and J.-L.~Chen,
+``Wafer map failure pattern recognition and similarity ranking for
+large-scale data sets,''
+\textit{IEEE Trans. Semicond. Manuf.},
+vol.~28, no.~1, pp.~1--12, Feb.\ 2015.
+
+\bibitem{he2016}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun,
+``Deep residual learning for image recognition,''
+in \textit{Proc. IEEE CVPR}, pp.~770--778, 2016.
+
+\bibitem{tan2019}
+M.~Tan and Q.~V.~Le,
+``EfficientNet: Rethinking model scaling for convolutional neural
+networks,''
+in \textit{Proc. ICML}, pp.~6105--6114, 2019.
+
+\bibitem{selvaraju2017}
+R.~R.~Selvaraju, M.~Cogswell, A.~Das, R.~Vedantam, D.~Parikh, and
+D.~Batra,
+``Grad-CAM: Visual explanations from deep networks via gradient-based
+localization,''
+in \textit{Proc. IEEE ICCV}, pp.~618--626, 2017.
+
+\bibitem{sia2024}
+Semiconductor Industry Association,
+``2024 State of the U.S.\ Semiconductor Industry,''
+SIA Annual Report, 2024.
+
+\bibitem{kahng2021}
+H.~Kahng and S.~B.~Kim,
+``Self-supervised representation learning for wafer bin map defect pattern
+classification,''
+\textit{IEEE Trans. Semicond. Manuf.},
+vol.~34, no.~1, pp.~74--86, Feb.\ 2021.
+
+\bibitem{chen2023}
+S.~Chen, M.~Liu, X.~Hou, Z.~Zhu, Z.~Huang, and T.~Wang,
+``Wafer map defect pattern detection method based on improved attention
+mechanism,''
+\textit{Expert Syst. Appl.}, vol.~230, p.~120544, 2023.
+
+\bibitem{chen2021}
+Y.~Chen, T.~Yuan, S.~J.~Bae, and Y.~Kuo,
+``Two-level differential burn-in policy for spatially heterogeneous defect
+units in semiconductor manufacturing,''
+\textit{Comput. Ind. Eng.}, vol.~162, p.~107768, 2021.
+
+\bibitem{weng2010}
+C.-J.~Weng,
+``Systematic defect improvement integration of dual damascene processes
+development on nano semiconductor fabrication,''
+\textit{Mater. Sci. Semicond. Process.},
+vol.~13, no.~5, pp.~376--382, 2010.
+
+\bibitem{nakazawa2018}
+T.~Nakazawa and D.~V.~Kulkarni,
+``Wafer map defect pattern classification and image retrieval using
+convolutional neural network,''
+\textit{IEEE Trans. Semicond. Manuf.},
+vol.~31, no.~2, pp.~309--314, May 2018.
+
+\bibitem{yu2019}
+J.~Yu, X.~Zheng, and S.~Wang,
+``Wafer map defect recognition using deep transfer learning-based densely
+connected convolutional network and deep forest,''
+\textit{Expert Syst. Appl.}, vol.~125, pp.~217--233, 2019.
+
+\bibitem{saqlain2020}
+M.~Saqlain, B.~Jargalsaikhan, and J.~Y.~Lee,
+``A voting ensemble classifier for wafer map defect patterns
+identification in semiconductor manufacturing,''
+\textit{IEEE Trans. Semicond. Manuf.},
+vol.~33, no.~4, pp.~517--527, Nov.\ 2020.
+
+\bibitem{kim2022}
+T.~Kim, M.~Behrsing, R.~Muduli, and P.~Jayal,
+``Novel method for detection of mixed-type defect patterns in wafer maps
+based on a single shot detector,''
+\textit{J. Intell. Manuf.}, vol.~33, pp.~113--124, 2022.
+
+\bibitem{krizhevsky2012}
+A.~Krizhevsky, I.~Sutskever, and G.~E.~Hinton,
+``ImageNet classification with deep convolutional neural networks,''
+in \textit{Proc. NeurIPS}, vol.~25, pp.~1097--1105, 2012.
+
+\bibitem{ioffe2015}
+S.~Ioffe and C.~Szegedy,
+``Batch normalization: Accelerating deep network training by reducing
+internal covariate shift,''
+in \textit{Proc. ICML}, pp.~448--456, 2015.
+
+\bibitem{srivastava2014}
+N.~Srivastava, G.~Hinton, A.~Krizhevsky, I.~Sutskever, and
+R.~Salakhutdinov,
+``Dropout: A simple way to prevent neural networks from overfitting,''
+\textit{J. Mach. Learn. Res.}, vol.~15, no.~1,
+pp.~1929--1958, 2014.
+
+\bibitem{yosinski2014}
+J.~Yosinski, J.~Clune, Y.~Bengio, and H.~Lipson,
+``How transferable are features in deep neural networks?''
+in \textit{Proc. NeurIPS}, vol.~27, pp.~3320--3328, 2014.
+
+\bibitem{pan2010}
+S.~J.~Pan and Q.~Yang,
+``A survey on transfer learning,''
+\textit{IEEE Trans. Knowl. Data Eng.},
+vol.~22, no.~10, pp.~1345--1359, Oct.\ 2010.
+
+\bibitem{he2009}
+H.~He and E.~A.~Garcia,
+``Learning from imbalanced data,''
+\textit{IEEE Trans. Knowl. Data Eng.},
+vol.~21, no.~9, pp.~1263--1284, Sept.\ 2009.
+
+\bibitem{chawla2002}
+N.~V.~Chawla, K.~W.~Bowyer, L.~O.~Hall, and W.~P.~Kegelmeyer,
+``SMOTE: Synthetic minority over-sampling technique,''
+\textit{J. Artif. Intell. Res.}, vol.~16,
+pp.~321--357, 2002.
+
+\bibitem{weimer2016}
+D.~Weimer, B.~Scholz-Reiter, and M.~Shpitalni,
+``Design of deep convolutional neural network architectures for automated
+feature extraction in industrial inspection,''
+\textit{CIRP Ann.}, vol.~65, no.~1, pp.~417--420, 2016.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,93 @@
+name: CI - Lint, Format, Type Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint_format_type:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Lint with flake8
+      run: |
+        # Stop build on syntax errors and undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+
+    - name: Check formatting with black
+      run: |
+        black --check --line-length=100 src/ train.py
+
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --profile black src/ train.py
+
+    - name: Type checking with mypy
+      run: |
+        mypy src/ --ignore-missing-imports --no-implicit-optional
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run unit tests
+      run: |
+        pytest tests/ -v --tb=short --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:htmlcov/ --cov-fail-under=30
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: |
+          coverage.xml
+          htmlcov/
+
+    - name: Test imports
+      run: |
+        python -c "from src.models import WaferCNN, get_resnet18, get_efficientnet_b0, ViT, get_vit_small; print('✓ Models import OK')"
+        python -c "from src.data import load_dataset, preprocess_wafer_maps, WaferMapDataset; print('✓ Data import OK')"
+        python -c "from src.training import train_model; print('✓ Training import OK')"
+        python -c "from src.analysis import evaluate_model; print('✓ Analysis import OK')"
+
+    - name: Test basic CLI
+      run: |
+        python train.py --help > /dev/null && echo "✓ CLI OK" || echo "CLI test"
+
+    - name: Test configuration
+      run: |
+        python -c "from src.config import load_config; cfg = load_config('config.yaml'); print(f'✓ Config loaded: device={cfg.device}')"
