@@ -1,0 +1,21 @@
+# Colab-friendly overlay for the notebook training loop.
+#
+# Tighter early-stopping (5 -> 3 bad epochs) so we don't waste T4 time once
+# val metrics plateau, and Drive-backed checkpoints so a disconnect doesn't
+# destroy an hour of training.
+#
+# Usage (from the notebook Cell 6 subprocess call):
+#   python train.py --model cnn --config config.yaml --config configs/colab_fast.yaml ...
+#
+# The base config is still authoritative; this file only overrides a few keys.
+
+training:
+  early_stopping:
+    enabled: true
+    patience: 3       # was 10 in base
+    min_delta: 1e-4
+
+  checkpointing:
+    save_dir: "/content/drive/MyDrive/wafer_runs/checkpoints"
+    save_best_only: true
+    save_frequency: 1  # save after every epoch so a crash loses <1 epoch

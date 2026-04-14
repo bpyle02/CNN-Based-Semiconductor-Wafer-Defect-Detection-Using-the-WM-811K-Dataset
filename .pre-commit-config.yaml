@@ -25,7 +25,17 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
-        args: ['--maxkb=500']
+        args: ['--maxkb=1024']
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Strip Jupyter notebook outputs so diffs stay sane (outputs can be MB of base64 images)
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
+        files: '\.ipynb$'
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
