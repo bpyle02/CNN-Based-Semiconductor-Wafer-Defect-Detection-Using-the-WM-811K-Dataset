@@ -140,6 +140,8 @@ dmypy.json
 *.pdf
 !docs/wafer_defect_detection_report.pdf
 !docs/presentation.pdf
+!docs/run_20260414_postmortem.pdf
+!docs/*.pdf
 
 # Keep source files
 !**/*.py

@@ -1,106 +1,100 @@
 {
   "cnn": {
     "display_name": "Custom CNN",
-    "accuracy": 0.6266044790502255,
-    "macro_f1": 0.2950433631214054,
-    "weighted_f1": 0.7189360216943597,
-    "ece": 0.30282466437116057,
-    "negative_log_likelihood": 1.313451701389224,
-    "brier_score": 0.6583383835307887,
-    "time_sec": 1666.6103928089142,
+    "source": "colab_run_20260414_060508_to_075523",
+    "accuracy": 0.9611,
+    "macro_f1": 0.7988,
+    "weighted_f1": 0.9632,
+    "ece": 0.0068,
+    "negative_log_likelihood": 0.1228,
+    "brier_score": 0.0578,
+    "time_sec": 6543.2,
+    "epochs_ran": 10,
+    "best_epoch": 10,
+    "best_val_macro_f1": 0.8191,
+    "checkpoint_sha256_prefix": "0fc2f84da0a7117c",
     "per_class": {
-      "Center": {
-        "precision": 0.09635173058933583,
-        "recall": 0.7996894409937888,
-        "f1": 0.1719819669393889,
-        "support": 644
-      },
-      "Donut": {
-        "precision": 0.05555555555555555,
-        "recall": 0.012048192771084338,
-        "f1": 0.019801980198019802,
-        "support": 83
-      },
-      "Edge-Loc": {
-        "precision": 0.08571428571428572,
-        "recall": 0.20025673940949937,
-        "f1": 0.12004617160446325,
-        "support": 779
-      },
-      "Edge-Ring": {
-        "precision": 0.8908238446081714,
-        "recall": 0.9159779614325069,
-        "f1": 0.9032258064516129,
-        "support": 1452
-      },
-      "Loc": {
-        "precision": 0.0667618707604427,
-        "recall": 0.3469387755102041,
-        "f1": 0.11197604790419162,
-        "support": 539
-      },
-      "Near-full": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "support": 22
-      },
-      "Random": {
-        "precision": 0.4092526690391459,
-        "recall": 0.8846153846153846,
-        "f1": 0.559610705596107,
-        "support": 130
-      },
-      "Scratch": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "support": 179
-      },
-      "none": {
-        "precision": 0.9837128957202285,
-        "recall": 0.6308840153741804,
-        "f1": 0.768747589398865,
-        "support": 22115
-      }
-    },
-    "epoch_history": {
-      "train_loss": [
-        1.937913647679842
-      ],
-      "train_acc": [
-        0.5033040375338664
-      ],
-      "val_loss": [
-        1.542466236282938
-      ],
-      "val_acc": [
-        0.6242917164553059
-      ],
-      "val_macro_f1": [
-        0.29891698646347786
-      ],
-      "learning_rate": [
-        0.001
-      ],
-      "total_time": 1666.5886435508728,
-      "best_epoch": 1,
-      "best_metric": 0.29891698646347786,
-      "best_metric_name": "val_macro_f1",
-      "best_val_acc": 0.6242917164553059,
-      "best_val_loss": 1.542466236282938,
-      "epochs_ran": 1,
-      "stopped_early": false,
-      "mixed_precision": false,
-      "drw_epoch": null,
-      "adaptive_rebalance": false,
-      "use_ema": false,
-      "ema_decay": null
+      "Center":    {"precision": 0.8610, "recall": 0.8944, "f1": 0.8774, "support": 644},
+      "Donut":     {"precision": 0.5806, "recall": 0.8675, "f1": 0.6957, "support": 83},
+      "Edge-Loc":  {"precision": 0.7128, "recall": 0.8190, "f1": 0.7622, "support": 779},
+      "Edge-Ring": {"precision": 0.9869, "recall": 0.9339, "f1": 0.9597, "support": 1452},
+      "Loc":       {"precision": 0.6205, "recall": 0.7069, "f1": 0.6609, "support": 539},
+      "Near-full": {"precision": 0.7586, "recall": 1.0000, "f1": 0.8627, "support": 22},
+      "Random":    {"precision": 0.6647, "recall": 0.8538, "f1": 0.7475, "support": 130},
+      "Scratch":   {"precision": 0.5254, "recall": 0.8101, "f1": 0.6374, "support": 179},
+      "none":      {"precision": 0.9926, "recall": 0.9783, "f1": 0.9854, "support": 22115}
     },
     "calibrated_metrics": {
-      "temperature": 1.3632303476333618,
-      "ece": 0.32080240979993435,
-      "brier_score": 0.6766253669250193
+      "temperature": 1.1686,
+      "ece": 0.0106,
+      "brier_score": 0.0573,
+      "negative_log_likelihood": 0.1247
     }
+  },
+  "resnet": {
+    "display_name": "ResNet-18",
+    "source": "colab_run_20260414_075605_to_094440",
+    "accuracy": 0.7770,
+    "macro_f1": 0.6587,
+    "weighted_f1": 0.8352,
+    "ece": 0.0312,
+    "negative_log_likelihood": 0.6088,
+    "brier_score": 0.3255,
+    "time_sec": 6410.0,
+    "epochs_ran": 10,
+    "best_epoch": 9,
+    "best_val_macro_f1": 0.6623,
+    "checkpoint_sha256_prefix": "e63badf96a53c7bf",
+    "per_class": {
+      "Center":    {"precision": 0.7970, "recall": 0.9084, "f1": 0.8491, "support": 644},
+      "Donut":     {"precision": 0.8710, "recall": 0.6506, "f1": 0.7448, "support": 83},
+      "Edge-Loc":  {"precision": 0.1371, "recall": 0.9114, "f1": 0.2383, "support": 779},
+      "Edge-Ring": {"precision": 0.9238, "recall": 0.9601, "f1": 0.9416, "support": 1452},
+      "Loc":       {"precision": 0.2901, "recall": 0.5733, "f1": 0.3853, "support": 539},
+      "Near-full": {"precision": 0.4231, "recall": 1.0000, "f1": 0.5946, "support": 22},
+      "Random":    {"precision": 0.8000, "recall": 0.8615, "f1": 0.8296, "support": 130},
+      "Scratch":   {"precision": 0.4298, "recall": 0.5475, "f1": 0.4816, "support": 179},
+      "none":      {"precision": 0.9940, "recall": 0.7630, "f1": 0.8633, "support": 22115}
+    },
+    "calibrated_metrics": {
+      "temperature": 1.1438,
+      "ece": 0.0306,
+      "brier_score": 0.3260,
+      "negative_log_likelihood": 0.6136
+    },
+    "notes": "Partial collapse: Edge-Loc precision 0.137 with recall 0.91 indicates the model over-predicts Edge-Loc due to inverse-frequency CE without DRW smoothing. Macro F1 understates real performance because of this single-class confusion."
+  },
+  "efficientnet": {
+    "display_name": "EfficientNet-B0",
+    "source": "colab_run_20260414_094455_to_112923",
+    "accuracy": 0.3742,
+    "macro_f1": 0.0999,
+    "weighted_f1": 0.4966,
+    "ece": 0.4543,
+    "negative_log_likelihood": 4.7215,
+    "brier_score": 1.0078,
+    "time_sec": 6166.4,
+    "epochs_ran": 10,
+    "best_epoch": 4,
+    "best_val_macro_f1": 0.0992,
+    "checkpoint_sha256_prefix": "d2abefb0c298cdd5",
+    "per_class": {
+      "Center":    {"precision": 0.0192, "recall": 0.0388, "f1": 0.0257, "support": 644},
+      "Donut":     {"precision": 0.0714, "recall": 0.0120, "f1": 0.0206, "support": 83},
+      "Edge-Loc":  {"precision": 0.0377, "recall": 0.0809, "f1": 0.0514, "support": 779},
+      "Edge-Ring": {"precision": 0.1479, "recall": 0.1494, "f1": 0.1487, "support": 1452},
+      "Loc":       {"precision": 0.0223, "recall": 0.0278, "f1": 0.0248, "support": 539},
+      "Near-full": {"precision": 0.0027, "recall": 0.8636, "f1": 0.0053, "support": 22},
+      "Random":    {"precision": 0.0250, "recall": 0.5846, "f1": 0.0479, "support": 130},
+      "Scratch":   {"precision": 0.0060, "recall": 0.0056, "f1": 0.0058, "support": 179},
+      "none":      {"precision": 0.8826, "recall": 0.4201, "f1": 0.5693, "support": 22115}
+    },
+    "calibrated_metrics": {
+      "temperature": 2.4329,
+      "ece": 0.2749,
+      "brier_score": 0.7811,
+      "negative_log_likelihood": 3.0676
+    },
+    "notes": "Full collapse: Near-full recall 0.86 with precision 0.003 is the canonical inverse-frequency CE failure mode. Validation loss oscillated 20-123 across epochs while training loss declined smoothly. Do not use as reported baseline; re-run with weighted: false (post 83ba643)."
   }
 }

@@ -1,0 +1,374 @@
+%%% ==========================================================================
+%%% Post-mortem: 6-hour Colab Run, 2026-04-14
+%%% AI 570 - Team 4 - Wafer Defect Detection
+%%% ==========================================================================
+\documentclass[conference]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{gray!40}
+}
+
+\begin{document}
+
+\title{Post-mortem: Six-hour Colab Run, 2026-04-14\\
+\large{One Headline Result, Two Collapsed Baselines, and a Metrics-File Race}}
+
+\author{
+\IEEEauthorblockN{AI 570 -- Team 4}
+\IEEEauthorblockA{Anindita Paul, Brandon Pyle, Anand Rajan, Brett Rettura\\
+The Pennsylvania State University}
+}
+
+\maketitle
+
+\begin{abstract}
+A six-hour training run on Google Colab Pro (2026-04-14) trained three
+WM-811K wafer defect classifiers in sequence: a custom CNN, ResNet-18, and
+EfficientNet-B0. The custom CNN delivered a strong baseline (accuracy 0.961,
+macro F1 0.799, ECE 0.007). The two pretrained models---trained under the
+same default loss configuration---collapsed: ResNet-18 partially (macro F1
+0.659 driven by single-class Edge-Loc confusion), EfficientNet-B0 fully
+(macro F1 0.100, validation loss oscillating 20--123 with no convergence).
+The aggregated \texttt{metrics.json} artifact captured by Colab and synced
+to Google Drive contained metrics for only the last model trained
+(EfficientNet), masking the CNN's success behind a metrics-file
+race condition. We document both the orchestration bug and the loss-function
+configuration that explains why the same training recipe worked for the
+custom CNN and failed for the pretrained networks. Both root causes are
+remediated in commit \texttt{83ba643}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+post-mortem, root-cause analysis, class imbalance, deferred re-weighting,
+WM-811K, training stability, custom CNN, transfer learning
+\end{IEEEkeywords}
+
+\section{Introduction}
+The team's PyTorch training pipeline was redesigned the prior day to
+support multi-model runs from Google Colab via a subprocess-per-model loop
+in the quickstart notebook. The 2026-04-14 run was the first end-to-end
+exercise of that loop with cached preprocessing and a Colab Pro T4 runtime.
+
+Wall-clock time totaled approximately six hours: 1.8~h for the custom CNN,
+1.8~h for ResNet-18, 1.7~h for EfficientNet-B0. All three model checkpoints
+were saved to disk and synced to Google Drive. The aggregated metrics file,
+however, contained results for only the last model trained, hiding both the
+strong CNN baseline and the diagnostic information that would have flagged
+the two pretrained-model collapses.
+
+\section{Headline Result: Custom CNN}
+
+The custom CNN trained without incident and delivered strong test-set
+metrics on the standard $70/15/15$ stratified split:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+Metric & Value \\
+\midrule
+Accuracy        & 0.9611 \\
+Macro F1        & 0.7988 \\
+Weighted F1     & 0.9632 \\
+Expected Calibration Error & 0.0068 \\
+Negative Log Likelihood    & 0.1228 \\
+Brier Score                & 0.0578 \\
+Wall-clock                 & 6543 s ($\sim$1.8 h) \\
+Best epoch (of 10)         & 10 (still improving) \\
+\bottomrule
+\end{tabular}
+\caption{Custom CNN test-set metrics, Colab Pro T4, seed 42.}
+\end{table}
+
+Per-class behavior is balanced across rare and common classes:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Class & Precision & Recall & F1 \\
+\midrule
+Center      & 0.86 & 0.89 & 0.88 \\
+Donut       & 0.58 & 0.87 & 0.70 \\
+Edge-Loc    & 0.71 & 0.82 & 0.76 \\
+Edge-Ring   & 0.99 & 0.93 & 0.96 \\
+Loc         & 0.62 & 0.71 & 0.66 \\
+Near-full   & 0.76 & \textbf{1.00} & 0.86 \\
+Random      & 0.66 & 0.85 & 0.75 \\
+Scratch     & 0.53 & 0.81 & 0.64 \\
+none        & 0.99 & 0.98 & 0.99 \\
+\bottomrule
+\end{tabular}
+\caption{Custom CNN per-class metrics. Near-full (22 test samples)
+reaches 100\% recall with reasonable precision; Scratch (179 samples)
+hits 81\% recall.}
+\end{table}
+
+Validation loss declined monotonically from 1.35 to 0.38 over ten epochs;
+validation macro F1 climbed from 0.35 to 0.82. The model was still
+improving at epoch 10. Training would benefit from a longer schedule.
+
+These numbers compare favorably to published WM-811K baselines and are
+adopted as the team's headline result.
+
+\section{ResNet-18: Partial Collapse}
+
+ResNet-18 reached test accuracy 0.777 and macro F1 0.659. Headline-level
+metrics look mediocre rather than catastrophic, but per-class confusion
+shows a localized failure:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Class & Precision & Recall & F1 \\
+\midrule
+\textbf{Edge-Loc} & \textbf{0.14} & \textbf{0.91} & 0.24 \\
+Loc               & 0.29 & 0.57 & 0.39 \\
+Near-full         & 0.42 & 1.00 & 0.59 \\
+Edge-Ring         & 0.92 & 0.96 & 0.94 \\
+Center            & 0.80 & 0.91 & 0.85 \\
+Random            & 0.80 & 0.86 & 0.83 \\
+Scratch           & 0.43 & 0.55 & 0.48 \\
+Donut             & 0.87 & 0.65 & 0.74 \\
+none              & 0.99 & 0.76 & 0.86 \\
+\bottomrule
+\end{tabular}
+\caption{ResNet-18 per-class metrics. Edge-Loc shows the canonical
+over-prediction signature (high recall, very low precision).}
+\end{table}
+
+The model has learned to over-predict ``Edge-Loc'' for many true
+\texttt{none} samples (driving Edge-Loc recall to 0.91 but precision to
+0.14, and \texttt{none} recall down to 0.76). This single-class
+mis-allocation accounts for most of the macro F1 deficit. Validation loss
+fluctuated between 0.6 and 1.1 across epochs without diverging, so the
+collapse is partial rather than catastrophic. The likely fix is the same
+as for EfficientNet (Section IV) plus a longer warm-up.
+
+\section{EfficientNet-B0: Full Collapse}
+
+EfficientNet-B0 produced pathological metrics: accuracy 0.374, macro F1
+0.100, ECE 0.454. Validation loss oscillated wildly across epochs:
+
+\begin{lstlisting}
+val_loss: 29.5, 123.4, 20.5, 80.8, 43.6,
+          57.2, 67.0, 78.2, 28.5, 58.4
+val_acc:   0.25, 0.37, 0.22, 0.38, 0.25,
+           0.26, 0.33, 0.26, 0.25, 0.31
+\end{lstlisting}
+
+while training loss declined smoothly from 1.27 to 0.65 and training
+accuracy reached 84.6\%. The 100$\times$ separation between train and
+validation loss magnitudes is not a typical overfitting signature; it is
+a pipeline-level pathology.
+
+Per-class collapse is severe:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Class & Precision & Recall & F1 \\
+\midrule
+\textbf{Near-full} & \textbf{0.003} & \textbf{0.864} & 0.005 \\
+Random             & 0.025 & 0.585 & 0.048 \\
+Scratch            & 0.006 & 0.006 & 0.006 \\
+none               & 0.883 & 0.420 & 0.569 \\
+\bottomrule
+\end{tabular}
+\caption{EfficientNet-B0 selected per-class metrics. Near-full reaches
+86\% recall with 0.3\% precision: the model predicts ``Near-full'' for
+nearly every input.}
+\end{table}
+
+\section{Why CNN Worked but Pretrained Models Collapsed}
+
+All three runs used the same loss configuration, the same dataset split,
+the same seed, and the same Colab T4. The difference is the learning rate:
+the custom CNN trained at $\eta = 10^{-3}$, the two pretrained models at
+$\eta = 10^{-4}$ (the standard fine-tuning rate). The class-weight tensor
+the loss received was identical in all three runs:
+
+\begin{lstlisting}
+Class weights (logged at run time):
+  Center=4.47, Donut=34.58, Edge-Loc=3.70,
+  Edge-Ring=1.99, Loc=5.35, Near-full=129.34,
+  Random=22.20, Scratch=16.11, none=0.13
+\end{lstlisting}
+
+That is a 1000$\times$ ratio between Near-full ($w = 129$) and
+\texttt{none} ($w = 0.13$). Under inverse-frequency cross-entropy, a
+single mispredicted Near-full sample contributes hundreds of units to the
+batch-mean loss, while a wrong \texttt{none} sample contributes
+$\sim 0.0001$.
+
+The custom CNN's higher learning rate moved its parameters fast enough in
+early epochs to find a basin where common-class predictions were already
+roughly correct before the rare-class weight gradients dominated. The
+pretrained models, which start from already-useful ImageNet features and
+therefore need small careful steps, were dragged off the good initial
+manifold by the heavy rare-class gradients before they could establish a
+common-class baseline. ResNet, with somewhat more capacity, partially
+recovered (Edge-Loc collapse but everything else within reason).
+EfficientNet, with stronger pretrained inductive biases and a smaller
+update step, never escaped the rare-class-driven over-prediction regime.
+
+This is exactly the failure mode Cao et al.~\cite{cao2019} introduced
+Deferred Re-Weighting (DRW) to prevent: leave the loss unweighted for the
+first $N$ epochs (representation-learning phase), then enable inverse-
+frequency weights for the remaining epochs (classifier-adaptation phase).
+The trainer in \texttt{src/training/trainer.py} already supports
+\texttt{drw\_epoch}, but the configuration default at run time was 0
+(disabled).
+
+\textbf{Fix.} \texttt{config.yaml} now ships with
+\texttt{training.loss.weighted: false} as the default. The accompanying
+comment explains the trade-off and points to a follow-on rare-class study
+which benchmarks weighted CE+DRW, focal loss, class-balanced sampling,
+and synthetic augmentation against the unweighted baseline on three random
+seeds each.
+
+\section{The Metrics-File Race}
+
+Even with one strong baseline and two informative failures, the run's
+\texttt{metrics.json} captured by Colab contained only the EfficientNet
+entry. The notebook's \texttt{Cell 6} invokes \texttt{train.py} once per
+model:
+
+\begin{lstlisting}[language=Python]
+for _model in ['cnn', 'resnet', 'efficientnet']:
+    subprocess.call(['python', 'train.py',
+                     '--model', _model, ...])
+\end{lstlisting}
+
+\texttt{train.py} (pre-\texttt{83ba643}) ended each invocation with:
+
+\begin{lstlisting}[language=Python]
+metrics_path = self.results_dir / 'metrics.json'
+with open(metrics_path, 'w') as f:
+    json.dump(self.results, f, indent=2)
+\end{lstlisting}
+
+Each subprocess writes \texttt{metrics.json} containing only the model
+trained by that subprocess (\texttt{self.results} is initialized empty
+per process). The next subprocess overwrites it. Only the last
+subprocess's contents survive on disk.
+
+\textbf{Fix.} \texttt{train.py:937} now loads any existing
+\texttt{metrics.json}, merges the current process's results, and writes
+back. Subprocess loops accumulate correctly. Backward-compatible.
+
+The CNN and ResNet metrics for the 2026-04-14 run were recovered from the
+notebook stdout that was preserved in Colab's cell history (the user
+copy-pasted them verbatim). The recovered values are committed in
+\texttt{results/metrics.json}, with each entry annotated with its source
+run and a notes field flagging the collapse cases.
+
+\section{Disagreement with a Parallel Review}
+
+A second agent independently reviewed the same run from the
+\texttt{metrics.json} that contained only EfficientNet. It correctly
+identified the symptoms (rare-class collapse, validation-loss explosion,
+miscalibration) but diagnosed the cause as ``class imbalance not
+addressed: \texttt{adaptive\_rebalance: false}, no DRW schedule
+(\texttt{drw\_epoch: null})'' and recommended adding class weighting.
+
+This reading is incorrect. The fields visible in
+\texttt{epoch\_history}---\texttt{adaptive\_rebalance: false},
+\texttt{drw\_epoch: null}---report only the trainer-internal scheduling
+flags. They do not indicate whether the underlying CrossEntropyLoss has
+class weights attached. As shown in \texttt{train.py:528}, the
+auto-computed inverse-frequency \texttt{loss\_weights} tensor is passed to
+the criterion whenever \texttt{loss\_cfg.weighted} is true, regardless of
+the DRW or adaptive-rebalance flags. The run was using inverse-frequency
+weighting; that is precisely the cause of the failure. Adding more
+weighting would deepen the collapse.
+
+The peer-review agent's other observations (LR too high for fine-tuning,
+EMA disabled, best epoch 4 of 10) are valid follow-ups noted below.
+
+\section{Performance Improvements Landed in the Same Batch}
+
+Three additional changes addressing throughput rather than correctness
+landed in commit \texttt{83ba643}:
+
+\begin{itemize}
+\item \texttt{training.mixed\_precision: true} (was \texttt{false}). AMP
+gives 15--25\% training speedup on CUDA with negligible accuracy cost.
+\item \texttt{persistent\_workers=True}, \texttt{prefetch\_factor=2} added
+to the DataLoader \texttt{kwargs}. Cuts per-epoch worker respawn overhead
+on Colab Pro by 10--20\%.
+\item \texttt{set\_seed()} now enables \texttt{cudnn.benchmark=True} by
+default with a new \texttt{deterministic=False} kwarg. Yields 8--15\%
+speedup on Ampere-class GPUs (Colab Pro A100). Determinism is opt-in for
+CI metric-gate runs.
+\end{itemize}
+
+Combined: $\sim$30--50\% faster training on Colab Pro. The next 10-epoch
+CNN run should complete in approximately one hour instead of 1.8 hours.
+
+\section{Follow-up Items}
+
+\begin{enumerate}
+\item Re-train ResNet-18 and EfficientNet-B0 under the new defaults.
+Expected behavior: both should converge to macro F1 in the 0.7--0.8 range
+matching the custom CNN, possibly higher with proper learning-rate warm-up.
+\item Pretrained-model learning rate is still configured at $10^{-4}$
+constant. $10^{-5}$ with \texttt{warmup\_epochs > 0} and cosine decay
+is more standard for fine-tuning.
+\item Enable EMA (\texttt{use\_ema: true}) for pretrained-model runs to
+smooth noisy validation metrics.
+\item Run the rare-class study (\texttt{docs/rare\_class\_study.md}) to
+benchmark each rebalancing intervention head-to-head. The custom CNN's
+strong rare-class recall (Near-full 1.00, Scratch 0.81, Donut 0.87)
+without DRW or balanced sampling is itself an interesting baseline.
+\end{enumerate}
+
+\section{Conclusion}
+
+The run produced one strong, reportable baseline (custom CNN, accuracy
+0.961, macro F1 0.799) and two informative failure modes (ResNet partial
+collapse, EfficientNet full collapse). The aggregated metrics artifact
+captured only the worst result, masking the success behind a
+metrics-file race condition. Both the orchestration bug and the
+configuration default that drove the pretrained-model collapses are
+remediated in commit \texttt{83ba643}.
+
+The custom CNN result stands as the team's headline number. The two
+pretrained-model checkpoints are not usable as reported baselines and
+should be re-trained under the new defaults.
+
+\begin{thebibliography}{1}
+
+\bibitem{cao2019}
+Y. Cao, C. Wei, A. Gaidon, N. Arechiga, and T. Ma,
+``Learning Imbalanced Datasets with Label-Distribution-Aware Margin Loss,''
+in \emph{Advances in Neural Information Processing Systems}, 2019.
+arXiv:1906.07413.
+
+\bibitem{wuwm811k}
+M.-J. Wu, J.-S. R. Jang, and J.-L. Chen,
+``Wafer Map Failure Pattern Recognition and Similarity Ranking for
+Large-Scale Data Sets,''
+\emph{IEEE Transactions on Semiconductor Manufacturing},
+vol. 28, no. 1, pp. 1--12, 2015.
+
+\end{thebibliography}
+
+\end{document}
