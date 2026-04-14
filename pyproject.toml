@@ -39,8 +39,10 @@ server = [
 ]
 tuning = [
   "optuna>=3.0.0",
-  "ray>=2.0.0",
   "optuna-dashboard>=0.13.0",
+]
+tuning-ray = [
+  "ray>=2.0.0",
 ]
 mlops = [
   "wandb>=0.13.0",
@@ -81,7 +83,6 @@ dev = [
   "jupyter>=1.0.0",
   "ipykernel>=6.0.0",
   "optuna>=3.0.0",
-  "ray>=2.0.0",
   "optuna-dashboard>=0.13.0",
   "wandb>=0.13.0",
   "mlflow>=1.20.0",

@@ -6,11 +6,8 @@ Run this in a Google Colab cell to train the models with GPU acceleration.
 
 ```python
 # Cell 1: Clone repo and setup
-!git clone https://github.com/YOUR_USERNAME/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
+!git clone https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
 %cd CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset
-
-# Checkout feature branch (when ready)
-# !git checkout feature/phd-complete-implementation
 
 # Install dependencies
 !python -m pip install -e ".[dev]"
@@ -70,9 +67,8 @@ Go to [Google Colab](https://colab.research.google.com) and create new notebook.
 
 **Cell 1:**
 ```python
-!git clone https://github.com/YOUR_USERNAME/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
+!git clone https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
 %cd CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset
-!git checkout feature/phd-complete-implementation
 !python -m pip install -e ".[dev]"
 ```
 

@@ -7,199 +7,138 @@
 \usepackage{hyperref}
 
 \title{CNN-Based Semiconductor Wafer Defect Detection}
-\subtitle{Defense Readiness Review of the Repository Artifact}
+\subtitle{WM-811K Dataset Classification Project}
 \author{Anindita Paul \and Brandon Pyle \and Anand Rajan \and Brett Rettura}
-\institute{Verified Software Artifact Summary}
-\date{March 22, 2026}
+\institute{AI 570 - Team 4}
+\date{\today}
 
 \begin{document}
 
 \frame{\titlepage}
 
 \begin{frame}
-  \frametitle{Defense Framing}
-  This repository is best defended as a research software artifact for wafer-defect analysis.
-
-  \vspace{0.4cm}
-  The strongest claim supported directly by the checked-in code is:
+  \frametitle{Problem}
+  Semiconductor wafer defect classification on the WM-811K dataset.
 
   \begin{itemize}
-    \item a modular platform for classification, inference, uncertainty, anomaly detection, and federated experimentation
-    \item a verified testable artifact with a reproducible local validation workflow
-    \item an inference path that now includes explainability through Grad-CAM
+    \item $\sim$120K samples, 9 defect classes
+    \item Severe class imbalance ($\sim$85\% ``none'')
+    \item Variable wafer map shapes $\rightarrow$ common resize
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Repository Scope}
-  Implemented capability areas:
+  \frametitle{Approach}
+  Compare three architectures on the same preprocessed dataset:
 
   \begin{itemize}
-    \item Wafer data loading and preprocessing
-    \item Baseline modeling: custom CNN, ResNet-18, EfficientNet-B0
-    \item Inference API with checkpoint loading and prediction
-    \item Explainability with Grad-CAM
-    \item Monte Carlo dropout uncertainty estimation
-    \item OOD and anomaly detection
-    \item Federated learning and robust aggregation utilities
-    \item Synthetic augmentation and model registry support
+    \item Custom CNN (4-block, from scratch, $\sim$1.2M params)
+    \item ResNet-18 transfer learning (ImageNet pretrained, $\sim$11.2M params)
+    \item EfficientNet-B0 transfer learning ($\sim$5.3M params)
   \end{itemize}
+
+  \vspace{0.3cm}
+  Class-weighted cross-entropy for imbalance; stratified train/val/test split.
 \end{frame}
 
 \begin{frame}
-  \frametitle{Architecture View}
+  \frametitle{Repository Layout}
+  \small
   \begin{center}
     \begin{tabular}{ll}
       \toprule
-      \textbf{Module} & \textbf{Role} \\
+      Module & Role \\
       \midrule
-      \texttt{src/data} & dataset loading, transforms, preprocessing \\
-      \texttt{src/models} & baseline and transfer-learning models \\
-      \texttt{src/inference} & serving, Grad-CAM, uncertainty \\
-      \texttt{src/analysis} & anomaly and OOD analysis \\
-      \texttt{src/federated} & client/server and aggregation logic \\
-      \texttt{src/augmentation} & synthetic data generation \\
-      \texttt{src/training} & trainer/config abstractions \\
-      \texttt{tests} & unit and integration verification \\
+      \texttt{src/data} & loading, preprocessing, transforms \\
+      \texttt{src/models} & CNN, ResNet, EfficientNet, ViT, Swin \\
+      \texttt{src/training} & trainer, config, DDP, SimCLR, SupCon \\
+      \texttt{src/inference} & FastAPI server, Grad-CAM, uncertainty \\
+      \texttt{src/analysis} & metrics, visualization, OOD, anomaly \\
+      \texttt{src/federated} & federated averaging client/server \\
+      \texttt{src/augmentation} & synthetic wafer-map generation \\
+      \texttt{tests} & unit + integration \\
       \bottomrule
     \end{tabular}
   \end{center}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Committee-Relevant Validation}
-  Current local validation result:
-
-  \vspace{0.3cm}
-  \begin{center}
-    \Large{\texttt{pytest -q} $\rightarrow$ 188 passed}
-  \end{center}
-
-  \vspace{0.4cm}
-  What this confirms:
-
+  \frametitle{Preprocessing}
   \begin{itemize}
-    \item imports and test discovery are stable
-    \item config parsing and trainer initialization work
-    \item uncertainty and OOD utilities are validated
-    \item federated aggregation utilities pass their tests
-    \item inference server paths remain functional under current constraints
+    \item Resize all wafer maps to a common resolution (default $96\times96$)
+    \item Normalize per-channel
+    \item ImageNet statistics for pretrained models only
+    \item Optional augmentation: flip, rotate, affine
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Defense-Prep Corrections}
-  The defense-readiness pass focused on closing the gap between claims and reality.
-
+  \frametitle{Training}
   \begin{itemize}
-    \item Repaired config parsing for scalar YAML values and direct device/checkpoint fields
-    \item Fixed \texttt{BaseTrainer} to use the typed config object correctly
-    \item Stabilized predictive entropy to respect theoretical bounds
-    \item Made OOD thresholding deterministic and data-fit rather than query-fit
-    \item Added real Grad-CAM support to the inference API
-    \item Began integrating the custom exception hierarchy into runtime code
-    \item Reworked the pytest harness to avoid inaccessible temp-directory failures
+    \item AdamW + cosine schedule
+    \item Mixed precision on GPU
+    \item Layer freezing for transfer-learning backbones
+    \item Early stopping on validation macro-F1
+  \end{itemize}
+
+  \vspace{0.2cm}
+  Entry point: \texttt{python train.py --model all --epochs 20 --device cuda}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evaluation}
+  Metrics reported per model:
+  \begin{itemize}
+    \item Accuracy and weighted F1 (dominated by majority class)
+    \item Macro F1 (primary metric for imbalanced setting)
+    \item Per-class precision / recall / F1
+    \item Confusion matrix visualization
+    \item Grad-CAM overlays for spatial interpretability
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Inference and Explainability Path}
-  The inference stack now supports:
-
+  \frametitle{Extensions}
+  Beyond the three baselines, the repository supports:
   \begin{itemize}
-    \item checkpoint loading through the FastAPI model server
-    \item base64 image prediction
-    \item file-upload prediction
-    \item active-model validation through \texttt{model\_name}
-    \item Grad-CAM overlays returned directly in prediction responses
-  \end{itemize}
-
-  \vspace{0.4cm}
-  Defense demo entry point:
-
-  \begin{center}
-    \texttt{python scripts/defense\_smoke\_demo.py}
-  \end{center}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Research Extensions Beyond Baselines}
-  The artifact goes beyond a single CNN classifier:
-
-  \begin{itemize}
-    \item uncertainty estimation for reliability and active-learning workflows
-    \item OOD and anomaly-detection tooling for abnormal wafer behavior
-    \item federated-learning components for distributed experimentation
-    \item synthetic augmentation utilities for minority-pattern generation
-    \item model registry support for versioned checkpoint tracking
+    \item Monte Carlo dropout uncertainty estimation
+    \item OOD / anomaly detection (IsolationForest, OC-SVM, autoencoder)
+    \item Federated averaging simulation
+    \item Synthetic data augmentation for minority classes
+    \item Model ensembling (voting, averaging, weighted)
+    \item SimCLR / SupCon self-supervised pretraining
+    \item Distributed multi-GPU training (DDP)
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{What Is Not Yet a Strong Claim}
-  The repository alone does \textbf{not} justify these claims without separately versioned experiments:
-
-  \begin{itemize}
-    \item final committee-grade benchmark tables
-    \item production-readiness certification
-    \item deployment security guarantees
-    \item reproducible quantitative performance without pinned checkpoints and dataset snapshots
-  \end{itemize}
-
-  \vspace{0.4cm}
-  This matters because a defense should separate software validity from experimental claims.
+  \frametitle{Running the Project}
+  \small
+  \begin{enumerate}
+    \item Clone and install: \texttt{pip install -e ".[dev]"}
+    \item Place dataset at \texttt{data/LSWMD\_new.pkl}
+    \item Run tests: \texttt{pytest -q}
+    \item Train: \texttt{python train.py --model all --epochs 20}
+    \item Evaluate saved checkpoints or run Colab notebook
+  \end{enumerate}
 \end{frame}
 
 \begin{frame}
   \frametitle{Known Limitations}
-  Remaining limitations after the defense pass:
-
   \begin{itemize}
-    \item no canonical trained checkpoint is shipped with the repo
-    \item serving remains single-active-model semantics
-    \item exception integration is partial rather than universal
-    \item historical course-era documents remain in \texttt{docs/} and should not be treated as authoritative
+    \item Trained checkpoints not versioned in repo (regenerate via training)
+    \item Inference server exposes a single active model at a time
+    \item Final accuracy numbers depend on dataset split and epoch count
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Recommended Submission Bundle}
-  Committee-facing materials should prioritize the updated artifacts:
-
-  \begin{enumerate}
-    \item \texttt{docs/DEFENSE\_PACKET.md}
-    \item \texttt{docs/presentation.tex} and compiled PDF
-    \item \texttt{docs/FINAL\_STATUS\_REPORT.md}
-    \item repository snapshot with the validation result
-    \item separately archived experiment logs or checkpoints, if quantitative claims are defended
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Live Demo Sequence}
-  Minimal defense sequence:
-
-  \begin{enumerate}
-    \item Run \texttt{pytest -q}
-    \item Run \texttt{python scripts/defense\_smoke\_demo.py}
-    \item Show generated Grad-CAM overlay artifact
-    \item Walk through the key modules and validated subsystems
-    \item Discuss limitations explicitly rather than overstating deployment maturity
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Conclusion}
-  The repository is now in a defensible state for committee presentation as a verified software artifact.
-
-  \vspace{0.4cm}
-  The defense-preparation work improved:
-
+  \frametitle{Summary}
   \begin{itemize}
-    \item truthfulness of the artifact narrative
-    \item explainability support in the live inference path
-    \item reproducibility of the validation workflow
-    \item alignment between documentation and the actual repository state
+    \item Modular PyTorch pipeline for WM-811K defect classification
+    \item Three baseline architectures with transfer-learning + scratch CNN
+    \item Full evaluation + explainability (Grad-CAM) + uncertainty tooling
+    \item Reproducible via \texttt{pytest} and a Colab-ready notebook
   \end{itemize}
 \end{frame}
 
