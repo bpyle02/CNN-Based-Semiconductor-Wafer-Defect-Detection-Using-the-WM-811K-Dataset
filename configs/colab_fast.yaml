@@ -18,4 +18,3 @@ training:
   checkpointing:
     save_dir: "/content/drive/MyDrive/wafer_runs/checkpoints"
     save_best_only: true
-    save_frequency: 1  # save after every epoch so a crash loses <1 epoch

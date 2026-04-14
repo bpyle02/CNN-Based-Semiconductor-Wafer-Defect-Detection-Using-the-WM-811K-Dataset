@@ -76,9 +76,10 @@ test-cov:
 ood:
 	$(CONDA_RUN) python -s -m pytest tests/unit -k ood -v
 
-# 6. Smoke-test end-to-end path (no training loop): load data, build model, run forward pass, save checkpoint
+# 6. Smoke-test: 1-epoch CPU training on synthetic-augmented data. Requires
+# data/LSWMD_new.pkl on disk (for CI / dataset-less envs use `make smoke-bash`).
 smoke:
-	$(CONDA_RUN) python -s train.py --model cnn --epochs 1 --smoke-test
+	$(CONDA_RUN) python -s train.py --model cnn --epochs 1 --batch-size 32 --device cpu --seed 42 --synthetic
 
 # 7. Lint / format / reproducibility / housekeeping
 lint:
