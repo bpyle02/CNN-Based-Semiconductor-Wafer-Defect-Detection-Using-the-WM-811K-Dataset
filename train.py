@@ -99,8 +99,19 @@ def load_and_preprocess_data(
     logger.info("LOADING AND PREPROCESSING DATA")
     logger.info(f"{'='*70}")
 
-    # Fast path: pre-resized cache from scripts/precompute_tensors.py
+    # Fast path: pre-resized cache from scripts/precompute_tensors.py.
+    # Auto-build the cache on first run so classmates who skip the Colab
+    # precompute cell don't fall back to the slow per-batch skimage resize
+    # path. Subsequent runs hit the cache directly.
     cache_path = Path(dataset_path).parent / "LSWMD_cache.npz"
+    if not cache_path.exists() and Path(dataset_path).exists():
+        logger.info(f"Cache not found at {cache_path}; building it now (one-time, ~1-3 min)")
+        try:
+            sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+            from precompute_tensors import build_cache
+            build_cache(Path(dataset_path), cache_path)
+        except Exception as e:
+            logger.warning(f"Auto-cache build failed ({e}); falling back to slow per-batch resize.")
     if cache_path.exists():
         logger.info(f"Using pre-resized cache: {cache_path}")
         cache = np.load(cache_path, allow_pickle=True)

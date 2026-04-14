@@ -16,12 +16,11 @@ FROM base as development
 
 RUN pip install --upgrade pip setuptools wheel
 
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-# Copy project files
+# Copy project files first so the editable install has the package tree
 COPY . .
+
+# Editable install with full dev extras (packaging defined in pyproject.toml)
+RUN pip install -e ".[dev]"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -37,14 +36,14 @@ FROM base as production
 
 RUN pip install --upgrade pip
 
-# Copy requirements and install (production only)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy only necessary files
-COPY train.py setup.py /app/
+# Copy only files needed for the production serving stack
+COPY pyproject.toml setup.py /app/
+COPY train.py /app/
 COPY src /app/src
 COPY config.yaml /app/ 2>/dev/null || true
+
+# Production install: core + server extras only (FastAPI, uvicorn)
+RUN pip install --no-cache-dir ".[server]"
 
 WORKDIR /app
 

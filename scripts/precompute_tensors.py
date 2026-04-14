@@ -50,28 +50,36 @@ def _resize_one(args: tuple[np.ndarray, int]) -> np.ndarray:
     return resized
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=Path("data/LSWMD_new.pkl"))
-    parser.add_argument("--output", type=Path, default=Path("data/LSWMD_cache.npz"))
-    parser.add_argument("--size", type=int, default=96, help="Target resolution (H=W)")
-    parser.add_argument("--workers", type=int, default=0, help="Process count (0 = cpu_count)")
-    args = parser.parse_args()
+def build_cache(
+    input_path: Path,
+    output_path: Path,
+    size: int = 96,
+    workers: int = 0,
+) -> Path:
+    """Build the pre-resized tensor cache. Callable from train.py as a fallback.
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    Args:
+        input_path: raw LSWMD_new.pkl
+        output_path: destination .npz
+        size: target HxW (square)
+        workers: process count; 0 means min(cpu_count(), 4)
 
-    if not args.input.exists():
-        logger.error(f"Input dataset not found: {args.input}")
-        return 1
+    Returns:
+        The output_path on success.
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
+    Raises:
+        FileNotFoundError: if input_path doesn't exist.
+    """
+    input_path = Path(input_path)
+    output_path = Path(output_path)
 
-    logger.info(f"Loading raw dataset from {args.input} ...")
-    df = load_dataset(args.input)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Input dataset not found: {input_path}")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Loading raw dataset from {input_path} ...")
+    df = load_dataset(input_path)
 
     mask = df["failureClass"].isin(KNOWN_CLASSES)
     df = df[mask].reset_index(drop=True)
@@ -80,14 +88,14 @@ def main() -> int:
     wafer_maps = df["waferMap"].tolist()
     labels_str = df["failureClass"].to_numpy()
 
-    n_workers = args.workers or min(cpu_count(), 4)
+    n_workers = workers or min(cpu_count(), 4)
     logger.info(
-        f"Resizing {len(wafer_maps):,} maps to {args.size}x{args.size} "
+        f"Resizing {len(wafer_maps):,} maps to {size}x{size} "
         f"using {n_workers} worker process(es) ..."
     )
 
     t0 = time.time()
-    payload = [(wm, args.size) for wm in wafer_maps]
+    payload = [(wm, size) for wm in wafer_maps]
 
     if n_workers <= 1:
         resized_list = [_resize_one(p) for p in payload]
@@ -104,15 +112,37 @@ def main() -> int:
         f"size on disk: {maps.nbytes/1e9:.2f} GB"
     )
 
-    logger.info(f"Saving to {args.output} ...")
+    logger.info(f"Saving to {output_path} ...")
     np.savez(
-        args.output,
+        output_path,
         maps=maps,
         labels=labels_str,
         classes=np.array(KNOWN_CLASSES),
-        target_size=np.array([args.size, args.size], dtype=np.int32),
+        target_size=np.array([size, size], dtype=np.int32),
     )
     logger.info("Done.")
+    return output_path
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", type=Path, default=Path("data/LSWMD_new.pkl"))
+    parser.add_argument("--output", type=Path, default=Path("data/LSWMD_cache.npz"))
+    parser.add_argument("--size", type=int, default=96, help="Target resolution (H=W)")
+    parser.add_argument("--workers", type=int, default=0, help="Process count (0 = cpu_count)")
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    try:
+        build_cache(args.input, args.output, size=args.size, workers=args.workers)
+    except FileNotFoundError as e:
+        logger.error(str(e))
+        return 1
     return 0
 
 

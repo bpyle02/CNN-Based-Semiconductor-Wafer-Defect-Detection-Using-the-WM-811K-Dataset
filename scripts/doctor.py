@@ -20,7 +20,7 @@ from typing import Iterable, Optional
 logger = logging.getLogger("doctor")
 
 SUPPORTED_PYTHON_RANGE = ">=3.10,<3.14"
-RECOMMENDED_CONDA_ENV = "base"
+RECOMMENDED_CONDA_ENV = "py313"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "config.yaml"
 DEFAULT_DATASET_PATH = REPO_ROOT / "data" / "LSWMD_new.pkl"

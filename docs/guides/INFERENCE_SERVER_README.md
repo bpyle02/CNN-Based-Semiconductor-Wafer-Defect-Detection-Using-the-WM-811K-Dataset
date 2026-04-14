@@ -533,11 +533,11 @@ gunicorn \
 ### With Docker
 
 ```dockerfile
-FROM python:3.9-slim
+FROM python:3.13-slim
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
+COPY pyproject.toml setup.py ./
+COPY src ./src
+RUN pip install ".[server]"
 CMD ["uvicorn", "src.inference.server:create_app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 

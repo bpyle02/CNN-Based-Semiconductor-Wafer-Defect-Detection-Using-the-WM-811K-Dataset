@@ -217,10 +217,10 @@ EfficientNet-B0 - Accuracy: 0.8312, Macro F1: 0.5067, Time: 389.2s
 ```
 feature/complete-implementation
 ├── train.py                    ← CLI entry point
-├── pyproject.toml              ← Package metadata and dependency groups
+├── pyproject.toml              ← Package metadata + dependency groups (single source of truth)
+├── environment.yml             ← One-command conda env
 ├── scripts/bootstrap_env.py    ← Environment bootstrap helper
-├── colab_runner.py             ← Interactive Colab setup
-├── requirements.txt            ← Python packages
+├── scripts/colab_runner.py     ← Interactive Colab setup
 ├── .gitignore                  ← Ignore rules
 │
 ├── README.md                   ← User guide (1600+ lines)

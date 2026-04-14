@@ -52,7 +52,7 @@ deliverables and target folder layout.
 **Responsibilities:**
 - Build a clean project structure
 - Write inference script to load the model and predict defect type for a new wafer map
-- Ensure reproducibility by writing README and requirements.txt
+- Ensure reproducibility by writing README and pyproject.toml
 - Environment setup instructions
 
 **Deliverables:**
@@ -72,9 +72,8 @@ project/
 │   ├── training/
 │   ├── analysis/
 │   └── inference/
-├── notebooks/
 ├── README.md
-└── requirements.txt
+└── pyproject.toml
 ```
 
 ---
@@ -217,8 +216,9 @@ production deployment infrastructure.
 │
 ├── train.py                                    # Primary CLI entry point (--model, --epochs, --device)
 ├── setup.py                                    # Platform detection (Colab/Kaggle/Local) + dependency install
-├── config.yaml                                 # Unified YAML configuration (all 23 features)
-├── requirements.txt                            # 78 dependencies (core + optional + dev)
+├── config.yaml                                 # Unified YAML configuration
+├── pyproject.toml                              # Packaging + dependency groups (dev/server/tuning/etc.)
+├── environment.yml                             # One-command conda env (py313)
 ├── Dockerfile                                  # Multi-stage: base, development, production, jupyter
 ├── docker-compose.yml                          # 4 services: train, inference, jupyter, mlflow
 ├── Makefile                                    # Build targets: install, train, test, dashboard
