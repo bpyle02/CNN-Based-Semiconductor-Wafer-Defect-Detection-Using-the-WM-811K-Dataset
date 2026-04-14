@@ -11,7 +11,7 @@ class TestConfigSchema:
         cfg = load_config("config.yaml")
 
         assert cfg.training.default_model == "all"
-        assert cfg.training.mixed_precision is False
+        assert cfg.training.mixed_precision is True  # AMP is the repo default
         assert cfg.training.loss.label_smoothing == 0.0
         assert cfg.models.efficientnet.architecture == "efficientnet_b0"
         assert cfg.models.cnn.input_channels == 3

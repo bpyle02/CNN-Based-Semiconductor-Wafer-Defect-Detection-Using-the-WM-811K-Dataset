@@ -71,8 +71,15 @@ from src.data.dataset import KNOWN_CLASSES
 SEED = 42
 
 
-def set_seed(seed: int) -> None:
-    """Set random seeds for reproducibility."""
+def set_seed(seed: int, deterministic: bool = False) -> None:
+    """Set random seeds for reproducibility.
+
+    By default we enable ``torch.backends.cudnn.benchmark`` (autotuner picks
+    the fastest conv algorithm per input shape) and leave determinism off —
+    this gives ~8-15% speedup on Ampere+ GPUs like Colab Pro's A100. Pass
+    ``deterministic=True`` to trade that for bit-for-bit reproducibility
+    between runs on the same hardware (needed for CI metric gating).
+    """
     import random
     random.seed(seed)
     np.random.seed(seed)
@@ -80,6 +87,8 @@ def set_seed(seed: int) -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.benchmark = not deterministic
+        torch.backends.cudnn.deterministic = deterministic
 
 
 def load_and_preprocess_data(
@@ -629,13 +638,20 @@ class TrainingPipeline:
         test_dataset = WaferMapDataset(test_maps, y_test, transform=transforms_val)
 
         g = torch.Generator().manual_seed(args.seed)
+        num_workers = data_cfg.num_workers if data_cfg else 0
         loader_kwargs = {
             "batch_size": args.batch_size,
-            "num_workers": data_cfg.num_workers if data_cfg else 0,
+            "num_workers": num_workers,
             "pin_memory": bool(data_cfg.pin_memory if data_cfg else False) and str(device).startswith("cuda"),
             "worker_init_fn": seed_worker,
             "generator": g,
         }
+        # persistent_workers + prefetch_factor require num_workers > 0. They
+        # cut per-epoch worker-respawn overhead (~10-20% on Colab Pro) so the
+        # GPU doesn't stall between epochs waiting for DataLoader warmup.
+        if num_workers > 0:
+            loader_kwargs["persistent_workers"] = True
+            loader_kwargs["prefetch_factor"] = 2
 
         # Class-balanced sampling: CLI flag or config
         use_balanced = args.balanced_sampling or bool(
@@ -933,11 +949,22 @@ class TrainingPipeline:
                 r = self.results[ens_key]
                 logger.info(f"{ens_key:<18} {r['accuracy']:<12.4f} {r['macro_f1']:<12.4f} {r['weighted_f1']:<12.4f} {r.get('time_sec', 0.0):<10.1f}")
 
-        # Save metrics JSON
+        # Save metrics JSON — merge with existing file so subprocess-per-model
+        # invocations (notebook Cell 6) accumulate metrics across runs instead
+        # of each subprocess clobbering the last model's results.
         metrics_path = self.results_dir / 'metrics.json'
+        merged: dict = {}
+        if metrics_path.exists():
+            try:
+                merged = json.loads(metrics_path.read_text(encoding='utf-8'))
+                if not isinstance(merged, dict):
+                    merged = {}
+            except (json.JSONDecodeError, OSError):
+                merged = {}
+        merged.update(self.results)
         with open(metrics_path, 'w') as f:
-            json.dump(self.results, f, indent=2)
-        logger.info(f"\nMetrics saved to {metrics_path}")
+            json.dump(merged, f, indent=2)
+        logger.info(f"\nMetrics saved to {metrics_path} ({len(merged)} model(s) total)")
 
         if self.wb_logger:
             self.wb_logger.finish()

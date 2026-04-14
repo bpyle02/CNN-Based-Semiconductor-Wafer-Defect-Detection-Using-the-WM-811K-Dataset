@@ -141,7 +141,9 @@ training:
     efficientnet: 1e-4
   weight_decay: 1e-4
   gradient_clip_max_norm: 1.0
-  mixed_precision: false
+  # Mixed precision (AMP) gives ~15-25% speedup on CUDA with negligible
+  # accuracy cost. Auto-disables on CPU inside trainer.py, safe to leave on.
+  mixed_precision: true
 
   # Class-balanced batch sampling (oversamples rare classes per epoch)
   balanced_sampling: false
@@ -174,9 +176,16 @@ training:
     verbose: true
 
   # Loss function
+  # NOTE on `weighted`: inverse-frequency class weights on WM-811K give
+  # Near-full a weight of ~873 vs 'none' at 0.13 (~6700x ratio). Without
+  # DRW smoothing (`drw_epoch > 0`), this makes pretrained models diverge —
+  # val_loss blows up to 20-120 even while train_loss looks fine. Default
+  # is now `false`; turn on together with `drw_epoch: 5` if you want
+  # class-weighted CE. See docs/rare_class_study.md for how different
+  # rare-class interventions compare.
   loss:
     type: "CrossEntropyLoss"  # Options: CrossEntropyLoss, FocalLoss, DiceLoss, TverskyLoss, LogitAdjustedLoss
-    weighted: true
+    weighted: false
     class_weights: null  # Computed from data if null
     label_smoothing: 0.0
     focal_gamma: 2.0

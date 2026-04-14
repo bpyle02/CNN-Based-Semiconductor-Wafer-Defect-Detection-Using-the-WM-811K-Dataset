@@ -41,11 +41,11 @@ class BaseTrainer:
         self.set_seed()
 
     def set_seed(self) -> None:
-        """
-        Set random seed for reproducibility across all libraries.
+        """Set random seed for reproducibility across all libraries.
 
-        Sets seeds for: torch, numpy, random, and CUDA (if available)
-        Also disables non-deterministic algorithms for CUDA.
+        By default leaves ``cudnn.benchmark`` on (~8-15% speedup on Ampere+).
+        Set ``self.deterministic = True`` before calling to force exact
+        reproducibility at the cost of throughput.
         """
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
@@ -54,8 +54,9 @@ class BaseTrainer:
         if torch.cuda.is_available():
             torch.cuda.manual_seed(self.seed)
             torch.cuda.manual_seed_all(self.seed)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
+            deterministic = getattr(self, "deterministic", False)
+            torch.backends.cudnn.deterministic = deterministic
+            torch.backends.cudnn.benchmark = not deterministic
 
     def save_checkpoint(
         self,
