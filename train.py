@@ -89,6 +89,7 @@ def load_and_preprocess_data(
     val_size=0.15,
     seed=SEED,
     synthetic=False,
+    target_size=(96, 96),
 ):
     """Load and split data."""
     if not np.isclose(train_size + val_size + test_size, 1.0):

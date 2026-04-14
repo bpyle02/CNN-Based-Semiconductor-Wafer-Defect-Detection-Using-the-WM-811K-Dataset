@@ -23,11 +23,14 @@ from __future__ import annotations
 import copy
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
+
+if TYPE_CHECKING:
+    import pandas as pd
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from skimage.transform import resize as skimage_resize
