@@ -109,7 +109,7 @@ python train.py --model all --epochs 5 --device cuda
 
 ```python
 # In Colab cell 1:
-!git clone https://github.com/YOUR_USERNAME/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
+!git clone https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset.git
 %cd CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset
 !git checkout feature/complete-implementation
 !python colab_runner.py  # Interactive setup
