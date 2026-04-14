@@ -5,9 +5,11 @@ submission/
 *.pkl
 *.pickle
 *.csv
+*.npz
 data/*.pkl
 data/*.pickle
 data/*.csv
+data/*.npz
 
 # Model Checkpoints & Weights
 checkpoints/

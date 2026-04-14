@@ -99,17 +99,33 @@ def load_and_preprocess_data(
     logger.info("LOADING AND PREPROCESSING DATA")
     logger.info(f"{'='*70}")
 
-    logger.info("Loading dataset...")
-    df = load_dataset(dataset_path)
+    # Fast path: pre-resized cache from scripts/precompute_tensors.py
+    cache_path = Path(dataset_path).parent / "LSWMD_cache.npz"
+    if cache_path.exists():
+        logger.info(f"Using pre-resized cache: {cache_path}")
+        cache = np.load(cache_path, allow_pickle=True)
+        cached_maps = cache["maps"]                 # (N, H, W) float16 in [0, 1]
+        cached_labels_str = cache["labels"]         # (N,) str
+        le = LabelEncoder().fit(np.array(KNOWN_CLASSES))
+        labels = le.transform(cached_labels_str)
+        # Hand wafer_maps as an object array so the existing downstream code
+        # path (index + object-array assignment) works unchanged. The per-item
+        # shape is already target_size, so WaferMapDataset takes its fast path.
+        wafer_maps = np.empty(len(cached_maps), dtype=object)
+        for i in range(len(cached_maps)):
+            wafer_maps[i] = cached_maps[i]
+    else:
+        logger.info("Loading dataset...")
+        df = load_dataset(dataset_path)
 
-    labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
-    df_clean = df[labeled_mask].reset_index(drop=True)
+        labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
+        df_clean = df[labeled_mask].reset_index(drop=True)
 
-    le = LabelEncoder()
-    df_clean['label_encoded'] = le.fit_transform(df_clean['failureClass'])
+        le = LabelEncoder()
+        df_clean['label_encoded'] = le.fit_transform(df_clean['failureClass'])
 
-    wafer_maps = df_clean['waferMap'].values
-    labels = df_clean['label_encoded'].values
+        wafer_maps = df_clean['waferMap'].values
+        labels = df_clean['label_encoded'].values
 
     logger.info(f"Total samples: {len(labels):,}")
     logger.info(f"Class distribution:")

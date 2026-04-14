@@ -328,6 +328,13 @@ class WaferMapDataset(Dataset):
         """
         Get a single sample.
 
+        Fast path: if ``wm`` is already the target size AND its values are
+        already normalized to ``[0, 1]`` (dtype float16/float32), skip the
+        expensive skimage resize + divide. This is the on-disk format
+        produced by ``scripts/precompute_tensors.py`` and turns the
+        per-batch CPU cost from ~150 ms to ~2 ms on Colab, so the GPU
+        can actually be fed at its service rate.
+
         Args:
             idx: Sample index
 
@@ -335,13 +342,20 @@ class WaferMapDataset(Dataset):
             Tuple of (image tensor [C, H, W], label tensor)
         """
         wm = self.maps[idx]
-        
-        # Preprocess lazily
-        arr = wm.astype(np.float32)
-        arr = skimage_resize(
-            arr, self.target_size, anti_aliasing=True, preserve_range=True
-        ).astype(np.float32)
-        arr = arr / 2.0
+
+        # Fast path: pre-resized + pre-normalized (see precompute_tensors.py).
+        if (
+            wm.shape == self.target_size
+            and wm.dtype in (np.float16, np.float32)
+        ):
+            arr = wm.astype(np.float32, copy=False)
+        else:
+            # Original slow path for raw variable-shape wafer maps.
+            arr = wm.astype(np.float32)
+            arr = skimage_resize(
+                arr, self.target_size, anti_aliasing=True, preserve_range=True
+            ).astype(np.float32)
+            arr = arr / 2.0
 
         # Stack to 3 channels: (H, W) -> (3, H, W)
         img = np.stack([arr] * 3, axis=0)
