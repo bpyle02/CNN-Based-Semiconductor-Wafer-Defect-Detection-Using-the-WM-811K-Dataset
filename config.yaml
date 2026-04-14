@@ -10,8 +10,8 @@ data:
   train_size: 0.70
   val_size: 0.15
   test_size: 0.15
-  num_workers: 0
-  pin_memory: false
+  num_workers: 2      # Colab T4 VMs have 2 vCPUs; set to 0 if you see spurious multiprocessing errors
+  pin_memory: true    # speeds up host->GPU transfer when device is cuda
 
   # Data augmentation
   augmentation:
