@@ -128,9 +128,15 @@ def load_and_preprocess_data(
         stratify=y_temp, random_state=seed
     )
 
-    train_maps = np.array([wafer_maps[i] for i in X_train])
-    val_maps = np.array([wafer_maps[i] for i in X_val])
-    test_maps = np.array([wafer_maps[i] for i in X_test])
+    # WM-811K wafer maps have heterogeneous shapes; keep as object arrays so the
+    # WaferMapDataset's lazy per-item resize handles them. Collapsing into a dense
+    # np.array() fails with "inhomogeneous shape" for the raw dataset.
+    train_maps = np.empty(len(X_train), dtype=object)
+    train_maps[:] = [wafer_maps[i] for i in X_train]
+    val_maps = np.empty(len(X_val), dtype=object)
+    val_maps[:] = [wafer_maps[i] for i in X_val]
+    test_maps = np.empty(len(X_test), dtype=object)
+    test_maps[:] = [wafer_maps[i] for i in X_test]
 
     # Optional: balance training set with synthetic augmentation
     if synthetic:

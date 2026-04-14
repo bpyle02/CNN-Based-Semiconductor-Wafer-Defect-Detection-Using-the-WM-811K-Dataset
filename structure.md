@@ -127,11 +127,8 @@ production deployment infrastructure.
 │   ├── presentation.pdf                        # Compiled presentation
 │   ├── wafer_defect_detection_run.ipynb        # Reference Jupyter notebook
 │   ├── old_wafer_defect_detection.ipynb        # Legacy notebook (baseline)
-│   ├── DEFENSE_PACKET.md                       # Defense committee materials
-│   ├── FINAL_STATUS_REPORT.md                  # Project completion status
 │   ├── COMPREHENSIVE_REVIEW.md                 # Detailed feature review
-│   ├── IMPROVEMENTS.md                         # Improvement descriptions
-│   └── IMPROVEMENTS_STATUS.md                  # Implementation status tracking
+│   └── IMPROVEMENTS.md                         # Improvement descriptions
 │
 ├── scripts/
 │   ├── train.py                                # Refactored training with BaseTrainer
@@ -149,11 +146,7 @@ production deployment infrastructure.
 │   ├── dashboard.py                            # Streamlit interactive dashboard
 │   ├── colab_runner.py                         # Google Colab setup and execution
 │   ├── extract_and_update_report.py            # Extract metrics, update LaTeX report
-│   ├── finalize_submission.py                  # Build final submission bundle
-│   ├── defense_smoke_demo.py                   # Defense committee smoke test
-│   ├── test_advanced_features.py               # Advanced feature integration tests
-│   ├── run_defense_demo.ps1                    # PowerShell defense demo wrapper
-│   └── wait_and_finalize.sh                    # Shell orchestration script
+│   └── test_advanced_features.py               # Advanced feature integration tests
 │
 ├── src/
 │   ├── __init__.py                             # Package root (version 0.1.0)
@@ -234,10 +227,9 @@ production deployment infrastructure.
 ├── requirements.txt                            # 78 dependencies (core + optional + dev)
 ├── Dockerfile                                  # Multi-stage: base, development, production, jupyter
 ├── docker-compose.yml                          # 4 services: train, inference, jupyter, mlflow
-├── Makefile                                    # Build targets: install, train, test, dashboard, defense
+├── Makefile                                    # Build targets: install, train, test, dashboard
 ├── pytest.ini                                  # Test configuration and path exclusions
 ├── README.md                                   # User-facing project overview
-├── DEFENSE_SUBMISSION.md                       # Defense committee submission guide
 ├── structure.md                                # This file
 └── .gitignore                                  # Comprehensive exclusion rules
 ```

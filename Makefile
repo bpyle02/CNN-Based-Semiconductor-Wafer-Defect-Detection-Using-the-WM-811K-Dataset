@@ -1,9 +1,9 @@
 # Makefile for CNN-Based Semiconductor Wafer Defect Detection
 
-CONDA_ENV ?= base
+CONDA_ENV ?= py313
 CONDA_RUN := conda run --no-capture-output -n $(CONDA_ENV)
 
-.PHONY: install bootstrap doctor train dashboard test test-cov defense demo federated active_learn compress progressive ood docs
+.PHONY: install bootstrap doctor train dashboard test test-cov federated active_learn compress progressive ood smoke docs
 
 # 1. Installation
 install:
@@ -15,9 +15,15 @@ bootstrap:
 doctor:
 	$(CONDA_RUN) python -s scripts/doctor.py
 
-# 2. Main Training Pipeline (Refactored)
+# 2. Main Training Pipeline
 train:
 	$(CONDA_RUN) python -s train.py --model all --epochs 5
+
+train-cnn:
+	$(CONDA_RUN) python -s train.py --model cnn --epochs 5
+
+train-gpu:
+	$(CONDA_RUN) python -s train.py --model all --epochs 20 --device cuda --batch-size 128
 
 # 3. Interactive Dashboard (Streamlit)
 dashboard:
@@ -44,19 +50,17 @@ test-cov:
 	$(CONDA_RUN) python -s -m pytest --cov=src --cov-report=term-missing
 
 ood:
-	$(CONDA_RUN) python -s -m pytest tests/test_improvements.py::test_ood_detection -v
+	$(CONDA_RUN) python -s -m pytest tests/unit -k ood -v
 
-demo:
-	$(CONDA_RUN) powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_defense_demo.ps1
+# 6. Smoke-test end-to-end path (no training loop): load data, build model, run forward pass, save checkpoint
+smoke:
+	$(CONDA_RUN) python -s train.py --model cnn --epochs 1 --smoke-test
 
-defense:
-	$(CONDA_RUN) python -s scripts/finalize_submission.py
-
-# 6. Documentation
+# 7. Documentation
 docs:
-	@echo "Documentation is located in the docs/ and docs/guides/ directories."
-	@echo "Key Guides:"
+	@echo "Documentation is in docs/ and docs/guides/."
+	@echo "Key guides:"
 	@echo "  - docs/guides/FEDERATED_LEARNING.md"
 	@echo "  - docs/guides/INFERENCE_SERVER_README.md"
 	@echo "  - docs/guides/UNCERTAINTY_QUANTIFICATION.md"
-	@echo "  - docs/guides/COMPREHENSIVE_FEATURE_GUIDE.md"
+	@echo "  - docs/COLAB_SETUP.md"

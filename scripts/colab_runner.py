@@ -44,7 +44,7 @@ def setup_colab():
 
     # Step 2: Checkout branch
     logger.info("\n[2/6] Checking out feature branch...")
-    run_cmd("git checkout feature/phd-complete-implementation 2>/dev/null || echo 'Branch not available yet, using main'")
+    run_cmd("git checkout feature/complete-implementation 2>/dev/null || echo 'Branch not available yet, using main'")
 
     # Step 3: Install dependencies
     logger.info("\n[3/6] Installing dependencies...")
