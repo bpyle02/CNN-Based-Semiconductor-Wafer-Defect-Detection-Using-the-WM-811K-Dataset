@@ -9,7 +9,7 @@ A PyTorch pipeline for multi-class wafer defect classification on the WM-811K da
   <a href="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/model_validation.yml"><img src="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/model_validation.yml/badge.svg?branch=main" alt="Model Validation"></a>
   <a href="https://colab.research.google.com/github/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/blob/main/docs/colab_quickstart.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
   <img src="https://img.shields.io/badge/python-3.10%E2%80%933.13-blue.svg" alt="Python 3.10-3.13">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License">
+  <img src="https://img.shields.io/badge/license-All%20Rights%20Reserved-lightgrey.svg" alt="All Rights Reserved">
 </p>
 
 ---
