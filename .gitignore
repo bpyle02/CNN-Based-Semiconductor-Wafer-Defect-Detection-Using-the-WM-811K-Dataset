@@ -12,18 +12,25 @@ data/*.csv
 data/*.npz
 
 # Model Checkpoints & Weights
-checkpoints/
-*.pth
-*.pt
-*.onnx
-*.sha256
-weights/
+# Tracked for now so teammates can pull working checkpoints directly from git.
+# Uncomment the block below once the repo gets unwieldy (probably around 500 MB total):
+# checkpoints/
+# *.pth
+# *.pt
+# *.onnx
+# *.sha256
+# weights/
 
-# Training outputs (keep README and the canonical + baseline metrics snapshots)
-results/*
-!results/README.md
-!results/metrics.json
-!results/metrics.baseline.json
+# Training outputs
+# Tracked for now so teammates can diff metrics and plots across runs.
+# Uncomment the block below (and restore the whitelist) once the repo gets unwieldy:
+# results/*
+# !results/README.md
+# !results/metrics.json
+# !results/metrics.baseline.json
+
+# Test scratch directories (pytest tempfiles, not real artifacts)
+tests/.tmp_*/
 
 # Python & Virtual Environment
 __pycache__/
