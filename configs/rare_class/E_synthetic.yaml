@@ -1,0 +1,13 @@
+# Rare-class study — condition E: synthetic augmentation.
+# Rule-based defect simulator (src/augmentation/synthetic.py) generates
+# parametric synthetic samples for rare classes until the training set
+# is approximately class-balanced. Loss stays unweighted and sampling
+# stays default — rebalancing happens at the dataset level.
+# The actual --synthetic flag is passed on the CLI; this overlay is here
+# to document the condition and will contain tuning knobs as they arise.
+training:
+  loss:
+    type: "CrossEntropyLoss"
+    weighted: false
+  drw_epoch: 0
+  balanced_sampling: false

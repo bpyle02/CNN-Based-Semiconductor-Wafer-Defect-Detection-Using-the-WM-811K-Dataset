@@ -1,0 +1,9 @@
+# Rare-class study — condition A: baseline (no rebalancing).
+# Matches the new repo default post-83ba643: unweighted CE, no DRW,
+# no balanced sampling, no synthetic augmentation.
+training:
+  loss:
+    type: "CrossEntropyLoss"
+    weighted: false
+  drw_epoch: 0
+  balanced_sampling: false

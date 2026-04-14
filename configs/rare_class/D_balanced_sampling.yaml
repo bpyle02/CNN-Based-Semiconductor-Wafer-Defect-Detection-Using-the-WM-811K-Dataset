@@ -1,0 +1,10 @@
+# Rare-class study — condition D: class-balanced batch sampling.
+# Each minibatch has ~equal representation of all 9 classes via
+# WeightedRandomSampler. Loss stays unweighted so the sampler does all
+# the rebalancing work.
+training:
+  loss:
+    type: "CrossEntropyLoss"
+    weighted: false
+  drw_epoch: 0
+  balanced_sampling: true

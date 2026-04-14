@@ -1,0 +1,12 @@
+# Rare-class study — condition C: weighted CE + DRW.
+# First 10 epochs: unweighted CE (representation-learning phase).
+# Epochs 11+: inverse-frequency weighted CE (classifier-adaptation phase).
+# Ref: Cao et al. (2019) arXiv:1906.07413. This is the principled way to
+# use class weighting on a 1000x-imbalance dataset like WM-811K; skipping
+# the deferred phase is what broke the 2026-04-14 pretrained-model runs.
+training:
+  loss:
+    type: "CrossEntropyLoss"
+    weighted: true
+  drw_epoch: 10
+  balanced_sampling: false

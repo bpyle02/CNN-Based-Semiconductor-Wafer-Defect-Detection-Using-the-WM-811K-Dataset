@@ -1,0 +1,11 @@
+# Rare-class study — condition B: focal loss.
+# Focuses gradient on hard/misclassified examples. focal_gamma=2.0 is
+# the default from Lin et al. (2017). No class weighting — focal's
+# modulating term should push the model toward rare classes on its own.
+training:
+  loss:
+    type: "FocalLoss"
+    weighted: false
+    focal_gamma: 2.0
+  drw_epoch: 0
+  balanced_sampling: false
