@@ -109,18 +109,17 @@ def load_and_preprocess_data(
     logger.info(f"{'='*70}")
 
     # Fast path: pre-resized cache from scripts/precompute_tensors.py.
-    # Auto-build the cache on first run so classmates who skip the Colab
-    # precompute cell don't fall back to the slow per-batch skimage resize
-    # path. Subsequent runs hit the cache directly.
+    # We intentionally do NOT auto-build the cache from inside train.py
+    # anymore. The cache-build spawns a multiprocessing Pool, and on
+    # Colab T4 (13.6 GB) the combined footprint of (raw df) + (pool fork
+    # copies) + (imminent training setup) exceeds RAM and the kernel
+    # gets SIGKILLed (exit -9). Build the cache separately ahead of time:
+    #     python scripts/precompute_tensors.py
+    # or run the notebook's Cell 5b. The Colab quickstart Cell 6 also
+    # runs a preflight that builds the cache as its own subprocess if
+    # missing — that process exits cleanly and releases RAM before
+    # train.py starts.
     cache_path = Path(dataset_path).parent / "LSWMD_cache.npz"
-    if not cache_path.exists() and Path(dataset_path).exists():
-        logger.info(f"Cache not found at {cache_path}; building it now (one-time, ~1-3 min)")
-        try:
-            sys.path.insert(0, str(Path(__file__).parent / "scripts"))
-            from precompute_tensors import build_cache
-            build_cache(Path(dataset_path), cache_path)
-        except Exception as e:
-            logger.warning(f"Auto-cache build failed ({e}); falling back to slow per-batch resize.")
     if cache_path.exists():
         logger.info(f"Using pre-resized cache: {cache_path}")
         cache = np.load(cache_path, allow_pickle=True)
