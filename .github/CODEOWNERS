@@ -1,0 +1,18 @@
+# CODEOWNERS
+#
+# Automatically requests review from the listed owners when a PR touches
+# matching paths. The repo admin (@bpyle02) is the fallback for everything;
+# teammates can claim specific areas by adding their GitHub handles below.
+#
+# Syntax: <path> <space-separated @handles>
+# Docs:   https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default fallback — required for any file without a more specific owner
+*                               @bpyle02
+
+# Claim your area by replacing the commented handles with your real ones:
+# src/models/                   @anindita-handle
+# src/training/                 @anand-handle
+# src/analysis/                 @brett-handle
+# docs/                         @brett-handle
+# .github/workflows/            @bpyle02

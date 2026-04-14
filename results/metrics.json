@@ -1,0 +1,106 @@
+{
+  "cnn": {
+    "display_name": "Custom CNN",
+    "accuracy": 0.6266044790502255,
+    "macro_f1": 0.2950433631214054,
+    "weighted_f1": 0.7189360216943597,
+    "ece": 0.30282466437116057,
+    "negative_log_likelihood": 1.313451701389224,
+    "brier_score": 0.6583383835307887,
+    "time_sec": 1666.6103928089142,
+    "per_class": {
+      "Center": {
+        "precision": 0.09635173058933583,
+        "recall": 0.7996894409937888,
+        "f1": 0.1719819669393889,
+        "support": 644
+      },
+      "Donut": {
+        "precision": 0.05555555555555555,
+        "recall": 0.012048192771084338,
+        "f1": 0.019801980198019802,
+        "support": 83
+      },
+      "Edge-Loc": {
+        "precision": 0.08571428571428572,
+        "recall": 0.20025673940949937,
+        "f1": 0.12004617160446325,
+        "support": 779
+      },
+      "Edge-Ring": {
+        "precision": 0.8908238446081714,
+        "recall": 0.9159779614325069,
+        "f1": 0.9032258064516129,
+        "support": 1452
+      },
+      "Loc": {
+        "precision": 0.0667618707604427,
+        "recall": 0.3469387755102041,
+        "f1": 0.11197604790419162,
+        "support": 539
+      },
+      "Near-full": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 22
+      },
+      "Random": {
+        "precision": 0.4092526690391459,
+        "recall": 0.8846153846153846,
+        "f1": 0.559610705596107,
+        "support": 130
+      },
+      "Scratch": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 179
+      },
+      "none": {
+        "precision": 0.9837128957202285,
+        "recall": 0.6308840153741804,
+        "f1": 0.768747589398865,
+        "support": 22115
+      }
+    },
+    "epoch_history": {
+      "train_loss": [
+        1.937913647679842
+      ],
+      "train_acc": [
+        0.5033040375338664
+      ],
+      "val_loss": [
+        1.542466236282938
+      ],
+      "val_acc": [
+        0.6242917164553059
+      ],
+      "val_macro_f1": [
+        0.29891698646347786
+      ],
+      "learning_rate": [
+        0.001
+      ],
+      "total_time": 1666.5886435508728,
+      "best_epoch": 1,
+      "best_metric": 0.29891698646347786,
+      "best_metric_name": "val_macro_f1",
+      "best_val_acc": 0.6242917164553059,
+      "best_val_loss": 1.542466236282938,
+      "epochs_ran": 1,
+      "stopped_early": false,
+      "mixed_precision": false,
+      "drw_epoch": null,
+      "adaptive_rebalance": false,
+      "use_ema": false,
+      "ema_decay": null
+    },
+    "calibrated_metrics": {
+      "temperature": 1.3632303476333618,
+      "ece": 0.32080240979993435,
+      "brier_score": 0.6766253669250193
+    }
+  }
+}

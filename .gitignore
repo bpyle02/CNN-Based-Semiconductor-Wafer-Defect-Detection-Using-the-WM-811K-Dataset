@@ -19,8 +19,10 @@ checkpoints/
 *.sha256
 weights/
 
-# Training outputs
-results/
+# Training outputs (keep README and the canonical metrics snapshot)
+results/*
+!results/README.md
+!results/metrics.json
 
 # Python & Virtual Environment
 __pycache__/

@@ -4,6 +4,8 @@ AI 570 - Team 4: Anindita Paul, Brandon Pyle, Anand Rajan, Brett Rettura
 
 A PyTorch pipeline for multi-class wafer defect classification on the WM-811K dataset (~120K labeled wafer maps, 9 classes). Compares a custom CNN, ResNet-18, and EfficientNet-B0 with transfer learning, plus optional extensions (Grad-CAM, MC dropout uncertainty, OOD detection, federated learning, ensembling, SimCLR).
 
+> **Academic integrity notice.** This repository is coursework for Penn State **AI 570 (Applied Machine Learning)**, Team 4. It is shared publicly for review, reuse of techniques, and citation. **Do not copy this code into your own AI 570 (or equivalent) submission** — your institution's academic integrity policies still apply. If you're a student taking the same class, read for ideas, cite, and write your own implementation.
+
 <p>
   <a href="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/ci.yml"><img src="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/model_validation.yml"><img src="https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset/actions/workflows/model_validation.yml/badge.svg?branch=main" alt="Model Validation"></a>

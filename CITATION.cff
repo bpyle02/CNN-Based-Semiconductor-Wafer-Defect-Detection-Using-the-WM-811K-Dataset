@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+message: "If you reference this project, please cite it as below."
+title: "CNN-Based Semiconductor Wafer Defect Detection Using the WM-811K Dataset"
+type: software
+authors:
+  - family-names: Paul
+    given-names: Anindita
+  - family-names: Pyle
+    given-names: Brandon
+  - family-names: Rajan
+    given-names: Anand
+  - family-names: Rettura
+    given-names: Brett
+repository-code: "https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset"
+version: "0.1.0"
+date-released: "2026-04-14"
+keywords:
+  - wafer defect detection
+  - semiconductor manufacturing
+  - convolutional neural network
+  - transfer learning
+  - WM-811K
+  - PyTorch
+preferred-citation:
+  type: software
+  title: "CNN-Based Semiconductor Wafer Defect Detection Using the WM-811K Dataset"
+  authors:
+    - family-names: Paul
+      given-names: Anindita
+    - family-names: Pyle
+      given-names: Brandon
+    - family-names: Rajan
+      given-names: Anand
+    - family-names: Rettura
+      given-names: Brett
+  year: 2026
+  url: "https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset"
+references:
+  - type: article
+    title: "Wafer Map Failure Pattern Recognition and Similarity Ranking for Large-Scale Data Sets"
+    authors:
+      - family-names: Wu
+        given-names: Ming-Ju
+      - family-names: Jang
+        given-names: Jyh-Shing R.
+      - family-names: Chen
+        given-names: Jui-Long
+    journal: "IEEE Transactions on Semiconductor Manufacturing"
+    volume: 28
+    issue: 1
+    year: 2015
+    pages: "1-12"
+    doi: "10.1109/TSM.2014.2364237"
