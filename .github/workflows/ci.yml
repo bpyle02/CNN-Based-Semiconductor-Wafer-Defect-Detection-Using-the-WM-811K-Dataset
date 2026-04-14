@@ -52,5 +52,18 @@ jobs:
         run: python train.py --help
       - name: pytest
         run: pytest -q --maxfail=5
-      - name: Config load
-        run: python -c "from src.config import load_config; cfg = load_config('config.yaml'); print('device:', cfg.device)"
+      - name: Config load (base + colab_fast overlay)
+        run: python -c "from src.config import load_config, load_merged_config; cfg = load_config('config.yaml'); print('device:', cfg.device); cfg2 = load_merged_config(['config.yaml', 'configs/colab_fast.yaml']); print('overlay patience:', cfg2.training.early_stopping.patience)"
+
+  metrics-regression:
+    runs-on: ubuntu-latest
+    # Only run the regression guard when results/metrics.json changed in the PR.
+    # Pushes to main always run it so a force-push or direct commit still gates.
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'metrics') || github.event.pull_request.changed_files > 0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check metrics vs baseline
+        run: python scripts/check_metrics.py --baseline results/metrics.baseline.json --current results/metrics.json
