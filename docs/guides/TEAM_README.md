@@ -253,7 +253,7 @@ feature/complete-implementation
 │       └── visualize.py        ← GradCAM grid visualization
 │
 └── docs/
-    ├── wafer_defect_detection_run.ipynb  ← Notebook with fixes
+    ├── colab_quickstart.ipynb            ← Colab T4 end-to-end notebook
     ├── wafer_defect_detection_report.tex ← LaTeX paper
     └── presentation.tex                  ← Beamer slides
 

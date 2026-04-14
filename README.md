@@ -272,11 +272,12 @@ See `docs/guides/INFERENCE_SERVER_README.md` for the API shape.
 ├── tests/                      # unit + integration tests
 ├── scripts/                    # optuna_tune, compress_model, active_learn, ...
 ├── docs/
-│   ├── COLAB_SETUP.md
-│   ├── wafer_defect_detection_run.ipynb
+│   ├── colab_quickstart.ipynb        # Colab T4 end-to-end notebook
+│   ├── COLAB_SETUP.md                # Colab instructions
+│   ├── GPU_AND_RUN_GUIDE.md          # Hardware + wall-clock reference
 │   ├── wafer_defect_detection_report.tex / .pdf
 │   ├── presentation.tex
-│   └── guides/                 # Feature-specific deep dives
+│   └── guides/                       # Feature deep-dive guides
 ├── references/                 # Reference papers (PDFs + text extracts)
 ├── Dockerfile                  # Multi-stage: base, dev, prod, jupyter
 ├── docker-compose.yml          # train / inference / jupyter / mlflow

@@ -109,26 +109,20 @@ production deployment infrastructure.
 │   └── LSWMD_new.pkl                           # WM-811K dataset (~120K wafer maps)
 │
 ├── docs/
-│   ├── guides/                                 # 11 comprehensive feature guides
-│   │   ├── COMPREHENSIVE_FEATURE_GUIDE.md
+│   ├── guides/                                 # Feature deep-dive guides
+│   │   ├── ENV_DOCTOR.md
 │   │   ├── FEDERATED_LEARNING.md
-│   │   ├── FEDERATED_LEARNING_GUIDE.md
 │   │   ├── INFERENCE_SERVER_ARCHITECTURE.md
-│   │   ├── INFERENCE_SERVER_QUICKSTART.md
 │   │   ├── INFERENCE_SERVER_README.md
-│   │   ├── OOD_DETECTION_GUIDE.md
 │   │   ├── SYNTHETIC_AUGMENTATION_GUIDE.md
 │   │   ├── TEAM_README.md
-│   │   ├── UNCERTAINTY_QUANTIFICATION.md
-│   │   └── UNCERTAINTY_QUICKSTART.md
+│   │   └── UNCERTAINTY_QUANTIFICATION.md
+│   ├── colab_quickstart.ipynb                  # T4 GPU end-to-end Colab notebook
+│   ├── COLAB_SETUP.md                          # Colab setup reference
+│   ├── GPU_AND_RUN_GUIDE.md                    # Hardware and wall-clock guide
 │   ├── wafer_defect_detection_report.tex       # IEEE-format technical report (LaTeX source)
 │   ├── wafer_defect_detection_report.pdf       # Compiled report
-│   ├── presentation.tex                        # Beamer slides (LaTeX source)
-│   ├── presentation.pdf                        # Compiled presentation
-│   ├── wafer_defect_detection_run.ipynb        # Reference Jupyter notebook
-│   ├── old_wafer_defect_detection.ipynb        # Legacy notebook (baseline)
-│   ├── COMPREHENSIVE_REVIEW.md                 # Detailed feature review
-│   └── IMPROVEMENTS.md                         # Improvement descriptions
+│   └── presentation.tex                        # Beamer slides (LaTeX source)
 │
 ├── scripts/
 │   ├── train.py                                # Refactored training with BaseTrainer
