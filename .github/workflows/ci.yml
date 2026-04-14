@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: flake8 (syntax / undefined names)
+        run: flake8 src train.py --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: flake8 (style, warn-only)
+        run: flake8 src train.py --count --exit-zero --max-complexity=15 --max-line-length=120 --statistics
+      - name: black --check
+        run: black --check --line-length=100 src/ train.py
+        continue-on-error: true
+      - name: isort --check-only
+        run: isort --check-only --profile black src/ train.py
+        continue-on-error: true
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Import smoke
+        run: |
+          python -c "from src.models import WaferCNN, get_resnet18, get_efficientnet_b0; print('models OK')"
+          python -c "from src.data import load_dataset, preprocess_wafer_maps, WaferMapDataset; print('data OK')"
+          python -c "from src.training import train_model; print('training OK')"
+          python -c "from src.analysis import evaluate_model; print('analysis OK')"
+      - name: CLI self-describes
+        run: python train.py --help
+      - name: pytest
+        run: pytest -q --maxfail=5
+      - name: Config load
+        run: python -c "from src.config import load_config; cfg = load_config('config.yaml'); print('device:', cfg.device)"

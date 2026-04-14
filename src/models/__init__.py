@@ -1,0 +1,61 @@
+"""Deep learning model architectures for wafer defect classification."""
+
+from typing import Any
+
+from .cnn import WaferCNN
+from .fpn import FPNBlock, WaferCNNFPN
+from .vit import ViT, get_vit_small, get_vit_tiny
+from .swin import SwinTransformer, get_swin_tiny, get_swin_micro
+from .ensemble import EnsembleModel, LearnedWeightEnsemble, StackingEnsemble
+from .attention import (
+    SEBlock,
+    SpatialAttention,
+    CBAMBlock,
+    add_se_to_model,
+    add_cbam_to_model,
+    attention_summary,
+)
+from .ride import RIDEModel, RIDELoss, build_ride_model
+
+_PRETRAINED_IMPORT_ERROR = None
+
+try:
+    from .pretrained import get_resnet18, get_efficientnet_b0
+except ImportError as exc:
+    _PRETRAINED_IMPORT_ERROR = exc
+
+    def get_resnet18(*args: Any, **kwargs: Any) -> Any:
+        raise ImportError(
+            "torchvision is required to use ResNet-18 models"
+        ) from _PRETRAINED_IMPORT_ERROR
+
+    def get_efficientnet_b0(*args: Any, **kwargs: Any) -> Any:
+        raise ImportError(
+            "torchvision is required to use EfficientNet-B0 models"
+        ) from _PRETRAINED_IMPORT_ERROR
+
+__all__ = [
+    'WaferCNN',
+    'FPNBlock',
+    'WaferCNNFPN',
+    'get_resnet18',
+    'get_efficientnet_b0',
+    'ViT',
+    'get_vit_small',
+    'get_vit_tiny',
+    'SwinTransformer',
+    'get_swin_tiny',
+    'get_swin_micro',
+    'EnsembleModel',
+    'LearnedWeightEnsemble',
+    'StackingEnsemble',
+    'SEBlock',
+    'SpatialAttention',
+    'CBAMBlock',
+    'add_se_to_model',
+    'add_cbam_to_model',
+    'attention_summary',
+    'RIDEModel',
+    'RIDELoss',
+    'build_ride_model',
+]

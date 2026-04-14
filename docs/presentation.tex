@@ -1,0 +1,145 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{dove}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{CNN-Based Semiconductor Wafer Defect Detection}
+\subtitle{WM-811K Dataset Classification Project}
+\author{Anindita Paul \and Brandon Pyle \and Anand Rajan \and Brett Rettura}
+\institute{AI 570 - Team 4}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+  \frametitle{Problem}
+  Semiconductor wafer defect classification on the WM-811K dataset.
+
+  \begin{itemize}
+    \item $\sim$120K samples, 9 defect classes
+    \item Severe class imbalance ($\sim$85\% ``none'')
+    \item Variable wafer map shapes $\rightarrow$ common resize
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Approach}
+  Compare three architectures on the same preprocessed dataset:
+
+  \begin{itemize}
+    \item Custom CNN (4-block, from scratch, $\sim$1.2M params)
+    \item ResNet-18 transfer learning (ImageNet pretrained, $\sim$11.2M params)
+    \item EfficientNet-B0 transfer learning ($\sim$5.3M params)
+  \end{itemize}
+
+  \vspace{0.3cm}
+  Class-weighted cross-entropy for imbalance; stratified train/val/test split.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Repository Layout}
+  \small
+  \begin{center}
+    \begin{tabular}{ll}
+      \toprule
+      Module & Role \\
+      \midrule
+      \texttt{src/data} & loading, preprocessing, transforms \\
+      \texttt{src/models} & CNN, ResNet, EfficientNet, ViT, Swin \\
+      \texttt{src/training} & trainer, config, DDP, SimCLR, SupCon \\
+      \texttt{src/inference} & FastAPI server, Grad-CAM, uncertainty \\
+      \texttt{src/analysis} & metrics, visualization, OOD, anomaly \\
+      \texttt{src/federated} & federated averaging client/server \\
+      \texttt{src/augmentation} & synthetic wafer-map generation \\
+      \texttt{tests} & unit + integration \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Preprocessing}
+  \begin{itemize}
+    \item Resize all wafer maps to a common resolution (default $96\times96$)
+    \item Normalize per-channel
+    \item ImageNet statistics for pretrained models only
+    \item Optional augmentation: flip, rotate, affine
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Training}
+  \begin{itemize}
+    \item AdamW + cosine schedule
+    \item Mixed precision on GPU
+    \item Layer freezing for transfer-learning backbones
+    \item Early stopping on validation macro-F1
+  \end{itemize}
+
+  \vspace{0.2cm}
+  Entry point: \texttt{python train.py --model all --epochs 20 --device cuda}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evaluation}
+  Metrics reported per model:
+  \begin{itemize}
+    \item Accuracy and weighted F1 (dominated by majority class)
+    \item Macro F1 (primary metric for imbalanced setting)
+    \item Per-class precision / recall / F1
+    \item Confusion matrix visualization
+    \item Grad-CAM overlays for spatial interpretability
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Extensions}
+  Beyond the three baselines, the repository supports:
+  \begin{itemize}
+    \item Monte Carlo dropout uncertainty estimation
+    \item OOD / anomaly detection (IsolationForest, OC-SVM, autoencoder)
+    \item Federated averaging simulation
+    \item Synthetic data augmentation for minority classes
+    \item Model ensembling (voting, averaging, weighted)
+    \item SimCLR / SupCon self-supervised pretraining
+    \item Distributed multi-GPU training (DDP)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Running the Project}
+  \small
+  \begin{enumerate}
+    \item Clone and install: \texttt{pip install -e ".[dev]"}
+    \item Place dataset at \texttt{data/LSWMD\_new.pkl}
+    \item Run tests: \texttt{pytest -q}
+    \item Train: \texttt{python train.py --model all --epochs 20}
+    \item Evaluate saved checkpoints or run Colab notebook
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Known Limitations}
+  \begin{itemize}
+    \item Trained checkpoints not versioned in repo (regenerate via training)
+    \item Inference server exposes a single active model at a time
+    \item Final accuracy numbers depend on dataset split and epoch count
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary}
+  \begin{itemize}
+    \item Modular PyTorch pipeline for WM-811K defect classification
+    \item Three baseline architectures with transfer-learning + scratch CNN
+    \item Full evaluation + explainability (Grad-CAM) + uncertainty tooling
+    \item Reproducible via \texttt{pytest} and a Colab-ready notebook
+  \end{itemize}
+\end{frame}
+
+\end{document}

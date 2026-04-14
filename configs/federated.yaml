@@ -1,0 +1,15 @@
+distributed:
+  enabled: true
+  backend: gloo
+  world_size: 1
+  rank: 0
+  master_addr: localhost
+  master_port: 29500
+
+training:
+  default_model: cnn
+  epochs: 3
+  batch_size: 32
+
+paths:
+  checkpoint_dir: checkpoints

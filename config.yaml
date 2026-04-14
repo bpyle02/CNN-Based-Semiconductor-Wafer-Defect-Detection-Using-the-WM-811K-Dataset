@@ -1,0 +1,466 @@
+# Wafer Defect Detection Configuration
+# Comprehensive configuration for training, evaluation, and deployment
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  dataset_path: data/LSWMD_new.pkl
+  image_size: 96
+  train_size: 0.70
+  val_size: 0.15
+  test_size: 0.15
+  num_workers: 0
+  pin_memory: false
+
+  # Data augmentation
+  augmentation:
+    enabled: true
+    random_rotation: 15
+    horizontal_flip: true
+    vertical_flip: false
+    gaussian_noise_std: 0.02
+    gaussian_blur: true
+    random_erasing: true
+    radial_jitter: true
+    brightness: 0.1
+    contrast: 0.1
+    # Domain-specific augmentations for semiconductor wafer maps
+    domain_specific: true
+    random_erasing_prob: 0.3
+    radial_distortion_strength: 0.1
+    synthetic:
+      enabled: false
+      target_per_class: null  # null = match max class count
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+models:
+  cnn:
+    name: "Custom CNN"
+    architecture: "custom"
+    input_channels: 3
+    num_classes: 9
+    dropout_rate: 0.5
+    feature_channels: [32, 64, 128, 256]
+    head_hidden_dim: 128
+    head_dropout: 0.3
+    use_batch_norm: true
+    parameters:
+      total: 1234567
+      trainable: 1234567
+
+  cnn_fpn:
+    name: "Custom CNN-FPN"
+    architecture: custom_fpn
+    input_channels: 3
+    num_classes: 9
+    fpn_out_channels: 128
+    dropout_rate: 0.5
+    feature_channels: [32, 64, 128, 256]
+    use_batch_norm: true
+    parameters:
+      total: 0
+      trainable: 0
+
+  resnet:
+    name: "ResNet-18"
+    architecture: "resnet18"
+    pretrained: true
+    freeze_until: "layer3"  # Freeze everything before layer4
+    num_classes: 9
+    dropout_rate: 0.5
+    head_hidden_dim: null
+    head_dropout: 0.5
+    parameters:
+      total: 11187905
+      trainable: 3456789
+
+  efficientnet:
+    name: "EfficientNet-B0"
+    architecture: "efficientnet_b0"
+    pretrained: true
+    freeze_until: "features.6"  # Freeze everything before features.7
+    num_classes: 9
+    dropout_rate: 0.5
+    head_hidden_dim: null
+    head_dropout: 0.5
+    parameters:
+      total: 5288548
+      trainable: 2109876
+
+  vit:
+    name: "ViT-small"
+    architecture: "vit_small"
+    input_channels: 3
+    num_classes: 9
+    dropout_rate: 0.1
+    parameters:
+      total: 0
+      trainable: 0
+
+  swin:
+    name: "Swin-Tiny"
+    architecture: "swin_tiny"
+    input_channels: 3
+    num_classes: 9
+    embed_dim: 96
+    depths: [2, 2, 6, 2]
+    num_heads: [3, 6, 12, 24]
+    window_size: 6
+    mlp_ratio: 4.0
+    dropout_rate: 0.0
+    attention_dropout: 0.0
+    drop_path: 0.1
+    parameters:
+      total: 27515043
+      trainable: 27515043
+
+  ride:
+    name: "RIDE"
+    architecture: "ride"
+    backbone: "cnn"
+    num_classes: 9
+    num_experts: 3
+    reduction: 4
+    diversity_weight: 0.1
+    dropout_rate: 0.5
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  default_model: "all"  # "cnn", "resnet", "efficientnet", "all"
+  epochs: 25
+  batch_size: 64
+  learning_rate:
+    cnn: 1e-3
+    cnn_fpn: 1e-3
+    resnet: 1e-4
+    efficientnet: 1e-4
+  weight_decay: 1e-4
+  gradient_clip_max_norm: 1.0
+  mixed_precision: false
+
+  # Class-balanced batch sampling (oversamples rare classes per epoch)
+  balanced_sampling: false
+
+  # Mixup / CutMix batch augmentation
+  mixup:
+    enabled: false
+    mixup_alpha: 0.2
+    cutmix_alpha: 1.0
+    mixup_prob: 0.5
+    cutmix_prob: 0.5
+
+  # Optimizer
+  optimizer: "adam"  # "adam", "sgd", "adamw"
+  momentum: 0.9
+  nesterov: true
+
+  # Learning rate scheduler
+  scheduler:
+    type: "ReduceLROnPlateau"
+    mode: "auto"  # auto-derived from monitored metric ("min" for loss, "max" otherwise)
+    factor: 0.5
+    patience: 3
+    min_lr: 1e-6
+    step_size: 5
+    t_max: null
+    eta_min: 0.0
+    warmup_epochs: 0            # 0 = disabled (backward compatible)
+    warmup_start_factor: 0.1    # Start at 10% of base LR
+    verbose: true
+
+  # Loss function
+  loss:
+    type: "CrossEntropyLoss"  # Options: CrossEntropyLoss, FocalLoss, DiceLoss, TverskyLoss, LogitAdjustedLoss
+    weighted: true
+    class_weights: null  # Computed from data if null
+    label_smoothing: 0.0
+    focal_gamma: 2.0
+    reduction: "mean"
+    tversky_alpha: 0.3
+    tversky_beta: 0.7
+    logit_adjustment_tau: 1.0
+
+  # Deferred Re-Weighting (DRW) schedule
+  # 0 = disabled; set to e.g. 15 to use unweighted loss for first 15 epochs
+  # then switch to class-weighted loss for remaining epochs.
+  # Reference: Cao et al. (2019). "LDAM + DRW". arXiv:1906.07413
+  drw_epoch: 0
+
+  # Adaptive Re-Balancing (AREA) — smooth interpolation from uniform to
+  # inverse-frequency weights with per-class F1 feedback.
+  # Overrides DRW when enabled.
+  # Reference: Chen et al. (2022). "AREA". arXiv:2206.02841
+  adaptive_rebalance: false
+
+  # Exponential Moving Average of model weights
+  # Reference: Polyak & Juditsky (1992)
+  ema:
+    enabled: false
+    decay: 0.999
+
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 10
+    min_delta: 1e-4
+
+  # Checkpointing
+  checkpointing:
+    enabled: true
+    save_dir: "checkpoints"
+    save_best_only: true
+    metric: "val_macro_f1"
+
+# ============================================================================
+# VALIDATION CONFIGURATION
+# ============================================================================
+validation:
+  eval_every_n_epochs: 1
+  compute_confusion_matrix: true
+  compute_per_class_metrics: true
+  compute_gradcam: true
+  num_gradcam_samples: 9
+
+# ============================================================================
+# INFERENCE CONFIGURATION
+# ============================================================================
+inference:
+  model_path: "checkpoints/best_model.pth"
+  batch_size: 32
+  num_workers: 4
+  device: "cuda"  # "cuda" or "cpu"
+  use_half_precision: false
+
+  # GradCAM settings
+  gradcam:
+    enabled: true
+    target_layer: null  # Auto-selected if null
+    colormap: "jet"
+
+  # Test-Time Augmentation
+  # Reference: Shanmugam et al. (2021). "Better Aggregation in TTA"
+  tta:
+    enabled: false
+    num_views: 5
+
+# ============================================================================
+# CALIBRATION CONFIGURATION
+# ============================================================================
+calibration:
+  enabled: false
+  method: "temperature_scaling"  # or "asymmetric" for per-class temperatures (ABC)
+
+# ============================================================================
+# ENSEMBLE CONFIGURATION
+# ============================================================================
+ensemble:
+  enabled: false
+  models: ["cnn", "resnet", "efficientnet"]
+  aggregation: "voting"  # "voting", "averaging", "weighted_averaging"
+  weights: [0.33, 0.33, 0.34]  # For weighted averaging
+
+# ============================================================================
+# HYPERPARAMETER TUNING CONFIGURATION
+# ============================================================================
+tuning:
+  enabled: false
+  method: "optuna"  # "optuna", "grid_search", "random_search"
+  n_trials: 100
+  n_jobs: 4
+
+  # Search space
+  search_space:
+    learning_rate: [1e-5, 1e-2]
+    batch_size: [32, 64, 128]
+    dropout_rate: [0.3, 0.7]
+    weight_decay: [1e-5, 1e-3]
+
+  # Optimization target
+  optimization:
+    metric: "macro_f1"  # "accuracy", "macro_f1", "weighted_f1"
+    direction: "maximize"  # "maximize" or "minimize"
+
+# ============================================================================
+# COMPRESSION CONFIGURATION
+# ============================================================================
+compression:
+  enabled: false
+
+  # Quantization
+  quantization:
+    enabled: false
+    dtype: "int8"  # "int8", "int16", "float16"
+
+  # Pruning
+  pruning:
+    enabled: false
+    percentage: 0.3  # Prune 30% of weights
+
+  # Knowledge distillation
+  distillation:
+    enabled: false
+    teacher_model: "checkpoints/best_model.pth"
+    temperature: 4.0
+    alpha: 0.7  # Weight of distillation loss
+
+# ============================================================================
+# ACTIVE LEARNING CONFIGURATION
+# ============================================================================
+active_learning:
+  enabled: false
+  strategy: "uncertainty"  # "uncertainty", "diversity", "hybrid"
+  initial_labeled: 0.1  # Start with 10% labeled data
+  acquisition_size: 100  # Add 100 samples per iteration
+  max_iterations: 10
+  uncertainty_method: "entropy"  # "entropy", "margin", "lc"
+
+# ============================================================================
+# MLOps CONFIGURATION
+# ============================================================================
+mlops:
+  # Weights & Biases
+  wandb:
+    enabled: false
+    project: "wafer-defect-detection"
+    entity: null  # Your W&B username
+    tags: ["production", "v1.0"]
+
+  # MLflow
+  mlflow:
+    enabled: false
+    tracking_uri: "http://localhost:5000"
+    experiment_name: "wafer_defect"
+
+  # Logging
+  logging:
+    level: "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR"
+    log_dir: "logs"
+    save_configs: true
+
+# ============================================================================
+# CROSS-VALIDATION CONFIGURATION
+# ============================================================================
+cross_validation:
+  enabled: false
+  n_splits: 5
+  method: "stratified_kfold"  # "stratified_kfold", "kfold", "group_kfold"
+  random_state: 42
+
+# ============================================================================
+# PROGRESSIVE TRAINING CONFIGURATION
+# ============================================================================
+progressive_training:
+  enabled: false
+  stages:
+    - image_size: 48
+      epochs: 2
+      learning_rate_factor: 1.0
+    - image_size: 96
+      epochs: 3
+      learning_rate_factor: 0.5
+    - image_size: 192
+      epochs: 2
+      learning_rate_factor: 0.25
+
+# ============================================================================
+# MULTI-GPU CONFIGURATION
+# ============================================================================
+distributed:
+  enabled: false
+  backend: "nccl"  # "nccl" (GPU), "gloo" (CPU)
+  world_size: 1
+  rank: 0
+  master_addr: "localhost"
+  master_port: 29500
+
+# ============================================================================
+# UNCERTAINTY QUANTIFICATION
+# ============================================================================
+uncertainty:
+  enabled: false
+  method: "monte_carlo_dropout"  # "monte_carlo_dropout", "ensemble"
+  n_samples: 10  # Number of forward passes
+  dropout_rate: 0.5
+
+# ============================================================================
+# EVALUATION CONFIGURATION
+# ============================================================================
+evaluation:
+  metrics:
+    - "accuracy"
+    - "macro_f1"
+    - "weighted_f1"
+    - "precision"
+    - "recall"
+    - "confusion_matrix"
+
+  visualizations:
+    - "training_curves"
+    - "confusion_matrix"
+    - "per_class_f1"
+    - "model_comparison"
+    - "gradcam"
+
+  save_predictions: true
+  output_dir: "results"
+
+# ============================================================================
+# DEVICE CONFIGURATION
+# ============================================================================
+device:
+  type: "cuda"  # "cuda" or "cpu"
+  device_ids: [0]  # GPU IDs to use
+  seed: 42
+  deterministic: true
+  benchmark: false  # Must be false when deterministic=true for reproducibility
+
+# ============================================================================
+# PATHS CONFIGURATION
+# ============================================================================
+paths:
+  data_dir: "data"
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  result_dir: "results"
+  config_dir: "configs"
+
+# ============================================================================
+# EXPORT/DEPLOYMENT CONFIGURATION
+# ============================================================================
+export:
+  enabled: false
+  format: "onnx"  # "onnx", "torchscript", "savedmodel"
+  output_dir: "exported_models"
+  optimize: true  # Optimize for inference
+  quantize_for_export: false
+
+# ============================================================================
+# SUPERVISED CONTRASTIVE LEARNING (SupCon)
+# Reference: Khosla et al. (2020). arXiv:2004.11362
+# ============================================================================
+supcon:
+  enabled: false
+  temperature: 0.07        # Contrastive loss temperature (lower = sharper)
+  projection_dim: 128      # Projection head output dimension
+  pretrain_epochs: 50       # Stage 1: contrastive pretraining epochs
+  pretrain_lr: 0.05         # Stage 1: SGD learning rate
+  finetune_epochs: 25       # Stage 2: linear probe epochs
+  finetune_lr: 0.01         # Stage 2: Adam learning rate
+
+# ============================================================================
+# SEMI-SUPERVISED LEARNING (FixMatch)
+# Reference: Sohn et al. (2020). arXiv:2001.07685
+# ============================================================================
+semi_supervised:
+  enabled: false
+  method: "fixmatch"
+  confidence_threshold: 0.95  # Pseudo-label acceptance threshold (tau)
+  lambda_u: 1.0               # Unsupervised loss weight
+  strong_augment: true         # Use strong augmentation for student branch
+  unlabeled_batch_size: 128    # Batch size for unlabeled data
+  epochs: 50                   # Training epochs for semi-supervised stage

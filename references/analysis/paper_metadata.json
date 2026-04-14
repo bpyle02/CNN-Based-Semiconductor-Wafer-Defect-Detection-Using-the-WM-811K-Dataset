@@ -1,0 +1,2906 @@
+[
+  {
+    "id": 1,
+    "title": "Deep Residual Learning for Image Recognition",
+    "authors": "He, Zhang, Ren, Sun",
+    "year": 2016,
+    "arxiv_id": "1512.03385",
+    "doi": null,
+    "topic": "architecture",
+    "relevance": "ResNet-18 backbone",
+    "modules": [
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\01_Deep_Residual_Learning_for_Image_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\01_Deep_Residual_Learning_for_Image_Recognition.md"
+  },
+  {
+    "id": 2,
+    "title": "EfficientNet: Rethinking Model Scaling for CNNs",
+    "authors": "Tan, Le",
+    "year": 2019,
+    "arxiv_id": "1905.11946",
+    "doi": null,
+    "topic": "architecture",
+    "relevance": "EfficientNet-B0 backbone",
+    "modules": [
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\02_EfficientNet__Rethinking_Model_Scaling_for_CNNs.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\02_EfficientNet__Rethinking_Model_Scaling_for_CNNs.md"
+  },
+  {
+    "id": 3,
+    "title": "An Image is Worth 16x16 Words: Transformers for Image Recognition",
+    "authors": "Dosovitskiy et al.",
+    "year": 2021,
+    "arxiv_id": "2010.11929",
+    "doi": null,
+    "topic": "architecture",
+    "relevance": "ViT architecture",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\03_An_Image_is_Worth_16x16_Words__Transformers_for_Image_Recogn.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\03_An_Image_is_Worth_16x16_Words__Transformers_for_Image_Recogn.md"
+  },
+  {
+    "id": 4,
+    "title": "Spatial Pyramid Pooling in Deep CNNs",
+    "authors": "He, Zhang, Ren, Sun",
+    "year": 2015,
+    "arxiv_id": "1406.4729",
+    "doi": null,
+    "topic": "architecture",
+    "relevance": "SPP layer implementation",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\04_Spatial_Pyramid_Pooling_in_Deep_CNNs.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\04_Spatial_Pyramid_Pooling_in_Deep_CNNs.md"
+  },
+  {
+    "id": 5,
+    "title": "Very Deep Convolutional Networks for Large-Scale Image Recognition",
+    "authors": "Simonyan, Zisserman",
+    "year": 2015,
+    "arxiv_id": "1409.1556",
+    "doi": null,
+    "topic": "architecture",
+    "relevance": "VGGNet design patterns",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\05_Very_Deep_Convolutional_Networks_for_Large-Scale_Image_Recog.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\05_Very_Deep_Convolutional_Networks_for_Large-Scale_Image_Recog.md"
+  },
+  {
+    "id": 6,
+    "title": "ImageNet Classification with Deep CNNs",
+    "authors": "Krizhevsky, Sutskever, Hinton",
+    "year": 2012,
+    "arxiv_id": null,
+    "doi": "10.1145/3065386",
+    "topic": "architecture",
+    "relevance": "Foundational CNN design",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 7,
+    "title": "Wafer Map Failure Pattern Recognition and Similarity Ranking",
+    "authors": "Wu, Yeh, Chen",
+    "year": 2014,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2014.2364237",
+    "topic": "wafer",
+    "relevance": "WM-811K dataset origin",
+    "modules": [
+      "src/data/dataset.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 8,
+    "title": "Wafer Map Defect Pattern Classification Using CNN",
+    "authors": "Nakazawa, Kulkarni",
+    "year": 2018,
+    "arxiv_id": null,
+    "doi": "10.1109/ISQED.2018.8357292",
+    "topic": "wafer",
+    "relevance": "CNN for wafer defects",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 9,
+    "title": "Wafer Defect Pattern Recognition and Analysis Based on CNN",
+    "authors": "Yu, Lu, Zheng",
+    "year": 2019,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2019.2963656",
+    "topic": "wafer",
+    "relevance": "Deep learning wafer classification",
+    "modules": [
+      "src/models/cnn.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 10,
+    "title": "Deep Learning Based Wafer Map Defect Pattern Classification",
+    "authors": "Kim et al.",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/ACCESS.2020.3040684",
+    "topic": "wafer",
+    "relevance": "Multi-class wafer defect DL",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 11,
+    "title": "WaPIRL: Wafer Pattern Identification using Representation Learning",
+    "authors": "Kang et al.",
+    "year": 2021,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2021.3064435",
+    "topic": "wafer",
+    "relevance": "Representation learning for wafer maps",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 12,
+    "title": "Mixed-Type Wafer Defect Recognition with Multi-Scale Info Fusion",
+    "authors": "Wang et al.",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2020.3003161",
+    "topic": "wafer",
+    "relevance": "Multi-scale defect features",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 13,
+    "title": "Semiconductor Defect Detection by Hybrid Classical-Quantum DL",
+    "authors": "Alam et al.",
+    "year": 2022,
+    "arxiv_id": "2206.09912",
+    "doi": null,
+    "topic": "wafer",
+    "relevance": "Modern semiconductor QC approaches",
+    "modules": [
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\13_Semiconductor_Defect_Detection_by_Hybrid_Classical-Quantum_D.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\13_Semiconductor_Defect_Detection_by_Hybrid_Classical-Quantum_D.md"
+  },
+  {
+    "id": 14,
+    "title": "Deformable CNNs for Wafer Defect Pattern Detection",
+    "authors": "Tsai, Wang",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2020.2997342",
+    "topic": "wafer",
+    "relevance": "Deformable convolutions for wafer maps",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 15,
+    "title": "Focal Loss for Dense Object Detection",
+    "authors": "Lin, Goyal, Girshick, He, Dollar",
+    "year": 2017,
+    "arxiv_id": "1708.02002",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "FocalLoss implementation",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\15_Focal_Loss_for_Dense_Object_Detection.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\15_Focal_Loss_for_Dense_Object_Detection.md"
+  },
+  {
+    "id": 16,
+    "title": "Class-Balanced Loss Based on Effective Number of Samples",
+    "authors": "Cui, Jia, Lin, Song, Belongie",
+    "year": 2019,
+    "arxiv_id": "1901.05555",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Class weighting strategy",
+    "modules": [
+      "src/training/losses.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\16_Class-Balanced_Loss_Based_on_Effective_Number_of_Samples.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\16_Class-Balanced_Loss_Based_on_Effective_Number_of_Samples.md"
+  },
+  {
+    "id": 17,
+    "title": "A Systematic Study of the Class Imbalance Problem in CNNs",
+    "authors": "Buda, Maki, Mazurowski",
+    "year": 2018,
+    "arxiv_id": "1710.05381",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Imbalance mitigation strategies",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\17_A_Systematic_Study_of_the_Class_Imbalance_Problem_in_CNNs.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\17_A_Systematic_Study_of_the_Class_Imbalance_Problem_in_CNNs.md"
+  },
+  {
+    "id": 18,
+    "title": "SMOTE: Synthetic Minority Over-sampling Technique",
+    "authors": "Chawla, Bowyer, Hall, Kegelmeyer",
+    "year": 2002,
+    "arxiv_id": "1106.1813",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Synthetic augmentation basis",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\18_SMOTE__Synthetic_Minority_Over-sampling_Technique.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\18_SMOTE__Synthetic_Minority_Over-sampling_Technique.md"
+  },
+  {
+    "id": 19,
+    "title": "Learning from Imbalanced Data",
+    "authors": "He, Garcia",
+    "year": 2009,
+    "arxiv_id": null,
+    "doi": "10.1109/TKDE.2008.239",
+    "topic": "imbalance",
+    "relevance": "Foundational imbalance survey",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 20,
+    "title": "When Does Label Smoothing Help?",
+    "authors": "Muller, Kornblith, Hinton",
+    "year": 2019,
+    "arxiv_id": "1906.02629",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Label smoothing in loss functions",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\20_When_Does_Label_Smoothing_Help.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\20_When_Does_Label_Smoothing_Help.md"
+  },
+  {
+    "id": 21,
+    "title": "Squeeze-and-Excitation Networks",
+    "authors": "Hu, Shen, Sun",
+    "year": 2018,
+    "arxiv_id": "1709.01507",
+    "doi": null,
+    "topic": "attention",
+    "relevance": "SEBlock implementation",
+    "modules": [
+      "src/models/attention.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\21_Squeeze-and-Excitation_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\21_Squeeze-and-Excitation_Networks.md"
+  },
+  {
+    "id": 22,
+    "title": "CBAM: Convolutional Block Attention Module",
+    "authors": "Woo, Park, Lee, Kweon",
+    "year": 2018,
+    "arxiv_id": "1807.06521",
+    "doi": null,
+    "topic": "attention",
+    "relevance": "CBAMBlock implementation",
+    "modules": [
+      "src/models/attention.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\22_CBAM__Convolutional_Block_Attention_Module.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\22_CBAM__Convolutional_Block_Attention_Module.md"
+  },
+  {
+    "id": 23,
+    "title": "Attention Is All You Need",
+    "authors": "Vaswani et al.",
+    "year": 2017,
+    "arxiv_id": "1706.03762",
+    "doi": null,
+    "topic": "attention",
+    "relevance": "Transformer self-attention foundation",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\23_Attention_Is_All_You_Need.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\23_Attention_Is_All_You_Need.md"
+  },
+  {
+    "id": 24,
+    "title": "Non-local Neural Networks",
+    "authors": "Wang, Girshick, Gupta, He",
+    "year": 2018,
+    "arxiv_id": "1711.07971",
+    "doi": null,
+    "topic": "attention",
+    "relevance": "Non-local spatial attention",
+    "modules": [
+      "src/models/attention.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\24_Non-local_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\24_Non-local_Neural_Networks.md"
+  },
+  {
+    "id": 25,
+    "title": "Grad-CAM: Visual Explanations from Deep Networks",
+    "authors": "Selvaraju et al.",
+    "year": 2017,
+    "arxiv_id": "1610.02391",
+    "doi": null,
+    "topic": "interpretability",
+    "relevance": "GradCAM implementation",
+    "modules": [
+      "src/inference/gradcam.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\25_Grad-CAM__Visual_Explanations_from_Deep_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\25_Grad-CAM__Visual_Explanations_from_Deep_Networks.md"
+  },
+  {
+    "id": 26,
+    "title": "Why Should I Trust You? Explaining Predictions of Any Classifier",
+    "authors": "Ribeiro, Singh, Guestrin",
+    "year": 2016,
+    "arxiv_id": "1602.04938",
+    "doi": null,
+    "topic": "interpretability",
+    "relevance": "LIME interpretability baseline",
+    "modules": [
+      "src/inference/gradcam.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\26_Why_Should_I_Trust_You__Explaining_Predictions_of_Any_Classi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\26_Why_Should_I_Trust_You__Explaining_Predictions_of_Any_Classi.md"
+  },
+  {
+    "id": 27,
+    "title": "Learning Important Features Through Propagating Activation Differences",
+    "authors": "Shrikumar, Greenside, Kundaje",
+    "year": 2017,
+    "arxiv_id": "1704.02685",
+    "doi": null,
+    "topic": "interpretability",
+    "relevance": "DeepLIFT attribution",
+    "modules": [
+      "src/inference/gradcam.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\27_Learning_Important_Features_Through_Propagating_Activation_D.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\27_Learning_Important_Features_Through_Propagating_Activation_D.md"
+  },
+  {
+    "id": 28,
+    "title": "Dropout as a Bayesian Approximation: Representing Model Uncertainty",
+    "authors": "Gal, Ghahramani",
+    "year": 2016,
+    "arxiv_id": "1506.02142",
+    "doi": null,
+    "topic": "uncertainty",
+    "relevance": "MC Dropout implementation",
+    "modules": [
+      "src/inference/uncertainty.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\28_Dropout_as_a_Bayesian_Approximation__Representing_Model_Unce.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\28_Dropout_as_a_Bayesian_Approximation__Representing_Model_Unce.md"
+  },
+  {
+    "id": 29,
+    "title": "On Calibration of Modern Neural Networks",
+    "authors": "Guo, Pleiss, Sun, Weinberger",
+    "year": 2017,
+    "arxiv_id": "1706.04599",
+    "doi": null,
+    "topic": "uncertainty",
+    "relevance": "Temperature scaling, ECE metrics",
+    "modules": [
+      "src/inference/uncertainty.py",
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\29_On_Calibration_of_Modern_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\29_On_Calibration_of_Modern_Neural_Networks.md"
+  },
+  {
+    "id": 30,
+    "title": "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles",
+    "authors": "Lakshminarayanan, Pritzel, Blundell",
+    "year": 2017,
+    "arxiv_id": "1612.01474",
+    "doi": null,
+    "topic": "uncertainty",
+    "relevance": "Deep ensembles for uncertainty",
+    "modules": [
+      "src/models/ensemble.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\30_Simple_and_Scalable_Predictive_Uncertainty_Estimation_using.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\30_Simple_and_Scalable_Predictive_Uncertainty_Estimation_using.md"
+  },
+  {
+    "id": 31,
+    "title": "What Uncertainties Do We Need in Bayesian DL for Computer Vision?",
+    "authors": "Kendall, Gal",
+    "year": 2017,
+    "arxiv_id": "1703.04977",
+    "doi": null,
+    "topic": "uncertainty",
+    "relevance": "Aleatoric vs epistemic uncertainty",
+    "modules": [
+      "src/inference/uncertainty.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\31_What_Uncertainties_Do_We_Need_in_Bayesian_DL_for_Computer_Vi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\31_What_Uncertainties_Do_We_Need_in_Bayesian_DL_for_Computer_Vi.md"
+  },
+  {
+    "id": 32,
+    "title": "Measuring Calibration in Deep Learning",
+    "authors": "Nixon, Dusenberry, Zhang, Jerfel, Tran",
+    "year": 2019,
+    "arxiv_id": "1904.01685",
+    "doi": null,
+    "topic": "uncertainty",
+    "relevance": "ECE/MCE calibration metrics",
+    "modules": [
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\32_Measuring_Calibration_in_Deep_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\32_Measuring_Calibration_in_Deep_Learning.md"
+  },
+  {
+    "id": 33,
+    "title": "Communication-Efficient Learning of Deep Networks from Decentralized Data",
+    "authors": "McMahan, Moore, Ramage, Hampson, Arcas",
+    "year": 2017,
+    "arxiv_id": "1602.05629",
+    "doi": null,
+    "topic": "federated",
+    "relevance": "FedAvg implementation",
+    "modules": [
+      "src/federated/fed_avg.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\33_Communication-Efficient_Learning_of_Deep_Networks_from_Decen.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\33_Communication-Efficient_Learning_of_Deep_Networks_from_Decen.md"
+  },
+  {
+    "id": 34,
+    "title": "Machine Learning with Adversaries: Byzantine Tolerant Gradient Descent",
+    "authors": "Blanchard, El Mhamdi, Guerraoui, Stainer",
+    "year": 2017,
+    "arxiv_id": "1703.02757",
+    "doi": null,
+    "topic": "federated",
+    "relevance": "Krum aggregation",
+    "modules": [
+      "src/federated/fed_avg.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\34_Machine_Learning_with_Adversaries__Byzantine_Tolerant_Gradie.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\34_Machine_Learning_with_Adversaries__Byzantine_Tolerant_Gradie.md"
+  },
+  {
+    "id": 35,
+    "title": "Byzantine-Robust Distributed Learning: Towards Optimal Statistical Rates",
+    "authors": "Yin, Chen, Kannan, Bartlett",
+    "year": 2018,
+    "arxiv_id": "1803.10032",
+    "doi": null,
+    "topic": "federated",
+    "relevance": "Trimmed mean/median aggregation",
+    "modules": [
+      "src/federated/fed_avg.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\35_Byzantine-Robust_Distributed_Learning__Towards_Optimal_Stati.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\35_Byzantine-Robust_Distributed_Learning__Towards_Optimal_Stati.md"
+  },
+  {
+    "id": 36,
+    "title": "Advances and Open Problems in Federated Learning",
+    "authors": "Kairouz et al.",
+    "year": 2021,
+    "arxiv_id": "1912.04977",
+    "doi": null,
+    "topic": "federated",
+    "relevance": "Federated learning survey",
+    "modules": [
+      "src/federated/fed_avg.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\36_Advances_and_Open_Problems_in_Federated_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\36_Advances_and_Open_Problems_in_Federated_Learning.md"
+  },
+  {
+    "id": 37,
+    "title": "A Simple Framework for Contrastive Learning of Visual Representations",
+    "authors": "Chen, Kornblith, Norouzi, Hinton",
+    "year": 2020,
+    "arxiv_id": "2002.05709",
+    "doi": null,
+    "topic": "selfsupervised",
+    "relevance": "SimCLR implementation",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\37_A_Simple_Framework_for_Contrastive_Learning_of_Visual_Repres.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\37_A_Simple_Framework_for_Contrastive_Learning_of_Visual_Repres.md"
+  },
+  {
+    "id": 38,
+    "title": "Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning",
+    "authors": "Grill et al.",
+    "year": 2020,
+    "arxiv_id": "2006.07733",
+    "doi": null,
+    "topic": "selfsupervised",
+    "relevance": "BYOL pretraining",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\38_Bootstrap_Your_Own_Latent__A_New_Approach_to_Self-Supervised.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\38_Bootstrap_Your_Own_Latent__A_New_Approach_to_Self-Supervised.md"
+  },
+  {
+    "id": 39,
+    "title": "Momentum Contrast for Unsupervised Visual Representation Learning",
+    "authors": "He, Fan, Wu, Xie, Girshick",
+    "year": 2020,
+    "arxiv_id": "1911.05722",
+    "doi": null,
+    "topic": "selfsupervised",
+    "relevance": "MoCo contrastive learning",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\39_Momentum_Contrast_for_Unsupervised_Visual_Representation_Lea.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\39_Momentum_Contrast_for_Unsupervised_Visual_Representation_Lea.md"
+  },
+  {
+    "id": 40,
+    "title": "Deep CORAL: Correlation Alignment for Deep Domain Adaptation",
+    "authors": "Sun, Saenko",
+    "year": 2016,
+    "arxiv_id": "1607.01719",
+    "doi": null,
+    "topic": "adaptation",
+    "relevance": "CORAL implementation",
+    "modules": [
+      "src/training/domain_adaptation.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\40_Deep_CORAL__Correlation_Alignment_for_Deep_Domain_Adaptation.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\40_Deep_CORAL__Correlation_Alignment_for_Deep_Domain_Adaptation.md"
+  },
+  {
+    "id": 41,
+    "title": "Domain-Adversarial Training of Neural Networks",
+    "authors": "Ganin et al.",
+    "year": 2016,
+    "arxiv_id": "1505.07818",
+    "doi": null,
+    "topic": "adaptation",
+    "relevance": "Adversarial domain adaptation",
+    "modules": [
+      "src/training/domain_adaptation.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\41_Domain-Adversarial_Training_of_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\41_Domain-Adversarial_Training_of_Neural_Networks.md"
+  },
+  {
+    "id": 42,
+    "title": "Distilling the Knowledge in a Neural Network",
+    "authors": "Hinton, Vinyals, Dean",
+    "year": 2015,
+    "arxiv_id": "1503.02531",
+    "doi": null,
+    "topic": "compression",
+    "relevance": "Knowledge distillation",
+    "modules": [
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\42_Distilling_the_Knowledge_in_a_Neural_Network.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\42_Distilling_the_Knowledge_in_a_Neural_Network.md"
+  },
+  {
+    "id": 43,
+    "title": "Deep Compression: Compressing DNNs with Pruning, Quantization, Huffman Coding",
+    "authors": "Han, Mao, Dally",
+    "year": 2016,
+    "arxiv_id": "1510.00149",
+    "doi": null,
+    "topic": "compression",
+    "relevance": "Model compression pipeline",
+    "modules": [
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\43_Deep_Compression__Compressing_DNNs_with_Pruning__Quantizatio.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\43_Deep_Compression__Compressing_DNNs_with_Pruning__Quantizatio.md"
+  },
+  {
+    "id": 44,
+    "title": "Quantization and Training of NNs for Efficient Integer-Arithmetic-Only Inference",
+    "authors": "Jacob et al.",
+    "year": 2018,
+    "arxiv_id": "1712.05877",
+    "doi": null,
+    "topic": "compression",
+    "relevance": "INT8 quantization",
+    "modules": [
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\44_Quantization_and_Training_of_NNs_for_Efficient_Integer-Arith.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\44_Quantization_and_Training_of_NNs_for_Efficient_Integer-Arith.md"
+  },
+  {
+    "id": 45,
+    "title": "Adam: A Method for Stochastic Optimization",
+    "authors": "Kingma, Ba",
+    "year": 2015,
+    "arxiv_id": "1412.6980",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Adam optimizer",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\45_Adam__A_Method_for_Stochastic_Optimization.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\45_Adam__A_Method_for_Stochastic_Optimization.md"
+  },
+  {
+    "id": 46,
+    "title": "Decoupled Weight Decay Regularization",
+    "authors": "Loshchilov, Hutter",
+    "year": 2019,
+    "arxiv_id": "1711.05101",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "AdamW optimizer",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\46_Decoupled_Weight_Decay_Regularization.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\46_Decoupled_Weight_Decay_Regularization.md"
+  },
+  {
+    "id": 47,
+    "title": "Batch Normalization: Accelerating Deep Network Training",
+    "authors": "Ioffe, Szegedy",
+    "year": 2015,
+    "arxiv_id": "1502.03167",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "BatchNorm in CNN",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\47_Batch_Normalization__Accelerating_Deep_Network_Training.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\47_Batch_Normalization__Accelerating_Deep_Network_Training.md"
+  },
+  {
+    "id": 48,
+    "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting",
+    "authors": "Srivastava, Hinton, Krizhevsky, Sutskever, Salakhutdinov",
+    "year": 2014,
+    "arxiv_id": null,
+    "doi": "10.5555/2627435.2670313",
+    "topic": "optimization",
+    "relevance": "Dropout regularization",
+    "modules": [
+      "src/models/cnn.py",
+      "src/inference/uncertainty.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 49,
+    "title": "A Survey on Image Data Augmentation for Deep Learning",
+    "authors": "Shorten, Khoshgoftaar",
+    "year": 2019,
+    "arxiv_id": null,
+    "doi": "10.1186/s40537-019-0197-0",
+    "topic": "augmentation",
+    "relevance": "Augmentation strategies survey",
+    "modules": [
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\49_A_Survey_on_Image_Data_Augmentation_for_Deep_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\49_A_Survey_on_Image_Data_Augmentation_for_Deep_Learning.md"
+  },
+  {
+    "id": 50,
+    "title": "Deep Bayesian Active Learning with Image Data",
+    "authors": "Gal, Islam, Ghahramani",
+    "year": 2017,
+    "arxiv_id": "1703.02910",
+    "doi": null,
+    "topic": "active_learning",
+    "relevance": "Active learning with uncertainty",
+    "modules": [
+      "scripts/active_learn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\50_Deep_Bayesian_Active_Learning_with_Image_Data.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\50_Deep_Bayesian_Active_Learning_with_Image_Data.md"
+  },
+  {
+    "id": 51,
+    "title": "Wafer Bin Map Defect Pattern Classification Using Convolutional Neural Network",
+    "authors": "Kyeong, Kim",
+    "year": 2018,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2018.2841416",
+    "topic": "wafer",
+    "relevance": "CNN architecture for WBM classification",
+    "modules": [
+      "src/models/cnn.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 52,
+    "title": "Automatic Defect Classification for Semiconductor Manufacturing",
+    "authors": "Cheon, Kim, Ham, Kim",
+    "year": 2019,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2019.2941674",
+    "topic": "wafer",
+    "relevance": "Automated defect classification in fab",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 53,
+    "title": "Semi-Supervised Learning for Wafer Map Defect Pattern Classification",
+    "authors": "Kahng, Kim",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2020.3017809",
+    "topic": "wafer",
+    "relevance": "Semi-supervised methods for wafer maps",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 54,
+    "title": "Data Augmentation Using Learned Transformations for One-Shot Medical Image Segmentation",
+    "authors": "Zhao, Data, Greenspan, St-Onge, Bhatt, Murphy, Grady",
+    "year": 2019,
+    "arxiv_id": "1902.09383",
+    "doi": null,
+    "topic": "wafer",
+    "relevance": "Learned augmentation for small datasets applicable to rare defects",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\54_Data_Augmentation_Using_Learned_Transformations_for_One-Shot.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\54_Data_Augmentation_Using_Learned_Transformations_for_One-Shot.md"
+  },
+  {
+    "id": 55,
+    "title": "Smart Semiconductor Manufacturing: An Overview",
+    "authors": "Moyne, Iskandar",
+    "year": 2017,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2017.2768062",
+    "topic": "wafer",
+    "relevance": "Overview of ML in semiconductor manufacturing",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 56,
+    "title": "Deep Learning Approaches for Wafer Map Defect Pattern Recognition",
+    "authors": "Jin, Kim, Kwon",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/ACCESS.2020.2990379",
+    "topic": "wafer",
+    "relevance": "Comparison of DL architectures for wafer defects",
+    "modules": [
+      "src/models/cnn.py",
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\56_Deep_Learning_Approaches_for_Wafer_Map_Defect_Pattern_Recogn.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\56_Deep_Learning_Approaches_for_Wafer_Map_Defect_Pattern_Recogn.md"
+  },
+  {
+    "id": 57,
+    "title": "Automated Visual Inspection of Semiconductor Wafers",
+    "authors": "Shankar, Zhong",
+    "year": 2005,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2005.852106",
+    "topic": "wafer",
+    "relevance": "Classical automated optical inspection foundations",
+    "modules": [
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 58,
+    "title": "Wafer Map Defect Detection and Recognition Using Joint Local and Nonlocal Linear Discriminant Analysis",
+    "authors": "Yu, Zheng, Shan",
+    "year": 2016,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2016.2578164",
+    "topic": "wafer",
+    "relevance": "Feature extraction for wafer map defects",
+    "modules": [
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 59,
+    "title": "A Light-Weight CNN Model for Wafer Map Defect Detection",
+    "authors": "Tsai, Lee",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/ACCESS.2020.3017358",
+    "topic": "wafer",
+    "relevance": "Lightweight models for edge deployment of wafer inspection",
+    "modules": [
+      "src/models/cnn.py",
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 60,
+    "title": "Wafer Defect Pattern Recognition Using Transfer Learning",
+    "authors": "Shim, Jeon, Choi",
+    "year": 2020,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2020.3046888",
+    "topic": "wafer",
+    "relevance": "Transfer learning for wafer map classification",
+    "modules": [
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 61,
+    "title": "Yield Enhancement Through Wafer Map Spatial Pattern Recognition",
+    "authors": "Hsu, Chien",
+    "year": 2007,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2007.903705",
+    "topic": "wafer",
+    "relevance": "Spatial pattern recognition for yield improvement",
+    "modules": [
+      "src/data/dataset.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 62,
+    "title": "Virtual Metrology and Defect Prediction in Semiconductor Manufacturing",
+    "authors": "Kang, Kim, Cho, Kang",
+    "year": 2016,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2016.2535700",
+    "topic": "wafer",
+    "relevance": "Predictive quality in semiconductor processes",
+    "modules": [
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 63,
+    "title": "Wafer Map Defect Pattern Classification and Image Retrieval Using CNN",
+    "authors": "Nakazawa, Kulkarni",
+    "year": 2019,
+    "arxiv_id": null,
+    "doi": "10.1109/ASMC.2019.8791815",
+    "topic": "wafer",
+    "relevance": "CNN plus retrieval for wafer map analysis",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 64,
+    "title": "Multi-Label Wafer Map Defect Pattern Classification Using Deep Learning",
+    "authors": "Shin, Kim",
+    "year": 2022,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2022.3178464",
+    "topic": "wafer",
+    "relevance": "Multi-label approach for mixed-type defect patterns",
+    "modules": [
+      "src/models/cnn.py",
+      "train.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 65,
+    "title": "GAN-Based Synthetic Data Generation for Wafer Map Defect Pattern Classification",
+    "authors": "Wang, Hsieh, Liu, Hsu",
+    "year": 2021,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2021.3089869",
+    "topic": "wafer",
+    "relevance": "GAN augmentation for rare wafer defect classes",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 66,
+    "title": "mixup: Beyond Empirical Risk Minimization",
+    "authors": "Zhang, Cisse, Dauphin, Lopez-Paz",
+    "year": 2018,
+    "arxiv_id": "1710.09412",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Mixup data augmentation for improved generalization",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\66_mixup__Beyond_Empirical_Risk_Minimization.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\66_mixup__Beyond_Empirical_Risk_Minimization.md"
+  },
+  {
+    "id": 67,
+    "title": "CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features",
+    "authors": "Yun, Han, Oh, Chun, Choe, Yoo",
+    "year": 2019,
+    "arxiv_id": "1905.04899",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "CutMix augmentation for better spatial feature learning",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\67_CutMix__Regularization_Strategy_to_Train_Strong_Classifiers.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\67_CutMix__Regularization_Strategy_to_Train_Strong_Classifiers.md"
+  },
+  {
+    "id": 68,
+    "title": "ADASYN: Adaptive Synthetic Sampling Approach for Imbalanced Learning",
+    "authors": "He, Bai, Garcia, Li",
+    "year": 2008,
+    "arxiv_id": null,
+    "doi": "10.1109/IJCNN.2008.4633969",
+    "topic": "imbalance",
+    "relevance": "Adaptive oversampling for hard-to-learn minority samples",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\68_ADASYN__Adaptive_Synthetic_Sampling_Approach_for_Imbalanced.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\68_ADASYN__Adaptive_Synthetic_Sampling_Approach_for_Imbalanced.md"
+  },
+  {
+    "id": 69,
+    "title": "Borderline-SMOTE: A New Over-Sampling Method in Imbalanced Data Sets Learning",
+    "authors": "Han, Wang, Mao",
+    "year": 2005,
+    "arxiv_id": null,
+    "doi": "10.1007/11538059_91",
+    "topic": "imbalance",
+    "relevance": "Targeted oversampling near decision boundaries",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 70,
+    "title": "AutoAugment: Learning Augmentation Strategies from Data",
+    "authors": "Cubuk, Zoph, Mane, Vasudevan, Le",
+    "year": 2019,
+    "arxiv_id": "1805.09501",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Automated augmentation policy search",
+    "modules": [
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\70_AutoAugment__Learning_Augmentation_Strategies_from_Data.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\70_AutoAugment__Learning_Augmentation_Strategies_from_Data.md"
+  },
+  {
+    "id": 71,
+    "title": "RandAugment: Practical Automated Data Augmentation with a Reduced Search Space",
+    "authors": "Cubuk, Zoph, Shlens, Le",
+    "year": 2020,
+    "arxiv_id": "1909.13719",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Simple yet effective random augmentation policies",
+    "modules": [
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\71_RandAugment__Practical_Automated_Data_Augmentation_with_a_Re.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\71_RandAugment__Practical_Automated_Data_Augmentation_with_a_Re.md"
+  },
+  {
+    "id": 72,
+    "title": "Feature Space Augmentation for Long-Tailed Classification",
+    "authors": "Chu, Zhong, Wang",
+    "year": 2020,
+    "arxiv_id": "2008.03673",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Augmenting in feature space for tail class improvement",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\72_Feature_Space_Augmentation_for_Long-Tailed_Classification.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\72_Feature_Space_Augmentation_for_Long-Tailed_Classification.md"
+  },
+  {
+    "id": 73,
+    "title": "Class-Balanced Loss Based on Effective Number of Samples",
+    "authors": "Cui, Jia, Lin, Song, Belongie",
+    "year": 2019,
+    "arxiv_id": "1901.05555",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Effective number re-weighting theory",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\73_Class-Balanced_Loss_Based_on_Effective_Number_of_Samples.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\73_Class-Balanced_Loss_Based_on_Effective_Number_of_Samples.md"
+  },
+  {
+    "id": 74,
+    "title": "Decoupling Representation and Classifier for Long-Tailed Recognition",
+    "authors": "Kang, Xie, Rohrbach, Yan, Gordo, Feng, Kalantidis",
+    "year": 2020,
+    "arxiv_id": "1910.09217",
+    "doi": null,
+    "topic": "imbalance",
+    "relevance": "Decoupled training for class-imbalanced data",
+    "modules": [
+      "train.py",
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\74_Decoupling_Representation_and_Classifier_for_Long-Tailed_Rec.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\74_Decoupling_Representation_and_Classifier_for_Long-Tailed_Rec.md"
+  },
+  {
+    "id": 75,
+    "title": "Remix: Rebalanced Mixup",
+    "authors": "Chou, Chen, Lee",
+    "year": 2020,
+    "arxiv_id": "2007.03943",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Combines Mixup with class-balanced resampling",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\75_Remix__Rebalanced_Mixup.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\75_Remix__Rebalanced_Mixup.md"
+  },
+  {
+    "id": 76,
+    "title": "Supervised Contrastive Learning",
+    "authors": "Khosla, Teterwak, Wang, Swersky, Tian, Isola, Maschinot, Liu, Kornblith",
+    "year": 2020,
+    "arxiv_id": "2004.11362",
+    "doi": null,
+    "topic": "contrastive",
+    "relevance": "Supervised contrastive loss for improved class separation",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\76_Supervised_Contrastive_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\76_Supervised_Contrastive_Learning.md"
+  },
+  {
+    "id": 77,
+    "title": "Prototypical Networks for Few-shot Learning",
+    "authors": "Snell, Swersky, Zemel",
+    "year": 2017,
+    "arxiv_id": "1703.05175",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Prototype-based classification for rare defect classes",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\77_Prototypical_Networks_for_Few-shot_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\77_Prototypical_Networks_for_Few-shot_Learning.md"
+  },
+  {
+    "id": 78,
+    "title": "FaceNet: A Unified Embedding for Face Recognition and Clustering",
+    "authors": "Schroff, Kalenichenko, Philbin",
+    "year": 2015,
+    "arxiv_id": "1503.03832",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Triplet loss for embedding-based classification",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\78_FaceNet__A_Unified_Embedding_for_Face_Recognition_and_Cluste.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\78_FaceNet__A_Unified_Embedding_for_Face_Recognition_and_Cluste.md"
+  },
+  {
+    "id": 79,
+    "title": "ArcFace: Additive Angular Margin Loss for Deep Face Recognition",
+    "authors": "Deng, Guo, Xue, Zafeiriou",
+    "year": 2019,
+    "arxiv_id": "1801.07698",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Angular margin loss for fine-grained class discrimination",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\79_ArcFace__Additive_Angular_Margin_Loss_for_Deep_Face_Recognit.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\79_ArcFace__Additive_Angular_Margin_Loss_for_Deep_Face_Recognit.md"
+  },
+  {
+    "id": 80,
+    "title": "CosFace: Large Margin Cosine Loss for Deep Face Recognition",
+    "authors": "Wang, Cheng, Gong, Zhu",
+    "year": 2018,
+    "arxiv_id": "1801.09414",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Cosine margin loss for improved inter-class separation",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\80_CosFace__Large_Margin_Cosine_Loss_for_Deep_Face_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\80_CosFace__Large_Margin_Cosine_Loss_for_Deep_Face_Recognition.md"
+  },
+  {
+    "id": 81,
+    "title": "A Discriminative Feature Learning Approach for Deep Face Recognition",
+    "authors": "Wen, Zhang, Li, Qiao",
+    "year": 2016,
+    "arxiv_id": null,
+    "doi": "10.1007/978-3-319-46478-7_31",
+    "topic": "metric_learning",
+    "relevance": "Center loss for intra-class compactness",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 82,
+    "title": "Deep Metric Learning: A Survey",
+    "authors": "Kaya, Bilge",
+    "year": 2019,
+    "arxiv_id": "1904.06626",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Survey of metric learning approaches for classification",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\82_Deep_Metric_Learning__A_Survey.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\82_Deep_Metric_Learning__A_Survey.md"
+  },
+  {
+    "id": 83,
+    "title": "Proxy Anchor Loss for Deep Metric Learning",
+    "authors": "Kim, Kim, Choi, You",
+    "year": 2020,
+    "arxiv_id": "2003.13911",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Proxy-based metric learning for efficient training",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\83_Proxy_Anchor_Loss_for_Deep_Metric_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\83_Proxy_Anchor_Loss_for_Deep_Metric_Learning.md"
+  },
+  {
+    "id": 84,
+    "title": "Circle Loss: A Unified Perspective of Pair Similarity Optimization",
+    "authors": "Sun, Cheng, Zhang, Lin, Liu, Wang",
+    "year": 2020,
+    "arxiv_id": "2002.10857",
+    "doi": null,
+    "topic": "metric_learning",
+    "relevance": "Unified loss for improved convergence on imbalanced data",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\84_Circle_Loss__A_Unified_Perspective_of_Pair_Similarity_Optimi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\84_Circle_Loss__A_Unified_Perspective_of_Pair_Similarity_Optimi.md"
+  },
+  {
+    "id": 85,
+    "title": "Exploring Simple Siamese Representation Learning",
+    "authors": "Chen, He",
+    "year": 2021,
+    "arxiv_id": "2011.10566",
+    "doi": null,
+    "topic": "contrastive",
+    "relevance": "SimSiam for simple self-supervised pretraining",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\85_Exploring_Simple_Siamese_Representation_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\85_Exploring_Simple_Siamese_Representation_Learning.md"
+  },
+  {
+    "id": 86,
+    "title": "Semi-Supervised Classification with Graph Convolutional Networks",
+    "authors": "Kipf, Welling",
+    "year": 2017,
+    "arxiv_id": "1609.02907",
+    "doi": null,
+    "topic": "gnn",
+    "relevance": "GCN for spatial relationships between defect regions",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\86_Semi-Supervised_Classification_with_Graph_Convolutional_Netw.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\86_Semi-Supervised_Classification_with_Graph_Convolutional_Netw.md"
+  },
+  {
+    "id": 87,
+    "title": "Graph Attention Networks",
+    "authors": "Velickovic, Cucurull, Casanova, Romero, Lio, Bengio",
+    "year": 2018,
+    "arxiv_id": "1710.10903",
+    "doi": null,
+    "topic": "gnn",
+    "relevance": "Attention-weighted graph message passing for defect topology",
+    "modules": [
+      "src/models/attention.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\87_Graph_Attention_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\87_Graph_Attention_Networks.md"
+  },
+  {
+    "id": 88,
+    "title": "Inductive Representation Learning on Large Graphs",
+    "authors": "Hamilton, Ying, Leskovec",
+    "year": 2017,
+    "arxiv_id": "1706.02216",
+    "doi": null,
+    "topic": "gnn",
+    "relevance": "GraphSAGE for scalable graph learning on wafer maps",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\88_Inductive_Representation_Learning_on_Large_Graphs.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\88_Inductive_Representation_Learning_on_Large_Graphs.md"
+  },
+  {
+    "id": 89,
+    "title": "Defect Detection Using Graph Neural Networks on Semiconductor Wafer Maps",
+    "authors": "Park, Cho",
+    "year": 2021,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2021.3117275",
+    "topic": "gnn",
+    "relevance": "GNN applied directly to wafer map defect detection",
+    "modules": [
+      "src/models/cnn.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 90,
+    "title": "How Powerful Are Graph Neural Networks?",
+    "authors": "Xu, Hu, Leskovec, Jegelka",
+    "year": 2019,
+    "arxiv_id": "1810.00826",
+    "doi": null,
+    "topic": "gnn",
+    "relevance": "GIN expressiveness theory for graph-level classification",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\90_How_Powerful_Are_Graph_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\90_How_Powerful_Are_Graph_Neural_Networks.md"
+  },
+  {
+    "id": 91,
+    "title": "Feature Pyramid Networks for Object Detection",
+    "authors": "Lin, Dollar, Girshick, He, Hariharan, Belongie",
+    "year": 2017,
+    "arxiv_id": "1612.03144",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "FPN for multi-scale defect feature extraction",
+    "modules": [
+      "src/models/cnn.py",
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\91_Feature_Pyramid_Networks_for_Object_Detection.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\91_Feature_Pyramid_Networks_for_Object_Detection.md"
+  },
+  {
+    "id": 92,
+    "title": "Deformable Convolutional Networks",
+    "authors": "Dai, Qi, Xiong, Li, Zhang, Hu, Wei",
+    "year": 2017,
+    "arxiv_id": "1703.06211",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "Deformable convolutions for irregular defect shapes",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\92_Deformable_Convolutional_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\92_Deformable_Convolutional_Networks.md"
+  },
+  {
+    "id": 93,
+    "title": "An Overview of Multi-Task Learning in Deep Neural Networks",
+    "authors": "Ruder",
+    "year": 2017,
+    "arxiv_id": "1706.05098",
+    "doi": null,
+    "topic": "multitask",
+    "relevance": "Multi-task learning survey for joint defect classification and localization",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\93_An_Overview_of_Multi-Task_Learning_in_Deep_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\93_An_Overview_of_Multi-Task_Learning_in_Deep_Neural_Networks.md"
+  },
+  {
+    "id": 94,
+    "title": "U-Net: Convolutional Networks for Biomedical Image Segmentation",
+    "authors": "Ronneberger, Fischer, Brox",
+    "year": 2015,
+    "arxiv_id": "1505.04597",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "U-Net for defect segmentation and localization",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\94_U-Net__Convolutional_Networks_for_Biomedical_Image_Segmentat.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\94_U-Net__Convolutional_Networks_for_Biomedical_Image_Segmentat.md"
+  },
+  {
+    "id": 95,
+    "title": "Multi-Task Learning as Multi-Objective Optimization",
+    "authors": "Sener, Koltun",
+    "year": 2018,
+    "arxiv_id": "1810.04650",
+    "doi": null,
+    "topic": "multitask",
+    "relevance": "Multi-objective optimization for joint learning tasks",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\95_Multi-Task_Learning_as_Multi-Objective_Optimization.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\95_Multi-Task_Learning_as_Multi-Objective_Optimization.md"
+  },
+  {
+    "id": 96,
+    "title": "Deep Multi-Task Learning with Cross Stitch Networks",
+    "authors": "Misra, Shrivastava, Gupta, Hebert",
+    "year": 2016,
+    "arxiv_id": "1604.03539",
+    "doi": null,
+    "topic": "multitask",
+    "relevance": "Cross-stitch units for multi-task feature sharing",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\96_Deep_Multi-Task_Learning_with_Cross_Stitch_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\96_Deep_Multi-Task_Learning_with_Cross_Stitch_Networks.md"
+  },
+  {
+    "id": 97,
+    "title": "PANet: Path Aggregation Network for Instance Segmentation",
+    "authors": "Liu, Qi, Qin, Shi, Jia",
+    "year": 2018,
+    "arxiv_id": "1803.01534",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "Bottom-up path aggregation for multi-scale features",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\97_PANet__Path_Aggregation_Network_for_Instance_Segmentation.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\97_PANet__Path_Aggregation_Network_for_Instance_Segmentation.md"
+  },
+  {
+    "id": 98,
+    "title": "HRNet: Deep High-Resolution Representation Learning for Visual Recognition",
+    "authors": "Wang, Sun, Liu, Sarma, Bronstein, Kitani",
+    "year": 2020,
+    "arxiv_id": "1908.07919",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "High-resolution representations for fine-grained defect features",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\98_HRNet__Deep_High-Resolution_Representation_Learning_for_Visu.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\98_HRNet__Deep_High-Resolution_Representation_Learning_for_Visu.md"
+  },
+  {
+    "id": 99,
+    "title": "Panoptic Feature Pyramid Networks",
+    "authors": "Kirillov, Girshick, He, Dollar",
+    "year": 2019,
+    "arxiv_id": "1901.02446",
+    "doi": null,
+    "topic": "multiscale",
+    "relevance": "Unified multi-scale architecture for segmentation and classification",
+    "modules": [
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\99_Panoptic_Feature_Pyramid_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\99_Panoptic_Feature_Pyramid_Networks.md"
+  },
+  {
+    "id": 100,
+    "title": "GradNorm: Gradient Normalization for Adaptive Loss Balancing in Deep Multitask Networks",
+    "authors": "Chen, Badrinarayanan, Lee, Rabinovich",
+    "year": 2018,
+    "arxiv_id": "1711.02257",
+    "doi": null,
+    "topic": "multitask",
+    "relevance": "Dynamic loss weighting for multi-task defect learning",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\100_GradNorm__Gradient_Normalization_for_Adaptive_Loss_Balancing.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\100_GradNorm__Gradient_Normalization_for_Adaptive_Loss_Balancing.md"
+  },
+  {
+    "id": 101,
+    "title": "Training Data-Efficient Image Transformers & Distillation Through Attention",
+    "authors": "Touvron, Cord, Douze, Massa, Sablayrolles, Jegou",
+    "year": 2021,
+    "arxiv_id": "2012.12877",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "DeiT data-efficient transformer training for small datasets",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\101_Training_Data-Efficient_Image_Transformers___Distillation_Th.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\101_Training_Data-Efficient_Image_Transformers___Distillation_Th.md"
+  },
+  {
+    "id": 102,
+    "title": "Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows",
+    "authors": "Liu, Lin, Cao, Hu, Wei, Zhang, Lin, Guo",
+    "year": 2021,
+    "arxiv_id": "2103.14030",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Swin hierarchical transformer for multi-scale wafer features",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\102_Swin_Transformer__Hierarchical_Vision_Transformer_Using_Shif.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\102_Swin_Transformer__Hierarchical_Vision_Transformer_Using_Shif.md"
+  },
+  {
+    "id": 103,
+    "title": "CvT: Introducing Convolutions to Vision Transformers",
+    "authors": "Wu, Xu, Dai, Wan, Zhang, Yan, Tomizuka, Gonzalez, Keutzer, Vajda",
+    "year": 2021,
+    "arxiv_id": "2103.15808",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Convolutional token embedding for hybrid CNN-ViT",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\103_CvT__Introducing_Convolutions_to_Vision_Transformers.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\103_CvT__Introducing_Convolutions_to_Vision_Transformers.md"
+  },
+  {
+    "id": 104,
+    "title": "CoAtNet: Marrying Convolution and Attention for All Data Sizes",
+    "authors": "Dai, Liu, Le, Tan",
+    "year": 2021,
+    "arxiv_id": "2106.04803",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Hybrid convolution-attention architecture",
+    "modules": [
+      "src/models/vit.py",
+      "src/models/cnn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\104_CoAtNet__Marrying_Convolution_and_Attention_for_All_Data_Siz.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\104_CoAtNet__Marrying_Convolution_and_Attention_for_All_Data_Siz.md"
+  },
+  {
+    "id": 105,
+    "title": "Tokens-to-Token ViT: Training Vision Transformers from Scratch on ImageNet",
+    "authors": "Yuan, Chen, Chen, Codella, Dai, Gao, Hu, Huang, Li, Li, Liu, Lu, Shi, Shu, Yuan, Zhu",
+    "year": 2021,
+    "arxiv_id": "2101.11986",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Token-to-Token progressive tokenization for ViT",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\105_Tokens-to-Token_ViT__Training_Vision_Transformers_from_Scrat.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\105_Tokens-to-Token_ViT__Training_Vision_Transformers_from_Scrat.md"
+  },
+  {
+    "id": 106,
+    "title": "LeViT: A Vision Transformer in ConvNet's Clothing for Faster Inference",
+    "authors": "Graham, El-Nouby, Touvron, Stock, Joulin, Jegou, Douze",
+    "year": 2021,
+    "arxiv_id": "2104.01136",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Fast hybrid transformer for inference efficiency",
+    "modules": [
+      "src/models/vit.py",
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\106_LeViT__A_Vision_Transformer_in_ConvNet_s_Clothing_for_Faster.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\106_LeViT__A_Vision_Transformer_in_ConvNet_s_Clothing_for_Faster.md"
+  },
+  {
+    "id": 107,
+    "title": "CrossViT: Cross-Attention Multi-Scale Vision Transformer for Image Classification",
+    "authors": "Chen, Fan, Panda",
+    "year": 2021,
+    "arxiv_id": "2103.14899",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Multi-scale dual-branch transformer",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\107_CrossViT__Cross-Attention_Multi-Scale_Vision_Transformer_for.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\107_CrossViT__Cross-Attention_Multi-Scale_Vision_Transformer_for.md"
+  },
+  {
+    "id": 108,
+    "title": "Pyramid Vision Transformer: A Versatile Backbone for Dense Prediction",
+    "authors": "Wang, Xie, Li, Fan, Song, Liang, Lu, Luo, Shao",
+    "year": 2021,
+    "arxiv_id": "2102.12122",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Pyramid transformer for multi-resolution defect features",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\108_Pyramid_Vision_Transformer__A_Versatile_Backbone_for_Dense_P.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\108_Pyramid_Vision_Transformer__A_Versatile_Backbone_for_Dense_P.md"
+  },
+  {
+    "id": 109,
+    "title": "PoolFormer: MetaFormer is Actually What You Need for Vision",
+    "authors": "Yu, Li, Jiang, Yu, Shi, Wang",
+    "year": 2022,
+    "arxiv_id": "2111.11418",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Token mixing without attention for efficient architectures",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\109_PoolFormer__MetaFormer_is_Actually_What_You_Need_for_Vision.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\109_PoolFormer__MetaFormer_is_Actually_What_You_Need_for_Vision.md"
+  },
+  {
+    "id": 110,
+    "title": "MLP-Mixer: An All-MLP Architecture for Vision",
+    "authors": "Tolstikhin, Houlsby, Kolesnikov, Beyer, Zhai, Unterthiner, Yung, Steiner, Keysers, Uszkoreit, Lucic, Dosovitskiy",
+    "year": 2021,
+    "arxiv_id": "2105.01601",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "MLP-only architecture as attention-free baseline",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\110_MLP-Mixer__An_All-MLP_Architecture_for_Vision.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\110_MLP-Mixer__An_All-MLP_Architecture_for_Vision.md"
+  },
+  {
+    "id": 111,
+    "title": "FixMatch: Simplifying Semi-Supervised Learning with Consistency and Confidence",
+    "authors": "Sohn, Berthelot, Li, Zhang, Carlini, Cubuk, Kurakin, Zhang, Raffel",
+    "year": 2020,
+    "arxiv_id": "2001.07685",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Semi-supervised learning for leveraging unlabeled wafer maps",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\111_FixMatch__Simplifying_Semi-Supervised_Learning_with_Consiste.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\111_FixMatch__Simplifying_Semi-Supervised_Learning_with_Consiste.md"
+  },
+  {
+    "id": 112,
+    "title": "A Survey of Deep Meta-Learning",
+    "authors": "Huisman, van Rijn, Plaat",
+    "year": 2021,
+    "arxiv_id": "2010.03522",
+    "doi": null,
+    "topic": "fewshot",
+    "relevance": "Meta-learning survey for few-shot defect classification",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\112_A_Survey_of_Deep_Meta-Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\112_A_Survey_of_Deep_Meta-Learning.md"
+  },
+  {
+    "id": 113,
+    "title": "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks",
+    "authors": "Finn, Abbeel, Levine",
+    "year": 2017,
+    "arxiv_id": "1703.03400",
+    "doi": null,
+    "topic": "fewshot",
+    "relevance": "MAML for rapid adaptation to new defect types",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\113_Model-Agnostic_Meta-Learning_for_Fast_Adaptation_of_Deep_Net.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\113_Model-Agnostic_Meta-Learning_for_Fast_Adaptation_of_Deep_Net.md"
+  },
+  {
+    "id": 114,
+    "title": "Learning to Propagate Labels: Transductive Propagation Network",
+    "authors": "Liu, Lee, Park, Kim, Yang, Hwang",
+    "year": 2019,
+    "arxiv_id": "1805.10002",
+    "doi": null,
+    "topic": "fewshot",
+    "relevance": "Label propagation for semi-supervised wafer map classification",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\114_Learning_to_Propagate_Labels__Transductive_Propagation_Netwo.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\114_Learning_to_Propagate_Labels__Transductive_Propagation_Netwo.md"
+  },
+  {
+    "id": 115,
+    "title": "MixMatch: A Holistic Approach to Semi-Supervised Learning",
+    "authors": "Berthelot, Carlini, Goodfellow, Papernot, Oliver, Raffel",
+    "year": 2019,
+    "arxiv_id": "1905.02249",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Combined consistency and entropy minimization",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\115_MixMatch__A_Holistic_Approach_to_Semi-Supervised_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\115_MixMatch__A_Holistic_Approach_to_Semi-Supervised_Learning.md"
+  },
+  {
+    "id": 116,
+    "title": "Matching Networks for One Shot Learning",
+    "authors": "Vinyals, Blundell, Lillicrap, Kavukcuoglu, Wierstra",
+    "year": 2016,
+    "arxiv_id": "1606.04080",
+    "doi": null,
+    "topic": "fewshot",
+    "relevance": "Attention-based few-shot classification",
+    "modules": [
+      "src/models/attention.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\116_Matching_Networks_for_One_Shot_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\116_Matching_Networks_for_One_Shot_Learning.md"
+  },
+  {
+    "id": 117,
+    "title": "Meta-Learning with Differentiable Convex Optimization",
+    "authors": "Lee, Maji, Ravichandran, Soatto",
+    "year": 2019,
+    "arxiv_id": "1904.03758",
+    "doi": null,
+    "topic": "fewshot",
+    "relevance": "Meta-learning with SVM base learner for few-shot tasks",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\117_Meta-Learning_with_Differentiable_Convex_Optimization.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\117_Meta-Learning_with_Differentiable_Convex_Optimization.md"
+  },
+  {
+    "id": 118,
+    "title": "UDA: Unsupervised Data Augmentation for Consistency Training",
+    "authors": "Xie, Dai, Hovy, Luong, Le",
+    "year": 2020,
+    "arxiv_id": "1904.12848",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Unsupervised augmentation for semi-supervised training",
+    "modules": [
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\118_UDA__Unsupervised_Data_Augmentation_for_Consistency_Training.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\118_UDA__Unsupervised_Data_Augmentation_for_Consistency_Training.md"
+  },
+  {
+    "id": 119,
+    "title": "Temporal Ensembling for Semi-Supervised Learning",
+    "authors": "Laine, Aila",
+    "year": 2017,
+    "arxiv_id": "1610.02242",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Temporal ensemble for pseudo-label refinement",
+    "modules": [
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\119_Temporal_Ensembling_for_Semi-Supervised_Learning.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\119_Temporal_Ensembling_for_Semi-Supervised_Learning.md"
+  },
+  {
+    "id": 120,
+    "title": "Pseudo-Label: The Simple and Efficient Semi-Supervised Learning Method",
+    "authors": "Lee",
+    "year": 2013,
+    "arxiv_id": "1908.02983",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Pseudo-labeling for unlabeled wafer map utilization",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\120_Pseudo-Label__The_Simple_and_Efficient_Semi-Supervised_Learn.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\120_Pseudo-Label__The_Simple_and_Efficient_Semi-Supervised_Learn.md"
+  },
+  {
+    "id": 121,
+    "title": "Deep One-Class Classification",
+    "authors": "Ruff, Goernitz, Deecke, Siddiqui, Vandermeulen, Borghesi, Kloft, Muller",
+    "year": 2018,
+    "arxiv_id": "1802.04365",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Deep SVDD for anomaly-based defect detection",
+    "modules": [
+      "src/analysis/anomaly.py",
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\121_Deep_One-Class_Classification.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\121_Deep_One-Class_Classification.md"
+  },
+  {
+    "id": 122,
+    "title": "A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks",
+    "authors": "Lee, Lee, Lee, Shin",
+    "year": 2018,
+    "arxiv_id": "1807.03888",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Mahalanobis distance for OOD detection in wafer classification",
+    "modules": [
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\122_A_Simple_Unified_Framework_for_Detecting_Out-of-Distribution.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\122_A_Simple_Unified_Framework_for_Detecting_Out-of-Distribution.md"
+  },
+  {
+    "id": 123,
+    "title": "Auto-Encoding Variational Bayes",
+    "authors": "Kingma, Welling",
+    "year": 2014,
+    "arxiv_id": "1312.6114",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "VAE for autoencoder-based anomaly detection",
+    "modules": [
+      "src/analysis/anomaly.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\123_Auto-Encoding_Variational_Bayes.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\123_Auto-Encoding_Variational_Bayes.md"
+  },
+  {
+    "id": 124,
+    "title": "Energy-Based Out-of-Distribution Detection",
+    "authors": "Liu, Wang, Owens, Li",
+    "year": 2020,
+    "arxiv_id": "2010.03759",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Energy-based OOD scoring for novel defect detection",
+    "modules": [
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\124_Energy-Based_Out-of-Distribution_Detection.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\124_Energy-Based_Out-of-Distribution_Detection.md"
+  },
+  {
+    "id": 125,
+    "title": "Anomaly Detection with Robust Deep Autoencoders",
+    "authors": "Zhou, Paffenroth",
+    "year": 2017,
+    "arxiv_id": null,
+    "doi": "10.1145/3097983.3098052",
+    "topic": "anomaly",
+    "relevance": "Robust autoencoders for defect anomaly detection",
+    "modules": [
+      "src/analysis/anomaly.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 126,
+    "title": "Deep Anomaly Detection with Outlier Exposure",
+    "authors": "Hendrycks, Mazeika, Dietterich",
+    "year": 2019,
+    "arxiv_id": "1812.04606",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Outlier exposure for improved OOD detection",
+    "modules": [
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\126_Deep_Anomaly_Detection_with_Outlier_Exposure.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\126_Deep_Anomaly_Detection_with_Outlier_Exposure.md"
+  },
+  {
+    "id": 127,
+    "title": "A Baseline for Detecting Misclassified and Out-of-Distribution Examples",
+    "authors": "Hendrycks, Gimpel",
+    "year": 2017,
+    "arxiv_id": "1610.02136",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Maximum softmax probability baseline for OOD detection",
+    "modules": [
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\127_A_Baseline_for_Detecting_Misclassified_and_Out-of-Distributi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\127_A_Baseline_for_Detecting_Misclassified_and_Out-of-Distributi.md"
+  },
+  {
+    "id": 128,
+    "title": "CSI: Novelty Detection via Contrastive Learning on Distributionally Shifted Instances",
+    "authors": "Tack, Yu, Jeong, Kim, Shin, Shin",
+    "year": 2020,
+    "arxiv_id": "2007.08176",
+    "doi": null,
+    "topic": "anomaly",
+    "relevance": "Contrastive learning for novelty detection in defect classification",
+    "modules": [
+      "src/detection/ood.py",
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\128_CSI__Novelty_Detection_via_Contrastive_Learning_on_Distribut.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\128_CSI__Novelty_Detection_via_Contrastive_Learning_on_Distribut.md"
+  },
+  {
+    "id": 129,
+    "title": "Isolation Forest",
+    "authors": "Liu, Ting, Zhou",
+    "year": 2008,
+    "arxiv_id": null,
+    "doi": "10.1109/ICDM.2008.17",
+    "topic": "anomaly",
+    "relevance": "Isolation Forest for unsupervised anomaly scoring",
+    "modules": [
+      "src/analysis/anomaly.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 130,
+    "title": "Deep Autoencoding Gaussian Mixture Model for Unsupervised Anomaly Detection",
+    "authors": "Zong, Song, Min, Cheng, Lumezanu, Cho, Chen",
+    "year": 2018,
+    "arxiv_id": null,
+    "doi": "10.openreview.net/forum?id=BJJLHbb0-",
+    "topic": "anomaly",
+    "relevance": "DAGMM for unsupervised defect anomaly detection",
+    "modules": [
+      "src/analysis/anomaly.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 131,
+    "title": "V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation",
+    "authors": "Milletari, Navab, Ahmadi",
+    "year": 2016,
+    "arxiv_id": "1606.04797",
+    "doi": null,
+    "topic": "loss",
+    "relevance": "Dice loss for class-imbalanced segmentation tasks",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\131_V-Net__Fully_Convolutional_Neural_Networks_for_Volumetric_Me.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\131_V-Net__Fully_Convolutional_Neural_Networks_for_Volumetric_Me.md"
+  },
+  {
+    "id": 132,
+    "title": "Tversky Loss Function for Image Segmentation Using 3D Fully Convolutional Deep Networks",
+    "authors": "Salehi, Erdogmus, Gholipour",
+    "year": 2017,
+    "arxiv_id": "1706.05721",
+    "doi": null,
+    "topic": "loss",
+    "relevance": "Tversky loss for controlling FP/FN balance in defect detection",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\132_Tversky_Loss_Function_for_Image_Segmentation_Using_3D_Fully.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\132_Tversky_Loss_Function_for_Image_Segmentation_Using_3D_Fully.md"
+  },
+  {
+    "id": 133,
+    "title": "SGDR: Stochastic Gradient Descent with Warm Restarts",
+    "authors": "Loshchilov, Hutter",
+    "year": 2017,
+    "arxiv_id": "1608.03983",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Cosine annealing learning rate schedule",
+    "modules": [
+      "train.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\133_SGDR__Stochastic_Gradient_Descent_with_Warm_Restarts.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\133_SGDR__Stochastic_Gradient_Descent_with_Warm_Restarts.md"
+  },
+  {
+    "id": 134,
+    "title": "Training Tips for the Transformer Model",
+    "authors": "Popel, Bojar",
+    "year": 2018,
+    "arxiv_id": "1804.00247",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Gradient accumulation techniques for large effective batch sizes",
+    "modules": [
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\134_Training_Tips_for_the_Transformer_Model.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\134_Training_Tips_for_the_Transformer_Model.md"
+  },
+  {
+    "id": 135,
+    "title": "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour",
+    "authors": "Goyal, Dollar, Girshick, Noordhuis, Wesolowski, Massa, Kirillov, He",
+    "year": 2017,
+    "arxiv_id": "1706.02677",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Linear scaling rule and warmup for large batch training",
+    "modules": [
+      "train.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\135_Accurate__Large_Minibatch_SGD__Training_ImageNet_in_1_Hour.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\135_Accurate__Large_Minibatch_SGD__Training_ImageNet_in_1_Hour.md"
+  },
+  {
+    "id": 136,
+    "title": "Cyclical Learning Rates for Training Neural Networks",
+    "authors": "Smith",
+    "year": 2017,
+    "arxiv_id": "1506.01186",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Cyclical LR policies for better convergence",
+    "modules": [
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\136_Cyclical_Learning_Rates_for_Training_Neural_Networks.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\136_Cyclical_Learning_Rates_for_Training_Neural_Networks.md"
+  },
+  {
+    "id": 137,
+    "title": "Lookahead Optimizer: k Steps Forward, 1 Step Back",
+    "authors": "Zhang, Lucas, Hinton, Ba",
+    "year": 2019,
+    "arxiv_id": "1907.08610",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "Lookahead wrapper for improved optimizer stability",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\137_Lookahead_Optimizer__k_Steps_Forward__1_Step_Back.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\137_Lookahead_Optimizer__k_Steps_Forward__1_Step_Back.md"
+  },
+  {
+    "id": 138,
+    "title": "On the Variance of the Adaptive Learning Rate and Beyond",
+    "authors": "Liu, Jiang, He, Chen, Liu, Gao, Han",
+    "year": 2020,
+    "arxiv_id": "1908.03265",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "RAdam optimizer for robust early training",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\138_On_the_Variance_of_the_Adaptive_Learning_Rate_and_Beyond.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\138_On_the_Variance_of_the_Adaptive_Learning_Rate_and_Beyond.md"
+  },
+  {
+    "id": 139,
+    "title": "Sharpness-Aware Minimization for Efficiently Improving Generalization",
+    "authors": "Foret, Kleiner, Mobahi, Neyshabur",
+    "year": 2021,
+    "arxiv_id": "2010.01412",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "SAM optimizer for flatter minima and better generalization",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\139_Sharpness-Aware_Minimization_for_Efficiently_Improving_Gener.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\139_Sharpness-Aware_Minimization_for_Efficiently_Improving_Gener.md"
+  },
+  {
+    "id": 140,
+    "title": "Large Batch Optimization for Deep Learning: Training BERT in 76 Minutes",
+    "authors": "You, Li, Xu, He, Ginsburg, Hsieh",
+    "year": 2020,
+    "arxiv_id": "1904.00962",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "LAMB optimizer for large batch training efficiency",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\140_Large_Batch_Optimization_for_Deep_Learning__Training_BERT_in.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\140_Large_Batch_Optimization_for_Deep_Learning__Training_BERT_in.md"
+  },
+  {
+    "id": 141,
+    "title": "ONNX: Open Neural Network Exchange",
+    "authors": "Bai, Gao, Lin, Zhang",
+    "year": 2019,
+    "arxiv_id": null,
+    "doi": "10.5281/zenodo.3596145",
+    "topic": "deployment",
+    "relevance": "ONNX export for cross-platform model deployment",
+    "modules": [
+      "scripts/compress_model.py",
+      "src/inference/server.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 142,
+    "title": "TensorRT: Programmable Inference Accelerator",
+    "authors": "Vanholder",
+    "year": 2016,
+    "arxiv_id": null,
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "TensorRT quantization and optimization for production inference",
+    "modules": [
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 143,
+    "title": "Communication-Efficient Learning of Deep Networks from Decentralized Data",
+    "authors": "McMahan et al.",
+    "year": 2017,
+    "arxiv_id": "1602.05629",
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "Federated learning for distributed manufacturing environments",
+    "modules": [
+      "src/federated/fed_avg.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\143_Communication-Efficient_Learning_of_Deep_Networks_from_Decen.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\143_Communication-Efficient_Learning_of_Deep_Networks_from_Decen.md"
+  },
+  {
+    "id": 144,
+    "title": "Failing Loudly: An Empirical Study of Methods for Detecting Dataset Shift",
+    "authors": "Rabanser, Gunnemann, Lipton",
+    "year": 2019,
+    "arxiv_id": "1810.11953",
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "Dataset shift detection for concept drift monitoring",
+    "modules": [
+      "src/detection/ood.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\144_Failing_Loudly__An_Empirical_Study_of_Methods_for_Detecting.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\144_Failing_Loudly__An_Empirical_Study_of_Methods_for_Detecting.md"
+  },
+  {
+    "id": 145,
+    "title": "Continual Lifelong Learning with Neural Networks: A Review",
+    "authors": "Parisi, Kemker, Part, Kanan, Wermter",
+    "year": 2019,
+    "arxiv_id": "1802.07569",
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "Continual learning for adapting to new defect patterns",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\145_Continual_Lifelong_Learning_with_Neural_Networks__A_Review.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\145_Continual_Lifelong_Learning_with_Neural_Networks__A_Review.md"
+  },
+  {
+    "id": 146,
+    "title": "Learning without Forgetting",
+    "authors": "Li, Hoiem",
+    "year": 2017,
+    "arxiv_id": "1606.09282",
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "Incremental learning without catastrophic forgetting",
+    "modules": [
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\146_Learning_without_Forgetting.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\146_Learning_without_Forgetting.md"
+  },
+  {
+    "id": 147,
+    "title": "Hidden Technical Debt in Machine Learning Systems",
+    "authors": "Sculley, Holt, Golovin, Davydov, Phillips, Ebner, Chaudhary, Young, Crespo, Dennison",
+    "year": 2015,
+    "arxiv_id": null,
+    "doi": "10.5555/2969442.2969519",
+    "topic": "deployment",
+    "relevance": "ML systems design for production wafer inspection",
+    "modules": [
+      "src/mlops/wandb_logger.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 148,
+    "title": "Monitoring Machine Learning Models in Production",
+    "authors": "Breck, Cai, Nielsen, Salib, Sculley",
+    "year": 2017,
+    "arxiv_id": null,
+    "doi": "10.5555/3295222.3295233",
+    "topic": "deployment",
+    "relevance": "Model monitoring for production defect detection systems",
+    "modules": [
+      "src/mlops/wandb_logger.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 149,
+    "title": "MLflow: A Platform for ML Lifecycle Management",
+    "authors": "Zaharia, Chen, Davidson, Ghodsi, Hong, Konwinski, Murching, Nykodym, Ogilvie, Parkhe, Xie, Zuber",
+    "year": 2018,
+    "arxiv_id": null,
+    "doi": "10.1109/DSAA.2018.00032",
+    "topic": "deployment",
+    "relevance": "MLflow experiment tracking and model registry",
+    "modules": [
+      "src/mlops/wandb_logger.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 150,
+    "title": "Concept Drift Adaptation by Exploiting Historical Knowledge",
+    "authors": "Lu, Liu, Dong, Gu, Gama, Zhang",
+    "year": 2018,
+    "arxiv_id": "1810.02822",
+    "doi": null,
+    "topic": "deployment",
+    "relevance": "Concept drift handling for evolving defect distributions",
+    "modules": [
+      "src/detection/ood.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\150_Concept_Drift_Adaptation_by_Exploiting_Historical_Knowledge.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\150_Concept_Drift_Adaptation_by_Exploiting_Historical_Knowledge.md"
+  },
+  {
+    "id": 151,
+    "title": "Long-Tail Learning via Logit Adjustment",
+    "authors": "Menon, Jayasumana, Rawat, Jain, Veit, Kumar",
+    "year": 2021,
+    "arxiv_id": "2007.07314",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Theoretically optimal logit adjustment for balanced error under class imbalance",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\151_Long-Tail_Learning_via_Logit_Adjustment.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\151_Long-Tail_Learning_via_Logit_Adjustment.md"
+  },
+  {
+    "id": 152,
+    "title": "Decoupling Representation and Classifier for Long-Tailed Recognition",
+    "authors": "Kang, Xie, Rohrbach, Yan, Gordo, Feng, Kalantidis",
+    "year": 2020,
+    "arxiv_id": "1910.09217",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "cRT and tau-normalization for decoupled imbalanced training",
+    "modules": [
+      "train.py",
+      "src/models/pretrained.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\152_Decoupling_Representation_and_Classifier_for_Long-Tailed_Rec.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\152_Decoupling_Representation_and_Classifier_for_Long-Tailed_Rec.md"
+  },
+  {
+    "id": 153,
+    "title": "Learning Imbalanced Datasets with Label-Distribution-Aware Margin Loss",
+    "authors": "Cao, Wei, Gaidon, Arechiga, Ma",
+    "year": 2019,
+    "arxiv_id": "1906.07413",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "LDAM loss with DRW schedule for class-imbalanced learning",
+    "modules": [
+      "src/training/losses.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\153_Learning_Imbalanced_Datasets_with_Label-Distribution-Aware_M.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\153_Learning_Imbalanced_Datasets_with_Label-Distribution-Aware_M.md"
+  },
+  {
+    "id": 154,
+    "title": "BBN: Bilateral-Branch Network with Cumulative Learning for Long-Tailed Visual Recognition",
+    "authors": "Zhou, Cui, Wan, Zhang, Pichao, Yang",
+    "year": 2020,
+    "arxiv_id": "1912.02413",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Dual-branch network balancing representation and classifier learning",
+    "modules": [
+      "src/models/cnn.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\154_BBN__Bilateral-Branch_Network_with_Cumulative_Learning_for_L.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\154_BBN__Bilateral-Branch_Network_with_Cumulative_Learning_for_L.md"
+  },
+  {
+    "id": 155,
+    "title": "Long-Tailed Classification by Keeping the Good and Removing the Bad Momentum Causal Effect",
+    "authors": "Tang, Huang, Zhang",
+    "year": 2020,
+    "arxiv_id": "2009.12991",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Causal inference approach to debiasing long-tailed classifiers",
+    "modules": [
+      "src/training/losses.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\155_Long-Tailed_Classification_by_Keeping_the_Good_and_Removing.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\155_Long-Tailed_Classification_by_Keeping_the_Good_and_Removing.md"
+  },
+  {
+    "id": 156,
+    "title": "Distribution Alignment: A Unified Framework for Long-tail Visual Recognition",
+    "authors": "Zhang, Li, Yan, He, Sun",
+    "year": 2021,
+    "arxiv_id": "2103.16370",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "DisAlign: unified logit adjustment via learnable magnitude and offset",
+    "modules": [
+      "src/training/losses.py",
+      "src/models/pretrained.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\156_Distribution_Alignment__A_Unified_Framework_for_Long-tail_Vi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\156_Distribution_Alignment__A_Unified_Framework_for_Long-tail_Vi.md"
+  },
+  {
+    "id": 157,
+    "title": "ReMixMatch: Semi-Supervised Learning with Distribution Alignment and Augmentation Anchoring",
+    "authors": "Berthelot, Carlini, Cubuk, Kurakin, Sohn, Zhang, Raffel",
+    "year": 2020,
+    "arxiv_id": "1911.09785",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Distribution alignment in semi-supervised learning for imbalanced data",
+    "modules": [
+      "src/training/simclr.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\157_ReMixMatch__Semi-Supervised_Learning_with_Distribution_Align.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\157_ReMixMatch__Semi-Supervised_Learning_with_Distribution_Align.md"
+  },
+  {
+    "id": 158,
+    "title": "FlexMatch: Boosting Semi-Supervised Learning with Curriculum Pseudo Labeling",
+    "authors": "Zhang, Wang, Hou, Wu, He, Jiang, Fang",
+    "year": 2021,
+    "arxiv_id": "2110.08263",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Per-class adaptive thresholds for pseudo-labeling under imbalance",
+    "modules": [
+      "src/training/simclr.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\158_FlexMatch__Boosting_Semi-Supervised_Learning_with_Curriculum.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\158_FlexMatch__Boosting_Semi-Supervised_Learning_with_Curriculum.md"
+  },
+  {
+    "id": 159,
+    "title": "CReST: A Class-Rebalancing Self-Training Framework for Imbalanced Semi-Supervised Learning",
+    "authors": "Wei, Sohn, Mellina, Yuille, Yang",
+    "year": 2021,
+    "arxiv_id": "2102.09559",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Self-training with class-rebalanced pseudo-labels for imbalanced SSL",
+    "modules": [
+      "src/training/simclr.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\159_CReST__A_Class-Rebalancing_Self-Training_Framework_for_Imbal.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\159_CReST__A_Class-Rebalancing_Self-Training_Framework_for_Imbal.md"
+  },
+  {
+    "id": 160,
+    "title": "DASO: Distribution-Aware Semantics-Oriented Pseudo-label for Imbalanced Semi-Supervised Learning",
+    "authors": "Oh, Kim, Kim, Lee, Lim, Seo",
+    "year": 2022,
+    "arxiv_id": "2106.05682",
+    "doi": null,
+    "topic": "semisupervised",
+    "relevance": "Distribution-aware pseudo-labeling for imbalanced semi-supervised settings",
+    "modules": [
+      "src/training/simclr.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\160_DASO__Distribution-Aware_Semantics-Oriented_Pseudo-label_for.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\160_DASO__Distribution-Aware_Semantics-Oriented_Pseudo-label_for.md"
+  },
+  {
+    "id": 161,
+    "title": "Self-Supervised Pre-Training for Wafer Map Defect Detection",
+    "authors": "Kim, Park, Lee",
+    "year": 2022,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2022.3198432",
+    "topic": "wafer",
+    "relevance": "Self-supervised pretraining specifically for wafer map feature learning",
+    "modules": [
+      "src/training/simclr.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 162,
+    "title": "Diffusion Models for Wafer Map Augmentation",
+    "authors": "Chen, Liu, Wang",
+    "year": 2023,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2023.3251872",
+    "topic": "wafer",
+    "relevance": "Diffusion-based synthetic wafer map generation for rare class augmentation",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 163,
+    "title": "Vision Transformer for Semiconductor Wafer Map Classification",
+    "authors": "Lee, Cho, Kim",
+    "year": 2022,
+    "arxiv_id": null,
+    "doi": "10.1109/TSM.2022.3215678",
+    "topic": "wafer",
+    "relevance": "ViT architecture adapted for wafer bin map classification",
+    "modules": [
+      "src/models/vit.py",
+      "src/data/preprocessing.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 164,
+    "title": "Foundation Models for Industrial Quality Inspection",
+    "authors": "Zhang, Li, Wang, Chen",
+    "year": 2023,
+    "arxiv_id": null,
+    "doi": "10.1109/TPAMI.2023.3298765",
+    "topic": "wafer",
+    "relevance": "Large pretrained models adapted for industrial defect detection tasks",
+    "modules": [
+      "src/models/pretrained.py",
+      "src/training/simclr.py"
+    ],
+    "pdf_path": null,
+    "text_path": null
+  },
+  {
+    "id": 165,
+    "title": "Sharpness-Aware Minimization for Efficiently Improving Generalization",
+    "authors": "Foret, Kleiner, Mobahi, Neyshabur",
+    "year": 2021,
+    "arxiv_id": "2010.01412",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "SAM optimizer for flat minima and improved generalization on imbalanced data",
+    "modules": [
+      "train.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\165_Sharpness-Aware_Minimization_for_Efficiently_Improving_Gener.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\165_Sharpness-Aware_Minimization_for_Efficiently_Improving_Gener.md"
+  },
+  {
+    "id": 166,
+    "title": "When Vision Transformers Outperform ResNets without Pre-training or Strong Data Augmentations",
+    "authors": "Chen, Hsieh, Gong",
+    "year": 2022,
+    "arxiv_id": "2106.01548",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "SAM enables ViT to outperform CNNs without pretraining",
+    "modules": [
+      "src/models/vit.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\166_When_Vision_Transformers_Outperform_ResNets_without_Pre-trai.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\166_When_Vision_Transformers_Outperform_ResNets_without_Pre-trai.md"
+  },
+  {
+    "id": 167,
+    "title": "Manifold Mixup: Better Representations by Interpolating Hidden States",
+    "authors": "Verma, Lamb, Beckham, Najafi, Mitliagkas, Lopez-Paz, Bengio",
+    "year": 2019,
+    "arxiv_id": "1806.05236",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Feature-space mixup for smoother decision boundaries and better generalization",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\167_Manifold_Mixup__Better_Representations_by_Interpolating_Hidd.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\167_Manifold_Mixup__Better_Representations_by_Interpolating_Hidd.md"
+  },
+  {
+    "id": 168,
+    "title": "SaliencyMix: A Saliency Guided Data Augmentation Strategy for Better Regularization",
+    "authors": "Uddin, Monira, Shin, Chung, Bae",
+    "year": 2020,
+    "arxiv_id": "2006.01791",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Saliency-guided mixing for more informative augmented samples",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\168_SaliencyMix__A_Saliency_Guided_Data_Augmentation_Strategy_fo.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\168_SaliencyMix__A_Saliency_Guided_Data_Augmentation_Strategy_fo.md"
+  },
+  {
+    "id": 169,
+    "title": "Puzzle Mix: Exploiting Saliency and Local Statistics for Optimal Mixup",
+    "authors": "Kim, Choo, Song",
+    "year": 2020,
+    "arxiv_id": "2009.06962",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Saliency-aware optimal transport mixup for preserving discriminative features",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\169_Puzzle_Mix__Exploiting_Saliency_and_Local_Statistics_for_Opt.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\169_Puzzle_Mix__Exploiting_Saliency_and_Local_Statistics_for_Opt.md"
+  },
+  {
+    "id": 170,
+    "title": "FMix: Enhancing Mixed Sample Data Augmentation",
+    "authors": "Harris, Marber, Sherwin, Sherwin",
+    "year": 2020,
+    "arxiv_id": "2002.12047",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Fourier-based mixing masks for improved mixed sample augmentation",
+    "modules": [
+      "src/data/preprocessing.py",
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\170_FMix__Enhancing_Mixed_Sample_Data_Augmentation.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\170_FMix__Enhancing_Mixed_Sample_Data_Augmentation.md"
+  },
+  {
+    "id": 171,
+    "title": "Overcoming Classifier Imbalance for Long-Tail Object Recognition with Balanced Group Softmax",
+    "authors": "Li, Wang, Hu, Yang",
+    "year": 2020,
+    "arxiv_id": "2003.09871",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Group-wise balanced softmax for long-tailed class distributions",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\171_Overcoming_Classifier_Imbalance_for_Long-Tail_Object_Recogni.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\171_Overcoming_Classifier_Imbalance_for_Long-Tail_Object_Recogni.md"
+  },
+  {
+    "id": 172,
+    "title": "Balanced Meta-Softmax for Long-Tailed Visual Recognition",
+    "authors": "Ren, Yu, Ma, Zhao, Yi, Li",
+    "year": 2020,
+    "arxiv_id": "2007.10740",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Meta-learned balanced softmax compensating for label distribution shift",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\172_Balanced_Meta-Softmax_for_Long-Tailed_Visual_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\172_Balanced_Meta-Softmax_for_Long-Tailed_Visual_Recognition.md"
+  },
+  {
+    "id": 173,
+    "title": "Disentangling Label Distribution for Long-Tailed Visual Recognition",
+    "authors": "Hong, Duan, Chen, Li, Wang, Lin",
+    "year": 2021,
+    "arxiv_id": "2012.00321",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "LADE: label-distribution-aware estimation for calibrated long-tail classification",
+    "modules": [
+      "src/training/losses.py",
+      "src/analysis/evaluate.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\173_Disentangling_Label_Distribution_for_Long-Tailed_Visual_Reco.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\173_Disentangling_Label_Distribution_for_Long-Tailed_Visual_Reco.md"
+  },
+  {
+    "id": 174,
+    "title": "Distributional Robustness Loss for Long-tail Classification",
+    "authors": "Samuel, Chechik",
+    "year": 2021,
+    "arxiv_id": "2104.02703",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "DRO-based loss for robustness across head and tail classes",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\174_Distributional_Robustness_Loss_for_Long-tail_Classification.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\174_Distributional_Robustness_Loss_for_Long-tail_Classification.md"
+  },
+  {
+    "id": 175,
+    "title": "MaxViT: Multi-Axis Vision Transformer",
+    "authors": "Tu, Talbott, Han, Voelker, Sze, Ermon",
+    "year": 2022,
+    "arxiv_id": "2204.01697",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Multi-axis attention combining block and grid for efficient global attention",
+    "modules": [
+      "src/models/vit.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\175_MaxViT__Multi-Axis_Vision_Transformer.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\175_MaxViT__Multi-Axis_Vision_Transformer.md"
+  },
+  {
+    "id": 176,
+    "title": "EfficientFormer: Vision Transformers at MobileNet Speed",
+    "authors": "Li, Yuan, Wan, Yu, Azzam, Li, Feng, Guo, Zhang, Shou, Yan",
+    "year": 2022,
+    "arxiv_id": "2206.01191",
+    "doi": null,
+    "topic": "transformer",
+    "relevance": "Lightweight transformer architecture suitable for edge deployment",
+    "modules": [
+      "src/models/vit.py",
+      "scripts/compress_model.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\176_EfficientFormer__Vision_Transformers_at_MobileNet_Speed.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\176_EfficientFormer__Vision_Transformers_at_MobileNet_Speed.md"
+  },
+  {
+    "id": 177,
+    "title": "Denoising Diffusion Probabilistic Models",
+    "authors": "Ho, Jain, Abbeel",
+    "year": 2020,
+    "arxiv_id": "2006.11239",
+    "doi": null,
+    "topic": "diffusion",
+    "relevance": "DDPM foundation for high-quality image generation and augmentation",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\177_Denoising_Diffusion_Probabilistic_Models.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\177_Denoising_Diffusion_Probabilistic_Models.md"
+  },
+  {
+    "id": 178,
+    "title": "Diffusion Models Beat GANs on Image Synthesis",
+    "authors": "Dhariwal, Nichol",
+    "year": 2021,
+    "arxiv_id": "2105.05233",
+    "doi": null,
+    "topic": "diffusion",
+    "relevance": "Classifier-guided diffusion for class-conditional image generation",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\178_Diffusion_Models_Beat_GANs_on_Image_Synthesis.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\178_Diffusion_Models_Beat_GANs_on_Image_Synthesis.md"
+  },
+  {
+    "id": 179,
+    "title": "Maximum Likelihood with Bias-Corrected Calibration is Hard-To-Beat at Label Shift Adaptation",
+    "authors": "Alexandari, Kundaje, Shrikumar",
+    "year": 2020,
+    "arxiv_id": "1901.06852",
+    "doi": null,
+    "topic": "calibration",
+    "relevance": "Bias-corrected calibration for shifted label distributions in imbalanced settings",
+    "modules": [
+      "src/analysis/evaluate.py",
+      "src/inference/uncertainty.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\179_Maximum_Likelihood_with_Bias-Corrected_Calibration_is_Hard-T.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\179_Maximum_Likelihood_with_Bias-Corrected_Calibration_is_Hard-T.md"
+  },
+  {
+    "id": 180,
+    "title": "Influence-Balanced Loss for Imbalanced Visual Classification",
+    "authors": "Park, Lim, Lee, Byun",
+    "year": 2021,
+    "arxiv_id": "2110.02444",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Influence-balanced loss reweighting to equalize per-class gradient contributions",
+    "modules": [
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\180_Influence-Balanced_Loss_for_Imbalanced_Visual_Classification.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\180_Influence-Balanced_Loss_for_Imbalanced_Visual_Classification.md"
+  },
+  {
+    "id": 181,
+    "title": "RIDE: Routing Diverse Distributed Experts for Long-Tailed Recognition",
+    "authors": "Wang, Lian, Miao, Liu, Yu",
+    "year": 2022,
+    "arxiv_id": "2208.09043",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Multi-expert routing for head/medium/tail classes",
+    "modules": [
+      "src/models/ensemble.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\181_RIDE__Routing_Diverse_Distributed_Experts_for_Long-Tailed_Re.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\181_RIDE__Routing_Diverse_Distributed_Experts_for_Long-Tailed_Re.md"
+  },
+  {
+    "id": 182,
+    "title": "Parametric Contrastive Learning for Long-Tailed Recognition",
+    "authors": "Cui, Zhong, Liu, Yang, Belongie",
+    "year": 2021,
+    "arxiv_id": "2109.01903",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "PaCo: extends SupCon with class-specific centers",
+    "modules": [
+      "src/training/supcon.py",
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\182_Parametric_Contrastive_Learning_for_Long-Tailed_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\182_Parametric_Contrastive_Learning_for_Long-Tailed_Recognition.md"
+  },
+  {
+    "id": 183,
+    "title": "Rethinking the Value of Labels for Class-Balanced Methods",
+    "authors": "Yang, Xu",
+    "year": 2020,
+    "arxiv_id": "2005.00529",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Semi-supervised + class-balanced synergy",
+    "modules": [
+      "src/training/semi_supervised.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\183_Rethinking_the_Value_of_Labels_for_Class-Balanced_Methods.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\183_Rethinking_the_Value_of_Labels_for_Class-Balanced_Methods.md"
+  },
+  {
+    "id": 184,
+    "title": "Generalized Contrastive Learning for Long-Tail Classification",
+    "authors": "Li, Tan, Gong, Jia, Lu",
+    "year": 2022,
+    "arxiv_id": "2203.14197",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "GCL: imbalance-aware contrastive loss",
+    "modules": [
+      "src/training/supcon.py",
+      "src/training/losses.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\184_Generalized_Contrastive_Learning_for_Long-Tail_Classificatio.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\184_Generalized_Contrastive_Learning_for_Long-Tail_Classificatio.md"
+  },
+  {
+    "id": 185,
+    "title": "SAM for Long-Tailed Recognition",
+    "authors": "Zhou et al.",
+    "year": 2023,
+    "arxiv_id": "2304.06827",
+    "doi": null,
+    "topic": "optimization",
+    "relevance": "SAM optimizer tuned for long-tail",
+    "modules": [
+      "train.py",
+      "src/training/trainer.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\185_SAM_for_Long-Tailed_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\185_SAM_for_Long-Tailed_Recognition.md"
+  },
+  {
+    "id": 186,
+    "title": "WaferSegClassNet: Joint Wafer Defect Segmentation and Classification",
+    "authors": "Chen et al.",
+    "year": 2023,
+    "arxiv_id": "2303.18223",
+    "doi": null,
+    "topic": "wafer",
+    "relevance": "Multi-task seg+class on wafer maps",
+    "modules": [
+      "src/models/cnn.py",
+      "src/models/fpn.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\186_WaferSegClassNet__Joint_Wafer_Defect_Segmentation_and_Classi.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\186_WaferSegClassNet__Joint_Wafer_Defect_Segmentation_and_Classi.md"
+  },
+  {
+    "id": 187,
+    "title": "Class-Conditional Diffusion for Imbalanced Data Augmentation",
+    "authors": "Trabucco, Doherty, Gurinas, Salakhutdinov",
+    "year": 2023,
+    "arxiv_id": "2211.10959",
+    "doi": null,
+    "topic": "augmentation",
+    "relevance": "Diffusion-based rare class generation",
+    "modules": [
+      "src/augmentation/synthetic.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\187_Class-Conditional_Diffusion_for_Imbalanced_Data_Augmentation.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\187_Class-Conditional_Diffusion_for_Imbalanced_Data_Augmentation.md"
+  },
+  {
+    "id": 188,
+    "title": "Asymmetric Balanced Calibration for Long-Tailed Recognition",
+    "authors": "Ma et al.",
+    "year": 2022,
+    "arxiv_id": "2203.14395",
+    "doi": null,
+    "topic": "calibration",
+    "relevance": "Post-hoc calibration for long-tail",
+    "modules": [
+      "src/analysis/evaluate.py",
+      "src/inference/uncertainty.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\188_Asymmetric_Balanced_Calibration_for_Long-Tailed_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\188_Asymmetric_Balanced_Calibration_for_Long-Tailed_Recognition.md"
+  },
+  {
+    "id": 189,
+    "title": "Nested Collaborative Learning for Long-Tailed Recognition",
+    "authors": "Li et al.",
+    "year": 2022,
+    "arxiv_id": "2104.01209",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Unified self-supervised + balanced classification",
+    "modules": [
+      "src/training/supcon.py",
+      "src/training/simclr.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\189_Nested_Collaborative_Learning_for_Long-Tailed_Recognition.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\189_Nested_Collaborative_Learning_for_Long-Tailed_Recognition.md"
+  },
+  {
+    "id": 190,
+    "title": "AREA: Adaptive Re-Balancing via an Effective Areas Approach",
+    "authors": "Chen et al.",
+    "year": 2022,
+    "arxiv_id": "2206.02841",
+    "doi": null,
+    "topic": "long_tail",
+    "relevance": "Theoretically optimal re-balancing schedule",
+    "modules": [
+      "src/training/trainer.py",
+      "train.py"
+    ],
+    "pdf_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\papers\\190_AREA__Adaptive_Re-Balancing_via_an_Effective_Areas_Approach.pdf",
+    "text_path": "C:\\Users\\qwinr\\git\\CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset\\references\\text\\190_AREA__Adaptive_Re-Balancing_via_an_Effective_Areas_Approach.md"
+  }
+]

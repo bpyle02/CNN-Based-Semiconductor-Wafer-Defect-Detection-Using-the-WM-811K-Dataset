@@ -1,0 +1,11 @@
+inference:
+  model_path: checkpoints/best_model.pth
+  batch_size: 32
+  num_workers: 4
+  device: cpu
+  use_half_precision: false
+  gradcam:
+    enabled: true
+
+paths:
+  checkpoint_dir: checkpoints
