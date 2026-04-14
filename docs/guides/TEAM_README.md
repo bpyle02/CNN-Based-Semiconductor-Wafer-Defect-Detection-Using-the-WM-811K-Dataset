@@ -12,7 +12,7 @@
 |------|--------|----------|
 | Python Code | ✅ Complete | `src/` (1509 lines) |
 | CLI Entry | ✅ Complete | `train.py` |
-| Documentation | ✅ Complete | `README.md`, `CLAUDE.md` |
+| Documentation | ✅ Complete | `README.md` |
 | Colab Support | ✅ Complete | `COLAB_SETUP.md`, `colab_runner.py` |
 | Testing | ✅ Verified | Syntax + imports working |
 | Branch | ✅ Isolated | `feature/phd-complete-implementation` |
@@ -32,7 +32,6 @@
 
 ### Documentation
 - **`README.md`** (1600+ lines): User guide, architecture, troubleshooting
-- **`CLAUDE.md`** (1500+ lines): Technical design, fixes, decisions
 - **`COLAB_SETUP.md`**: Google Colab training guide
 - **`BRANCH_GUIDE.md`**: Branch management and merging
 - **`IMPROVEMENTS.md`**: 23 enhancement ideas with code sketches
@@ -62,7 +61,6 @@ git checkout feature/phd-complete-implementation
 
 # 2. Review documentation
 cat README.md        # User guide
-cat CLAUDE.md        # Architecture
 cat COLAB_SETUP.md   # Colab guide
 
 # 3. Verify code
@@ -91,7 +89,6 @@ python train.py --help  # Does it run?
 
 **Documentation**:
 - [ ] README is clear for new users
-- [ ] CLAUDE.md explains design decisions
 - [ ] COLAB_SETUP.md has correct instructions
 - [ ] Code examples in docs actually run
 
@@ -227,7 +224,6 @@ feature/phd-complete-implementation
 ├── .gitignore                  ← Ignore rules
 │
 ├── README.md                   ← User guide (1600+ lines)
-├── CLAUDE.md                   ← Technical guide (1500+ lines)
 ├── COLAB_SETUP.md              ← Colab instructions
 ├── BRANCH_GUIDE.md             ← Branch management
 ├── IMPROVEMENTS.md             ← 23 enhancement ideas
@@ -300,7 +296,6 @@ Total: 59 files, 1509 lines of Python code
 
 For questions or issues, contact the team or check:
 - `README.md` - User questions
-- `CLAUDE.md` - Technical questions
 - `COLAB_SETUP.md` - Colab issues
 - `BRANCH_GUIDE.md` - Branch management
 

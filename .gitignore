@@ -1,9 +1,6 @@
 # Submission Bundle (build artifact)
 submission/
 
-# External AI config files
-GEMINI.md
-
 # Dataset & Large Files
 *.pkl
 *.pickle
@@ -135,7 +132,6 @@ dmypy.json
 !**/*.tex
 !requirements.txt
 !README.md
-!CLAUDE.md
 !COLAB_SETUP.md
 !BRANCH_GUIDE.md
 

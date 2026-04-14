@@ -236,7 +236,6 @@ production deployment infrastructure.
 ├── docker-compose.yml                          # 4 services: train, inference, jupyter, mlflow
 ├── Makefile                                    # Build targets: install, train, test, dashboard, defense
 ├── pytest.ini                                  # Test configuration and path exclusions
-├── CLAUDE.md                                   # Technical project guide
 ├── README.md                                   # User-facing project overview
 ├── DEFENSE_SUBMISSION.md                       # Defense committee submission guide
 ├── structure.md                                # This file
