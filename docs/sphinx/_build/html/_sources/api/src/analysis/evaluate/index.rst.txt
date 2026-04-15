@@ -1,0 +1,244 @@
+src.analysis.evaluate
+=====================
+
+.. py:module:: src.analysis.evaluate
+
+.. autoapi-nested-parse::
+
+   Model evaluation metrics and parameter counting.
+
+   Computes accuracy, macro/weighted F1, calibration metrics, and detailed
+   per-class metrics.  Includes post-hoc calibration via temperature scaling
+   and asymmetric balanced calibration (ABC) for long-tailed distributions.
+
+   .. rubric:: References
+
+   [13] Alam et al. (2022). "Semiconductor Defect Detection by Hybrid Classical-Quantum DL". arXiv:2206.09912
+   [29] Guo et al. (2017). "On Calibration of Modern Neural Networks". arXiv:1706.04599
+   [32] Nixon et al. (2019). "Measuring Calibration in Deep Learning". arXiv:1904.01685
+   [57] (2019). "Automated Visual Inspection of Semiconductor Wafers"
+   [62] (2021). "Statistical Process Control for Semiconductor Manufacturing"
+   [188] Ma et al. (2022). "ABC: Asymmetric Balanced Calibration". arXiv:2203.14395
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.analysis.evaluate.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.analysis.evaluate.AsymmetricCalibrator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.analysis.evaluate.compute_calibration_metrics
+   src.analysis.evaluate.evaluate_model
+   src.analysis.evaluate.calibrate_and_evaluate
+   src.analysis.evaluate.calibrate_and_evaluate_asymmetric
+   src.analysis.evaluate.get_per_class_f1
+   src.analysis.evaluate.count_params
+   src.analysis.evaluate.count_trainable
+   src.analysis.evaluate.evaluate_with_tta
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:function:: compute_calibration_metrics(probabilities: numpy.ndarray, labels: numpy.ndarray, n_bins: int = 15) -> Dict[str, Any]
+
+   Compute calibration and reliability metrics for a multiclass classifier.
+
+   :param probabilities: Array of shape (n_samples, n_classes) with softmax scores.
+   :param labels: Ground-truth class indices.
+   :param n_bins: Number of reliability bins for ECE/MCE computation.
+
+   :returns: JSON-serializable metrics dictionary.
+
+
+.. py:function:: evaluate_model(model: torch.nn.Module, test_loader: torch.utils.data.DataLoader, class_names: List[str], model_name: str = 'Model', device: str = 'cpu') -> Tuple[numpy.ndarray, numpy.ndarray, Dict[str, Any]]
+
+   Evaluate model on test set and return metrics.
+
+   Computes:
+       - Accuracy (overall correct predictions)
+       - Macro F1 (unweighted average across classes)
+       - Weighted F1 (weighted by support across classes)
+       - ECE, MCE, Brier score, and negative log-likelihood
+       - Per-class precision, recall, F1 (printed as classification report)
+
+   :param model: PyTorch model in eval mode
+   :param test_loader: DataLoader for test set
+   :param class_names: List of class names for reporting
+   :param model_name: Name for logging
+   :param device: Compute device
+
+   :returns:     - accuracy: Float in [0, 1]
+                 - macro_f1: Float in [0, 1]
+                 - weighted_f1: Float in [0, 1]
+                 - ece: Expected calibration error
+                 - brier_score: Multiclass Brier score
+   :rtype: Tuple of (predictions, labels, metrics_dict) where metrics_dict contains
+
+
+.. py:function:: calibrate_and_evaluate(model: torch.nn.Module, val_loader: torch.utils.data.DataLoader, test_loader: torch.utils.data.DataLoader, class_names: List[str], model_name: str = 'Model', device: str = 'cpu') -> Tuple[numpy.ndarray, numpy.ndarray, Dict[str, Any], float]
+
+   Evaluate model with post-hoc temperature scaling calibration.
+
+   Fits temperature T on validation set, then evaluates on test set
+   with calibrated probabilities. Returns (preds, labels, metrics, temperature).
+
+   The returned metrics dict contains both ``raw_*`` and ``calibrated_*``
+   prefixed metrics so callers can compare the effect of calibration.  The
+   top-level (un-prefixed) accuracy / f1 / calibration keys correspond to
+   the **calibrated** predictions.
+
+   :param model: PyTorch model (will be set to eval mode).
+   :param val_loader: DataLoader for validation/calibration set.
+   :param test_loader: DataLoader for test set.
+   :param class_names: List of class names for reporting.
+   :param model_name: Name used in log messages.
+   :param device: Compute device string (e.g. ``"cpu"`` or ``"cuda"``).
+
+   :returns: Tuple of (calibrated_predictions, labels, combined_metrics_dict, temperature).
+
+
+.. py:class:: AsymmetricCalibrator(num_classes: int = 9, device: str = 'cpu')
+
+   Asymmetric Balanced Calibration for long-tailed recognition.
+
+   Learns per-class temperature parameters instead of a single global
+   temperature.  Rare classes receive higher temperatures (softer
+   predictions) to improve calibration on the tail of the distribution.
+
+   The per-class temperature is optimised by minimising the negative
+   log-likelihood on the subset of validation samples belonging to each
+   class, using bounded scalar optimization.
+
+   Reference:
+       [188] Ma et al. (2022). "ABC: Asymmetric Balanced Calibration".
+       arXiv:2203.14395
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+   .. py:attribute:: device
+      :value: 'cpu'
+
+
+
+   .. py:attribute:: class_temperatures
+      :type:  torch.Tensor
+
+
+   .. py:method:: fit(model: torch.nn.Module, val_loader: torch.utils.data.DataLoader) -> numpy.ndarray
+
+      Fit per-class temperatures on the validation set.
+
+      For each class *c*, extracts the logits of all validation samples
+      whose true label is *c* and finds the temperature that minimises
+      the NLL on those samples via bounded scalar optimisation.
+
+      :param model: Trained model (set to eval mode internally).
+      :param val_loader: Validation ``DataLoader`` yielding ``(images, labels)``.
+
+      :returns: NumPy array of shape ``(num_classes,)`` with the learned
+                temperatures.
+
+
+
+   .. py:method:: calibrate_logits(logits: torch.Tensor) -> torch.Tensor
+
+      Apply per-class temperature scaling to logits.
+
+      :param logits: Tensor of shape ``(B, C)`` with raw model logits.
+
+      :returns: Tensor of shape ``(B, C)`` with temperature-scaled logits.
+
+
+
+.. py:function:: calibrate_and_evaluate_asymmetric(model: torch.nn.Module, val_loader: torch.utils.data.DataLoader, test_loader: torch.utils.data.DataLoader, class_names: List[str], model_name: str = 'Model', device: str = 'cpu', num_classes: int = 9) -> Tuple[numpy.ndarray, numpy.ndarray, Dict[str, Any], numpy.ndarray]
+
+   Evaluate a model with asymmetric balanced calibration (ABC).
+
+   Fits per-class temperatures on the validation set, then evaluates
+   on the test set with the asymmetrically calibrated probabilities.
+
+   :param model: Trained PyTorch model.
+   :param val_loader: DataLoader for validation/calibration set.
+   :param test_loader: DataLoader for test set.
+   :param class_names: Human-readable class names for the report.
+   :param model_name: Label for log messages.
+   :param device: Compute device (``"cpu"`` or ``"cuda"``).
+   :param num_classes: Number of output classes.
+
+   :returns: Tuple of ``(calibrated_predictions, labels, combined_metrics,
+             class_temperatures)``.
+
+
+.. py:function:: get_per_class_f1(labels: numpy.ndarray, preds: numpy.ndarray) -> numpy.ndarray
+
+   Compute per-class F1 scores.
+
+   :param labels: True labels
+   :param preds: Predicted labels
+
+   :returns: Array of F1 scores (one per class)
+
+
+.. py:function:: count_params(model: torch.nn.Module) -> int
+
+   Count total parameters in model.
+
+   :param model: PyTorch model
+
+   :returns: Total parameter count
+
+
+.. py:function:: count_trainable(model: torch.nn.Module) -> int
+
+   Count trainable parameters in model.
+
+   :param model: PyTorch model
+
+   :returns: Trainable parameter count
+
+
+.. py:function:: evaluate_with_tta(model: torch.nn.Module, test_loader: torch.utils.data.DataLoader, class_names: List[str], model_name: str = 'Model', device: str = 'cpu', transforms_list: Any = None) -> Tuple[numpy.ndarray, numpy.ndarray, Dict[str, Any]]
+
+   Evaluate a model using Test-Time Augmentation.
+
+   Averages softmax predictions over multiple augmented views of each
+   test image and computes classification metrics on the averaged
+   predictions.
+
+   :param model: Trained PyTorch model.
+   :param test_loader: DataLoader for the test set.
+   :param class_names: List of human-readable class names.
+   :param model_name: Label used in log messages.
+   :param device: Compute device (``"cpu"`` or ``"cuda"``).
+   :param transforms_list: Optional list of ``torchvision.transforms.Compose``
+                           augmentations.  ``None`` uses the default 5 geometric views
+                           (identity, hflip, vflip, hflip+vflip, 90-deg rotation).
+
+   :returns: Tuple of ``(predictions, labels, metrics_dict)`` where
+             ``metrics_dict`` contains ``accuracy``, ``macro_f1``,
+             ``weighted_f1``, and calibration metrics.
+
+

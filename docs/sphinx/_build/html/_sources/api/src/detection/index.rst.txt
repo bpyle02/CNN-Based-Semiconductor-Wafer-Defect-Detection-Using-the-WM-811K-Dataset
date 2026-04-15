@@ -1,0 +1,20 @@
+src.detection
+=============
+
+.. py:module:: src.detection
+
+.. autoapi-nested-parse::
+
+   Anomaly and out-of-distribution detection module.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/detection/ood/index
+
+

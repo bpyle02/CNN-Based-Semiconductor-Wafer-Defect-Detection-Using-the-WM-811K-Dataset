@@ -1,0 +1,706 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.analysis.anomaly &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.analysis.anomaly</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.analysis.anomaly</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Anomaly Detection for wafer defect classification.</span>
+
+<span class="sd">Implements one-class and novelty detection methods to identify defects as anomalies</span>
+<span class="sd">relative to a &quot;normal&quot; class (e.g., &#39;none&#39; class in wafer detection).</span>
+
+<span class="sd">Methods:</span>
+<span class="sd">    - Isolation Forest: Tree-based anomaly scoring</span>
+<span class="sd">    - One-Class SVM: Support vector method for single-class learning</span>
+<span class="sd">    - Autoencoder-based: Reconstruction error for anomaly detection</span>
+<span class="sd">    - Statistical: Mahalanobis distance from normal class distribution</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [121] Ruff et al. (2018). &quot;Deep One-Class Classification (Deep SVDD)&quot;. arXiv:1802.04365</span>
+<span class="sd">    [123] An &amp; Cho (2015). &quot;Variational Autoencoder Based Anomaly Detection&quot;. arXiv:1802.03903</span>
+<span class="sd">    [125] Chalapathy &amp; Chawla (2019). &quot;Deep Learning for Anomaly Detection Survey&quot;. arXiv:1901.03407</span>
+<span class="sd">    [129] Hendrycks &amp; Gimpel (2017). &quot;Baseline for OOD Detection&quot;. arXiv:1610.02136</span>
+<span class="sd">    [130] Liang et al. (2018). &quot;ODIN: OOD Detection&quot;. arXiv:1706.02690</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsolationForest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.svm</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneClassSVM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">roc_auc_score</span><span class="p">,</span> <span class="n">roc_curve</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnomalyDetectionAutoencoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple autoencoder for wafer map reconstruction.</span>
+
+<span class="sd">    Learns to reconstruct &quot;normal&quot; wafers and uses reconstruction error</span>
+<span class="sd">    as anomaly score.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_channels: Number of input channels (3)</span>
+<span class="sd">        latent_dim: Dimension of latent space (default 32)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">latent_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Encoder</span>
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.encoder">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.encoder">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">input_channels</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+        <span class="c1"># Flattened dim: 128 * (96//8) * (96//8) = 128 * 12 * 12 = 18432</span>
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.fc_encode">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.fc_encode">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_encode</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span> <span class="o">*</span> <span class="mi">12</span> <span class="o">*</span> <span class="mi">12</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.fc_decode">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.fc_decode">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_decode</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">latent_dim</span><span class="p">,</span> <span class="mi">128</span> <span class="o">*</span> <span class="mi">12</span> <span class="o">*</span> <span class="mi">12</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Decoder</span>
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.decoder">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.decoder">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">output_padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">output_padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">input_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">output_padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">(),</span>  <span class="c1"># Constrain to [0, 1]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.encode">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.encode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode input to latent space.&quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc_encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">z</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.decode">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.decode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode from latent space to image.&quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc_decode</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetectionAutoencoder.forward">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetectionAutoencoder.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor of shape (B, C, H, W)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (reconstruction, latent_code)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">recon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">recon</span><span class="p">,</span> <span class="n">z</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AnomalyDetector">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnomalyDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    High-level anomaly detection interface.</span>
+
+<span class="sd">    Supports multiple detection methods: Isolation Forest, One-Class SVM,</span>
+<span class="sd">    Autoencoder reconstruction error, Mahalanobis distance.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        method: Detection method (&#39;isolation_forest&#39;, &#39;one_class_svm&#39;, &#39;autoencoder&#39;, &#39;mahalanobis&#39;)</span>
+<span class="sd">        device: Device to run on (cuda or cpu)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;isolation_forest&#39;</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;isolation_forest&#39;</span><span class="p">,</span> <span class="s1">&#39;one_class_svm&#39;</span><span class="p">,</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">,</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AnomalyDetector.method">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.method">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.device">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.device">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.model">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.model">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.scaler">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.scaler">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.normal_mean">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.normal_mean">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_mean</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.normal_cov">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.normal_cov">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="AnomalyDetector.normal_cov_inv">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.normal_cov_inv">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov_inv</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.extract_features">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.extract_features">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_features</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">data_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract features from model for anomaly detection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: PyTorch model (features extracted from final layer before classification)</span>
+<span class="sd">            data_loader: DataLoader for extracting features</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Feature matrix of shape (N, feature_dim)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">features_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">data_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="c1"># Extract features from model</span>
+                <span class="c1"># Assumes model has a method to get features</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;features&#39;</span><span class="p">):</span>
+                    <span class="n">feats</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                    <span class="n">feats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">feats</span> <span class="o">=</span> <span class="n">feats</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># For models like ResNet, get intermediate features</span>
+                    <span class="c1"># This is a simplification; may need to be model-specific</span>
+                    <span class="n">feats</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+
+                <span class="n">features_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feats</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">features_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">features</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.fit_isolation_forest">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.fit_isolation_forest">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_isolation_forest</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">contamination</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit Isolation Forest on normal class features.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            features: Feature matrix from normal class</span>
+<span class="sd">            contamination: Expected proportion of anomalies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">IsolationForest</span><span class="p">(</span>
+            <span class="n">contamination</span><span class="o">=</span><span class="n">contamination</span><span class="p">,</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+            <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">features</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.fit_one_class_svm">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.fit_one_class_svm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_one_class_svm</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">nu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit One-Class SVM on normal class features.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            features: Feature matrix from normal class</span>
+<span class="sd">            nu: Expected proportion of outliers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Normalize features</span>
+        <span class="n">features_normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">OneClassSVM</span><span class="p">(</span>
+            <span class="n">kernel</span><span class="o">=</span><span class="s1">&#39;rbf&#39;</span><span class="p">,</span>
+            <span class="n">gamma</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+            <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">features_normalized</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.fit_mahalanobis">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.fit_mahalanobis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_mahalanobis</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit Mahalanobis distance detector.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            features: Feature matrix from normal class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_mean</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="c1"># Add small regularization to avoid singular matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normal_cov</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normal_cov</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.fit_autoencoder">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.fit_autoencoder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_autoencoder</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train autoencoder on normal class data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_loader: DataLoader for normal class</span>
+<span class="sd">            epochs: Number of training epochs</span>
+<span class="sd">            lr: Learning rate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">autoencoder</span> <span class="o">=</span> <span class="n">AnomalyDetectionAutoencoder</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">autoencoder</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">recon</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">autoencoder</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">recon</span><span class="p">,</span> <span class="n">images</span><span class="p">)</span>
+
+                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Autoencoder Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">avg_loss</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">autoencoder</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.predict_isolation_forest">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.predict_isolation_forest">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_isolation_forest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict anomaly scores (0=normal, -1=anomaly).</span>
+
+<span class="sd">        Returns: Array of predictions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">features</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.predict_one_class_svm">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.predict_one_class_svm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_one_class_svm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict anomaly scores (1=normal, -1=anomaly).</span>
+
+<span class="sd">        Returns: Array of predictions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">features_normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">features_normalized</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.predict_mahalanobis">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.predict_mahalanobis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_mahalanobis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute Mahalanobis distance as anomaly score.</span>
+
+<span class="sd">        Higher score = more anomalous.</span>
+
+<span class="sd">        Returns: Array of Mahalanobis distances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">features</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_mean</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">diff</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_cov_inv</span> <span class="o">*</span> <span class="n">diff</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">distances</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.predict_autoencoder">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.predict_autoencoder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_autoencoder</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">data_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute reconstruction error as anomaly score.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: Original model for feature extraction</span>
+<span class="sd">            data_loader: DataLoader for inference</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Array of reconstruction errors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">data_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">recon</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">recon</span> <span class="o">-</span> <span class="n">images</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+                <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.fit">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">normal_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit anomaly detector on normal class data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: PyTorch model for feature extraction</span>
+<span class="sd">            normal_loader: DataLoader for normal class</span>
+<span class="sd">            **kwargs: Method-specific arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_autoencoder</span><span class="p">(</span><span class="n">normal_loader</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Extract features for other methods</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_features</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">normal_loader</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;isolation_forest&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fit_isolation_forest</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;one_class_svm&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fit_one_class_svm</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fit_mahalanobis</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.score">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">data_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute anomaly scores for data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: PyTorch model (None for autoencoder method)</span>
+<span class="sd">            data_loader: DataLoader for scoring</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Array of anomaly scores</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;autoencoder&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_autoencoder</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data_loader</span><span class="p">)</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_features</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data_loader</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;isolation_forest&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_isolation_forest</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;one_class_svm&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_one_class_svm</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_mahalanobis</span><span class="p">(</span><span class="n">features</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnomalyDetector.evaluate">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.AnomalyDetector.evaluate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">normal_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">anomaly_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate anomaly detector on normal vs. anomalous data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: PyTorch model</span>
+<span class="sd">            normal_loader: DataLoader for normal samples</span>
+<span class="sd">            anomaly_loader: DataLoader for anomalous samples</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with metrics (AUROC, AUPR, etc.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normal_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">normal_loader</span><span class="p">)</span>
+        <span class="n">anomaly_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">anomaly_loader</span><span class="p">)</span>
+
+        <span class="c1"># For Isolation Forest and OCSVM: -1=anomaly, 1=normal</span>
+        <span class="c1"># Flip so higher=more anomalous</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;isolation_forest&#39;</span><span class="p">,</span> <span class="s1">&#39;one_class_svm&#39;</span><span class="p">]:</span>
+            <span class="n">normal_scores</span> <span class="o">=</span> <span class="o">-</span><span class="n">normal_scores</span>
+            <span class="n">anomaly_scores</span> <span class="o">=</span> <span class="o">-</span><span class="n">anomaly_scores</span>
+
+        <span class="c1"># Combine labels: 0=normal, 1=anomaly</span>
+        <span class="n">y_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">normal_scores</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anomaly_scores</span><span class="p">))])</span>
+        <span class="n">y_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">normal_scores</span><span class="p">,</span> <span class="n">anomaly_scores</span><span class="p">])</span>
+
+        <span class="c1"># Compute metrics</span>
+        <span class="n">auroc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+        <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">thresholds</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;auroc&#39;</span><span class="p">:</span> <span class="n">auroc</span><span class="p">,</span>
+            <span class="s1">&#39;fpr_at_95_tpr&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">fpr</span><span class="p">[</span><span class="n">tpr</span> <span class="o">&gt;=</span> <span class="mf">0.95</span><span class="p">])</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">tpr</span> <span class="o">&gt;=</span> <span class="mf">0.95</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">metrics</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OODDetector">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OODDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Out-of-distribution detection.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="OODDetector.method">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.method">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span></div>
+
+<div class="viewcode-block" id="OODDetector.threshold">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.threshold">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>  <span class="c1"># Percentile for anomaly threshold</span></div>
+
+<div class="viewcode-block" id="OODDetector.feature_mean">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.feature_mean">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_mean</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="OODDetector.feature_cov_inv">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.feature_cov_inv">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_cov_inv</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="OODDetector.ood_threshold">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.ood_threshold">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ood_threshold</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="OODDetector.fit">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit OOD detector on in-distribution features.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_mean</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">cov</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e-6</span>  <span class="c1"># Regularization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_cov_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">:</span>
+            <span class="n">train_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mahalanobis_distance</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;odin&#39;</span><span class="p">:</span>
+            <span class="n">train_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_odin_score</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown OOD method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ood_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">train_scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OODDetector.detect_ood">
+<a class="viewcode-back" href="../../../api/src/analysis/anomaly/index.html#src.analysis.anomaly.OODDetector.detect_ood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_ood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True for OOD samples.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ood_threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;OODDetector must be fitted before calling detect_ood.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;mahalanobis&#39;</span><span class="p">:</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mahalanobis_distance</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;odin&#39;</span><span class="p">:</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_odin_score</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown OOD method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">scores</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ood_threshold</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_mahalanobis_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Mahalanobis distance from mean.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_mean</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_cov_inv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;OODDetector must be fitted before calling detect_ood.&quot;</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">features</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_mean</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">diff</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_cov_inv</span> <span class="o">*</span> <span class="n">diff</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">distances</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_odin_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ODIN score - based on softmax confidence.&quot;&quot;&quot;</span>
+        <span class="c1"># Higher ODIN score = more likely OOD</span>
+        <span class="n">exp_logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logits</span> <span class="o">/</span> <span class="n">temperature</span><span class="p">)</span>
+        <span class="n">softmax</span> <span class="o">=</span> <span class="n">exp_logits</span> <span class="o">/</span> <span class="n">exp_logits</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">max_confidence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">softmax</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">max_confidence</span>  <span class="c1"># Negate so high = OOD</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

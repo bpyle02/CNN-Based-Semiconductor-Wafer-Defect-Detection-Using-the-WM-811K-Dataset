@@ -1,0 +1,327 @@
+src.data.preprocessing
+======================
+
+.. py:module:: src.data.preprocessing
+
+.. autoapi-nested-parse::
+
+   Data preprocessing and augmentation for wafer map images.
+
+   Handles resizing, normalization, and transformation of wafer maps to prepare
+   them for training and inference with deep learning models.
+
+   .. rubric:: References
+
+   [7] Wu et al. (2014). "WM-811K Dataset". DOI:10.1109/TSM.2014.2364237
+   [9] Yu et al. (2019). "Wafer Defect Pattern Recognition Based on CNN". DOI:10.1109/TSM.2019.2963656
+   [49] Shorten & Khoshgoftaar (2019). "Image Data Augmentation Survey". DOI:10.1186/s40537-019-0197-0
+   [58] (2020). "Wafer Map Defect Detection Using Joint Local-Global Features"
+   [66] Zhang et al. (2018). "mixup: Beyond Empirical Risk Minimization". arXiv:1710.09412
+   [67] Yun et al. (2019). "CutMix". arXiv:1905.04899
+   [70] Cubuk et al. (2019). "AutoAugment". arXiv:1805.09501
+   [71] Cubuk et al. (2020). "RandAugment". arXiv:1909.13719
+   [75] DeVries & Taylor (2017). "Cutout". arXiv:1708.04552
+   [118] Zhai et al. (2019). "S4L: Self-Supervised Semi-Supervised Learning". arXiv:1905.03670
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.data.preprocessing.logger
+   src.data.preprocessing.TARGET_SIZE
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.data.preprocessing.MixupCutmix
+   src.data.preprocessing.ClassBalancedSampler
+   src.data.preprocessing.GaussianNoise
+   src.data.preprocessing.RadialDistortion
+   src.data.preprocessing.RadialJitter
+   src.data.preprocessing.WaferMapDataset
+   src.data.preprocessing.PatchWaferDataset
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.data.preprocessing.seed_worker
+   src.data.preprocessing.preprocess_wafer_maps
+   src.data.preprocessing.preprocess_data
+   src.data.preprocessing.get_image_transforms
+   src.data.preprocessing.get_imagenet_normalize
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: MixupCutmix(mixup_alpha: float = 0.2, cutmix_alpha: float = 1.0, mixup_prob: float = 0.5, cutmix_prob: float = 0.5, num_classes: int = 9)
+
+   Mixup and CutMix batch augmentation for improved generalization.
+
+   Operates on batches (not individual samples). One of mixup or cutmix is
+   randomly selected per batch based on their respective probabilities. If
+   neither fires, the original batch is returned with lam=1.0.
+
+   .. rubric:: References
+
+   [51] Zhang et al. (2018). "mixup: Beyond Empirical Risk Minimization". arXiv:1710.09412
+   [52] Yun et al. (2019). "CutMix". arXiv:1905.04899
+
+
+   .. py:attribute:: mixup_alpha
+      :value: 0.2
+
+
+
+   .. py:attribute:: cutmix_alpha
+      :value: 1.0
+
+
+
+   .. py:attribute:: mixup_prob
+      :value: 0.5
+
+
+
+   .. py:attribute:: cutmix_prob
+      :value: 0.5
+
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+.. py:class:: ClassBalancedSampler(labels: numpy.ndarray, num_samples_per_class: Optional[int] = None)
+
+   Bases: :py:obj:`torch.utils.data.Sampler`
+
+
+   Sampler that oversamples minority classes so each epoch sees balanced data.
+
+   Unlike WeightedRandomSampler (which changes the per-sample probability),
+   this sampler replicates minority-class indices to match a target count per
+   class, then shuffles the result. The training distribution within each
+   epoch is roughly uniform across classes.
+
+   :param labels: 1-D integer array of class labels for every sample.
+   :param num_samples_per_class: Target sample count per class per epoch.
+                                 If ``None``, defaults to the count of the majority class.
+
+
+   .. py:attribute:: labels
+
+
+   .. py:attribute:: class_indices
+
+
+   .. py:attribute:: num_samples_per_class
+      :value: None
+
+
+
+.. py:class:: GaussianNoise(mean: float = 0.0, std: float = 0.02)
+
+   Add Gaussian noise to simulate sensor measurement variability.
+
+
+   .. py:attribute:: mean
+      :value: 0.0
+
+
+
+   .. py:attribute:: std
+      :value: 0.02
+
+
+
+.. py:class:: RadialDistortion(strength: float = 0.1, p: float = 0.3)
+
+   Apply radial distortion to simulate wafer warping effects.
+
+   Wafers are circular substrates that can warp during thermal processing.
+   Barrel distortion (radial displacement proportional to r^2) models this
+   physical effect, making it a domain-appropriate augmentation.
+
+
+   .. py:attribute:: strength
+      :value: 0.1
+
+
+
+   .. py:attribute:: p
+      :value: 0.3
+
+
+
+.. py:class:: RadialJitter(scale_range: tuple = (0.95, 1.05))
+
+   Apply small radial distortion centered on the wafer.
+
+   Wafers are circular, so radial scaling (zoom in/out from center)
+   is more physically meaningful than arbitrary translation. Uses
+   affine_grid + grid_sample for smooth, differentiable distortion.
+
+
+   .. py:attribute:: scale_range
+      :value: (0.95, 1.05)
+
+
+
+.. py:data:: TARGET_SIZE
+   :value: (96, 96)
+
+
+.. py:function:: seed_worker(worker_id: int) -> None
+
+   Seed DataLoader workers for reproducibility.
+
+   When num_workers > 0, each worker gets its own copy of the dataset
+   and random state. This function ensures deterministic behavior by
+   seeding each worker based on the global torch seed.
+
+
+.. py:class:: WaferMapDataset(raw_maps: List[numpy.ndarray], labels: numpy.ndarray, transform: Optional[torchvision.transforms.Compose] = None, target_size: Tuple[int, int] = TARGET_SIZE)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   PyTorch Dataset for WM-811K semiconductor wafer maps.
+
+   Expects raw wafer maps. Resizes, normalizes, and stacks grayscale maps into
+   3-channel format during __getitem__ for lazy loading.
+
+   .. attribute:: maps
+
+      List of raw numpy arrays
+
+   .. attribute:: labels
+
+      List of integer class labels
+
+   .. attribute:: transform
+
+      Optional torchvision transforms to apply
+
+   .. attribute:: target_size
+
+      Target (height, width) after resizing
+
+   Initialize dataset.
+
+   :param raw_maps: List of raw numpy arrays
+   :param labels: 1D array of integer class labels
+   :param transform: Optional torchvision transform pipeline
+   :param target_size: Target (height, width) for resizing
+
+
+   .. py:attribute:: maps
+
+
+   .. py:attribute:: labels
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: target_size
+      :value: (96, 96)
+
+
+
+.. py:class:: PatchWaferDataset(raw_maps: List[numpy.ndarray], labels: numpy.ndarray, patch_size: int = 32, patches_per_wafer: int = 1, transform: Optional[torchvision.transforms.Compose] = None)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for high-resolution wafers that yields patches instead of resizing.
+   Useful for preserving resolution-dependent defect signatures.
+
+
+   .. py:attribute:: maps
+
+
+   .. py:attribute:: labels
+
+
+   .. py:attribute:: patch_size
+      :value: 32
+
+
+
+   .. py:attribute:: patches_per_wafer
+      :value: 1
+
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+.. py:function:: preprocess_wafer_maps(wafer_maps: List[numpy.ndarray], target_size: Tuple[int, int] = TARGET_SIZE) -> List[numpy.ndarray]
+
+   Resize all wafer maps to uniform size and normalize to [0, 1].
+
+   DEPRECATED: Preprocessing is now done lazily in WaferMapDataset.
+   This function is kept for backward compatibility or one-off conversions.
+
+   :param wafer_maps: List of (H, W) numpy arrays
+   :param target_size: Target (height, width) after resizing
+
+   :returns: List of (H, W) float32 arrays normalized to [0, 1]
+
+
+.. py:function:: preprocess_data(dataset_path: Optional[pathlib.Path] = None) -> Tuple[pandas.DataFrame, torchvision.transforms.Compose, torchvision.transforms.Compose]
+
+   Load raw dataset and filter to known classes.
+
+   :param dataset_path: Optional path to dataset pickle
+
+   :returns: Tuple of (filtered DataFrame, train augmentation transform, ImageNet norm)
+
+
+.. py:function:: get_image_transforms(augment: bool = True, domain_augment: bool = True) -> torchvision.transforms.Compose
+
+   Get data augmentation transforms for training.
+
+   Applies generic geometric augmentations (H/V flips, rotation, translation)
+   plus optional domain-specific augmentations for semiconductor wafer maps:
+   - RadialDistortion: barrel distortion simulating wafer warping
+   - GaussianBlur: simulates sensor blur in wafer imaging equipment
+   - GaussianNoise: simulates sensor measurement variability
+   - RandomErasing: simulates partial defect occlusion or missing data
+
+   :param augment: Enable augmentation pipeline (False = identity transform)
+   :param domain_augment: Include domain-specific augmentations. Only applies
+                          when augment=True.
+
+   Intensity normalization (x / 2.0) is done during preprocessing.
+
+   :returns: Torchvision Compose object with augmentation pipeline
+
+
+.. py:function:: get_imagenet_normalize() -> torchvision.transforms.Normalize
+
+   Get ImageNet normalization transform for pretrained models.
+
+   ResNet-18 and EfficientNet-B0 were pretrained on ImageNet with these
+   specific mean and std values. Must be applied to inputs for these models.
+
+   :returns: Normalize transform with ImageNet mean/std
+
+

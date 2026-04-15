@@ -12,7 +12,8 @@ References:
     [72] Zhong et al. (2020). "Random Erasing Data Augmentation". arXiv:1708.04896
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -27,11 +28,11 @@ class DefectSimulator:
         wafer = np.ones((size, size), dtype=np.float32) * 0.1
         center = size // 2
         radius = size // 8
-        
+
         y, x = np.ogrid[:size, :size]
-        mask = (x - center) ** 2 + (y - center) ** 2 <= radius ** 2
+        mask = (x - center) ** 2 + (y - center) ** 2 <= radius**2
         wafer[mask] = 0.5 + intensity * 0.5
-        
+
         return wafer
 
     @staticmethod
@@ -39,17 +40,17 @@ class DefectSimulator:
         """Generate synthetic edge localization defect."""
         wafer = np.ones((size, size), dtype=np.float32) * 0.1
         edge_width = size // 4
-        
-        edge = np.random.choice(['top', 'bottom', 'left', 'right'])
-        if edge == 'top':
+
+        edge = np.random.choice(["top", "bottom", "left", "right"])
+        if edge == "top":
             wafer[:edge_width, :] = 0.5 + intensity * 0.5
-        elif edge == 'bottom':
+        elif edge == "bottom":
             wafer[-edge_width:, :] = 0.5 + intensity * 0.5
-        elif edge == 'left':
+        elif edge == "left":
             wafer[:, :edge_width] = 0.5 + intensity * 0.5
         else:
             wafer[:, -edge_width:] = 0.5 + intensity * 0.5
-        
+
         return wafer
 
     @staticmethod
@@ -91,11 +92,12 @@ def balance_dataset_with_synthetic(
         Tuple of (augmented_maps, augmented_labels)
     """
     from collections import Counter
+
     counts = Counter(labels)
     if target_per_class is None:
         target_per_class = min(max(counts.values()), max_target_per_class)
 
-    gen = SyntheticDataGenerator(method='rule_based')
+    gen = SyntheticDataGenerator(method="rule_based")
     total_synthetic = 0
     deficits = {}
     for cls_id, count in sorted(counts.items()):
@@ -106,7 +108,9 @@ def balance_dataset_with_synthetic(
 
     n_orig = len(labels)
     out_maps = np.empty((n_orig + total_synthetic, size, size), dtype=np.float32)
-    out_labels = np.empty(n_orig + total_synthetic, dtype=labels.dtype if hasattr(labels, 'dtype') else np.int64)
+    out_labels = np.empty(
+        n_orig + total_synthetic, dtype=labels.dtype if hasattr(labels, "dtype") else np.int64
+    )
 
     for i, m in enumerate(wafer_maps):
         out_maps[i] = m
@@ -115,8 +119,8 @@ def balance_dataset_with_synthetic(
     offset = n_orig
     for cls_id, deficit in deficits.items():
         synthetic = gen.generate(deficit, cls_id, size)
-        out_maps[offset:offset + deficit] = synthetic
-        out_labels[offset:offset + deficit] = cls_id
+        out_maps[offset : offset + deficit] = synthetic
+        out_labels[offset : offset + deficit] = cls_id
         offset += deficit
 
     return out_maps, out_labels
@@ -125,7 +129,7 @@ def balance_dataset_with_synthetic(
 class SyntheticDataGenerator:
     """High-level interface for synthetic data generation."""
 
-    def __init__(self, method: str = 'rule_based') -> None:
+    def __init__(self, method: str = "rule_based") -> None:
         """Initialize generator."""
         self.method = method
 
@@ -136,7 +140,7 @@ class SyntheticDataGenerator:
         size: int = 96,
     ) -> np.ndarray:
         """Generate synthetic samples."""
-        if self.method == 'rule_based':
+        if self.method == "rule_based":
             return self._generate_rule_based(num_samples, class_label, size)
         else:
             raise ValueError(f"Unknown method: {self.method}")
@@ -149,7 +153,7 @@ class SyntheticDataGenerator:
     ) -> np.ndarray:
         """Generate synthetic samples using rule-based approach."""
         samples = []
-        
+
         for _ in range(num_samples):
             if class_label == 0:  # Center
                 sample = DefectSimulator.generate_center_defect(size)
@@ -159,7 +163,7 @@ class SyntheticDataGenerator:
                 sample = DefectSimulator.generate_scratch_defect(size)
             else:
                 sample = np.random.uniform(0.1, 0.9, (size, size)).astype(np.float32)
-            
+
             samples.append(sample)
-        
+
         return np.array(samples, dtype=np.float32)

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.mlops.wandb_logger &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.model_registry" href="../../model_registry/index.html" />
+    <link rel="prev" title="src.mlops" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../training/index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.mlops</a></li>
+      <li class="breadcrumb-item active">src.mlops.wandb_logger</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/mlops/wandb_logger/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.mlops.wandb_logger">
+<span id="src-mlops-wandb-logger"></span><h1>src.mlops.wandb_logger<a class="headerlink" href="#module-src.mlops.wandb_logger" title="Link to this heading"></a></h1>
+<p>Weights &amp; Biases integration for experiment tracking.</p>
+<p>Logs training metrics, hyperparameters, model checkpoints, and evaluation results.</p>
+<p class="rubric">References</p>
+<p>[147] Biewald (2020). “Experiment Tracking with Weights and Biases”
+[148] Zaharia et al. (2018). “Accelerating the ML Lifecycle with MLflow”. DOI:10.1109/DSAA.2018.00032
+[149] Amershi et al. (2019). “Software Engineering for ML”. arXiv:1904.07204</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.mlops.wandb_logger.logger" title="src.mlops.wandb_logger.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.mlops.wandb_logger.HAS_WANDB" title="src.mlops.wandb_logger.HAS_WANDB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HAS_WANDB</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.mlops.wandb_logger.WandBLogger" title="src.mlops.wandb_logger.WandBLogger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WandBLogger</span></code></a></p></td>
+<td><p>Weights &amp; Biases experiment logger.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.mlops.wandb_logger.MLFlowLogger" title="src.mlops.wandb_logger.MLFlowLogger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MLFlowLogger</span></code></a></p></td>
+<td><p>MLflow experiment logger.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.logger">
+<span class="sig-prename descclassname"><span class="pre">src.mlops.wandb_logger.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.HAS_WANDB">
+<span class="sig-prename descclassname"><span class="pre">src.mlops.wandb_logger.</span></span><span class="sig-name descname"><span class="pre">HAS_WANDB</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#HAS_WANDB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.HAS_WANDB" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.mlops.wandb_logger.</span></span><span class="sig-name descname"><span class="pre">WandBLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'wafer-defect-detection'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger" title="Link to this definition"></a></dt>
+<dd><p>Weights &amp; Biases experiment logger.</p>
+<p>Initialize W&amp;B logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project</strong> – W&amp;B project name</p></li>
+<li><p><strong>entity</strong> – W&amp;B entity/team name</p></li>
+<li><p><strong>name</strong> – Experiment name</p></li>
+<li><p><strong>config</strong> – Hyperparameter dictionary</p></li>
+<li><p><strong>enabled</strong> – Enable logging</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.enabled">
+<span class="sig-name descname"><span class="pre">enabled</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.enabled" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.project">
+<span class="sig-name descname"><span class="pre">project</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'wafer-defect-detection'</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.project"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.project" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.entity">
+<span class="sig-name descname"><span class="pre">entity</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.entity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.log_metrics">
+<span class="sig-name descname"><span class="pre">log_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.log_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.log_metrics" title="Link to this definition"></a></dt>
+<dd><p>Log metrics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.log_model">
+<span class="sig-name descname"><span class="pre">log_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.log_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.log_model" title="Link to this definition"></a></dt>
+<dd><p>Log model artifact.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.log_confusion_matrix">
+<span class="sig-name descname"><span class="pre">log_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.log_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.log_confusion_matrix" title="Link to this definition"></a></dt>
+<dd><p>Log confusion matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.WandBLogger.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#WandBLogger.finish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.WandBLogger.finish" title="Link to this definition"></a></dt>
+<dd><p>Finish logging run.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.mlops.wandb_logger.</span></span><span class="sig-name descname"><span class="pre">MLFlowLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'wafer-defect-detection'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracking_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://localhost:5000'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger" title="Link to this definition"></a></dt>
+<dd><p>MLflow experiment logger.</p>
+<p>Initialize MLFlow logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>experiment_name</strong> – Experiment name</p></li>
+<li><p><strong>tracking_uri</strong> – MLflow tracking server URI</p></li>
+<li><p><strong>enabled</strong> – Enable logging</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.enabled">
+<span class="sig-name descname"><span class="pre">enabled</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.enabled" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.experiment_name">
+<span class="sig-name descname"><span class="pre">experiment_name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'wafer-defect-detection'</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.experiment_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.experiment_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.tracking_uri">
+<span class="sig-name descname"><span class="pre">tracking_uri</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'http://localhost:5000'</span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.tracking_uri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.tracking_uri" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.log_params">
+<span class="sig-name descname"><span class="pre">log_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.log_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.log_params" title="Link to this definition"></a></dt>
+<dd><p>Log parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.log_metrics">
+<span class="sig-name descname"><span class="pre">log_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.log_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.log_metrics" title="Link to this definition"></a></dt>
+<dd><p>Log metrics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.log_model">
+<span class="sig-name descname"><span class="pre">log_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.log_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.log_model" title="Link to this definition"></a></dt>
+<dd><p>Log model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.mlops.wandb_logger.MLFlowLogger.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/mlops/wandb_logger.html#MLFlowLogger.finish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.mlops.wandb_logger.MLFlowLogger.finish" title="Link to this definition"></a></dt>
+<dd><p>End logging run.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="src.mlops" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../model_registry/index.html" class="btn btn-neutral float-right" title="src.model_registry" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

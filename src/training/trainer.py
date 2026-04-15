@@ -104,9 +104,7 @@ class AdaptiveRebalancer:
             return self.uniform.clone()
 
         # Cosine interpolation from uniform to target weights
-        progress = (epoch - self.warmup_epochs) / max(
-            self.total_epochs - self.warmup_epochs, 1
-        )
+        progress = (epoch - self.warmup_epochs) / max(self.total_epochs - self.warmup_epochs, 1)
         alpha = 0.5 * (1.0 - math.cos(math.pi * min(progress, 1.0)))
 
         base_weights = (1.0 - alpha) * self.uniform + alpha * self.target_weights
@@ -130,7 +128,9 @@ def _is_loss_metric(metric_name: str) -> bool:
 def _get_metric_value(metric_name: str, values: Dict[str, float]) -> float:
     if metric_name not in values:
         supported = ", ".join(sorted(MONITORED_METRICS))
-        raise ValueError(f"Unsupported monitored metric '{metric_name}'. Expected one of: {supported}")
+        raise ValueError(
+            f"Unsupported monitored metric '{metric_name}'. Expected one of: {supported}"
+        )
     return float(values[metric_name])
 
 
@@ -159,7 +159,7 @@ def _step_scheduler(
     scheduler.step()
 
 
-def train_model(
+def core_training_loop(
     model: nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
@@ -314,9 +314,7 @@ def train_model(
     for epoch in range(1, epochs + 1):
         # --- Adaptive rebalancing: update criterion weights each epoch ---
         if rebalancer is not None and hasattr(criterion, "weight"):
-            new_weights = rebalancer.get_weights(
-                epoch, per_class_f1=_prev_per_class_f1
-            )
+            new_weights = rebalancer.get_weights(epoch, per_class_f1=_prev_per_class_f1)
             criterion.weight = new_weights.to(device)
 
         model.train()
@@ -344,9 +342,13 @@ def train_model(
                     images, labels_a, labels_b, lam = batch_transform(images, labels)
                     outputs = model(images)
                     if use_unweighted:
-                        loss = lam * F.cross_entropy(outputs, labels_a) + (1.0 - lam) * F.cross_entropy(outputs, labels_b)
+                        loss = lam * F.cross_entropy(outputs, labels_a) + (
+                            1.0 - lam
+                        ) * F.cross_entropy(outputs, labels_b)
                     else:
-                        loss = lam * criterion(outputs, labels_a) + (1.0 - lam) * criterion(outputs, labels_b)
+                        loss = lam * criterion(outputs, labels_a) + (1.0 - lam) * criterion(
+                            outputs, labels_b
+                        )
                 else:
                     outputs = model(images)
                     if use_unweighted:
@@ -417,9 +419,7 @@ def train_model(
 
         # Capture per-class F1 for adaptive rebalancing feedback
         if rebalancer is not None:
-            per_class_f1_arr = f1_score(
-                val_targets, val_predictions, average=None, zero_division=0
-            )
+            per_class_f1_arr = f1_score(val_targets, val_predictions, average=None, zero_division=0)
             _prev_per_class_f1 = torch.tensor(per_class_f1_arr, dtype=torch.float32)
 
         # EMA: restore training weights after validation
@@ -519,8 +519,12 @@ def train_model(
     history["total_time"] = elapsed
     history["best_epoch"] = best_epoch
     history["best_metric"] = best_metric
-    history["best_val_acc"] = best_val_acc if history["best_epoch"] == 0 else history["best_val_acc"]
-    history["best_val_loss"] = best_val_loss if history["best_epoch"] == 0 else history["best_val_loss"]
+    history["best_val_acc"] = (
+        best_val_acc if history["best_epoch"] == 0 else history["best_val_acc"]
+    )
+    history["best_val_loss"] = (
+        best_val_loss if history["best_epoch"] == 0 else history["best_val_loss"]
+    )
 
     logger.info(
         "%s training complete in %.1fs (best %s: %.4f at epoch %d)",
@@ -551,5 +555,12 @@ def train_model(
     return model, history
 
 
+# Backward-compat alias. The inner training loop was renamed from
+# ``train_model`` to ``core_training_loop`` for clarity (the pipeline is
+# the orchestrator, this is the inner loop). Existing scripts and tests
+# continue to import ``train_model``.
+train_model = core_training_loop
+
+
 if __name__ == "__main__":
-    logger.info("Training module loaded. Use train_model() from training pipeline.")
+    logger.info("Training module loaded. Use core_training_loop() from training pipeline.")

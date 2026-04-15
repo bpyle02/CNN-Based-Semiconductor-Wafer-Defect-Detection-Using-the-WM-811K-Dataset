@@ -1,10 +1,11 @@
-import json
 import hashlib
 import io
+import json
 import logging
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Iterable, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -45,7 +46,8 @@ def resolve_trusted_checkpoint_path(
     """Resolve a checkpoint path and ensure it is inside a trusted root."""
     resolved = resolve_checkpoint_path(path)
     trusted_roots = tuple(
-        Path(root).expanduser().resolve() for root in (allowed_roots or DEFAULT_TRUSTED_CHECKPOINT_DIRS)
+        Path(root).expanduser().resolve()
+        for root in (allowed_roots or DEFAULT_TRUSTED_CHECKPOINT_DIRS)
     )
     if any(_is_relative_to(resolved, root) for root in trusted_roots):
         return resolved
@@ -66,8 +68,8 @@ def compute_checkpoint_hash(path: Path) -> str:
         Hex-encoded SHA-256 digest.
     """
     sha256 = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), b''):
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
             sha256.update(chunk)
     return sha256.hexdigest()
 
@@ -84,7 +86,7 @@ def save_checkpoint_with_hash(state_dict: dict, path: Path) -> str:
     """
     torch.save(state_dict, path)
     file_hash = compute_checkpoint_hash(path)
-    hash_path = path.with_suffix('.sha256')
+    hash_path = path.with_suffix(".sha256")
     hash_path.write_text(file_hash)
     logger.info(f"Checkpoint saved to {path} (SHA-256: {file_hash[:16]}...)")
     return file_hash
@@ -103,7 +105,7 @@ def verify_checkpoint(path: Path) -> bool:
         ``True`` if the file matches its hash or no hash file exists,
         ``False`` if the hash does not match.
     """
-    hash_path = path.with_suffix('.sha256')
+    hash_path = path.with_suffix(".sha256")
     if not hash_path.exists():
         return True  # No hash file = skip verification (backwards compatible)
     stored_hash = hash_path.read_text().strip()
@@ -116,6 +118,7 @@ def verify_checkpoint(path: Path) -> bool:
         return False
     logger.info(f"Checkpoint integrity verified for {path}")
     return True
+
 
 class ModelMetadata:
     """Metadata for saved models."""
@@ -143,30 +146,30 @@ class ModelMetadata:
 class ModelRegistry:
     """Centralized model storage and versioning."""
 
-    def __init__(self, registry_path: str = 'model_registry') -> None:
+    def __init__(self, registry_path: str = "model_registry") -> None:
         self.registry_path = Path(registry_path).resolve()
         self.registry_path.mkdir(parents=True, exist_ok=True)
-        self.metadata_file = self.registry_path / 'registry.json'
+        self.metadata_file = self.registry_path / "registry.json"
         self.models = self._load_registry()
 
     def register(
         self,
         model: nn.Module,
         metadata: ModelMetadata,
-        version: str = 'v1.0',
+        version: str = "v1.0",
     ) -> str:
         """Register and save model with metadata."""
         state_dict = model.state_dict()
         metadata_dict = {
             **metadata.__dict__,
-            'timestamp': datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
         checkpoint_payload = {
-            'state_dict': state_dict,
-            'metadata': metadata_dict,
+            "state_dict": state_dict,
+            "metadata": metadata_dict,
         }
         metadata.num_params = sum(param.numel() for param in model.parameters())
-        metadata_dict['num_params'] = metadata.num_params
+        metadata_dict["num_params"] = metadata.num_params
 
         timestamp_slug = datetime.now().strftime("%Y%m%dT%H%M%S")
         base_model_id = f"{metadata.model_name}_{version}_{timestamp_slug}"
@@ -180,13 +183,13 @@ class ModelRegistry:
         model_path = (self.registry_path / f"{model_id}.pth").resolve()
         file_hash = save_checkpoint_with_hash(checkpoint_payload, model_path)
         metadata.model_hash = file_hash
-        metadata_dict['model_hash'] = file_hash
+        metadata_dict["model_hash"] = file_hash
 
         # Update registry
         self.models[model_id] = {
-            'path': str(model_path),
-            'metadata': metadata_dict,
-            'registered_at': datetime.now().isoformat(),
+            "path": str(model_path),
+            "metadata": metadata_dict,
+            "registered_at": datetime.now().isoformat(),
         }
         self._save_registry()
 
@@ -197,7 +200,7 @@ class ModelRegistry:
         if model_id not in self.models:
             raise ModelError(f"Model {model_id} not found in registry")
 
-        model_path = Path(self.models[model_id]['path']).resolve()
+        model_path = Path(self.models[model_id]["path"]).resolve()
         if not verify_checkpoint(model_path):
             raise ModelError(f"Checkpoint integrity verification failed for {model_path}")
 
@@ -205,14 +208,14 @@ class ModelRegistry:
             checkpoint_bytes = model_path.read_bytes()
             checkpoint = torch.load(
                 io.BytesIO(checkpoint_bytes),
-                map_location='cpu',
+                map_location="cpu",
                 weights_only=True,
             )
         except OSError as exc:
             raise ModelError(f"Failed to read model artifact for {model_id}") from exc
         except RuntimeError as exc:
             raise ModelError(f"Failed to deserialize model artifact for {model_id}") from exc
-        return checkpoint['state_dict'], checkpoint['metadata']
+        return checkpoint["state_dict"], checkpoint["metadata"]
 
     def list_models(self) -> List[str]:
         """List all registered models."""
@@ -223,23 +226,29 @@ class ModelRegistry:
         if model_id1 not in self.models or model_id2 not in self.models:
             raise ModelError("One or both model IDs not found in registry")
 
-        meta1 = self.models[model_id1]['metadata']
-        meta2 = self.models[model_id2]['metadata']
+        meta1 = self.models[model_id1]["metadata"]
+        meta2 = self.models[model_id2]["metadata"]
 
         return {
-            'model1': model_id1,
-            'model2': model_id2,
-            'accuracy_diff': meta1.get('metrics', {}).get('accuracy', 0) - meta2.get('metrics', {}).get('accuracy', 0),
-            'f1_diff': meta1.get('metrics', {}).get('weighted_f1', 0) - meta2.get('metrics', {}).get('weighted_f1', 0),
-            'params_ratio': meta1.get('num_params', 1) / meta2.get('num_params', 1) if meta2.get('num_params', 0) > 0 else 1.0,
+            "model1": model_id1,
+            "model2": model_id2,
+            "accuracy_diff": meta1.get("metrics", {}).get("accuracy", 0)
+            - meta2.get("metrics", {}).get("accuracy", 0),
+            "f1_diff": meta1.get("metrics", {}).get("weighted_f1", 0)
+            - meta2.get("metrics", {}).get("weighted_f1", 0),
+            "params_ratio": (
+                meta1.get("num_params", 1) / meta2.get("num_params", 1)
+                if meta2.get("num_params", 0) > 0
+                else 1.0
+            ),
         }
 
     def _load_registry(self) -> Dict[str, Any]:
         if self.metadata_file.exists():
-            with open(self.metadata_file, 'r', encoding='utf-8') as f:
+            with open(self.metadata_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
     def _save_registry(self) -> None:
-        with open(self.metadata_file, 'w', encoding='utf-8') as f:
+        with open(self.metadata_file, "w", encoding="utf-8") as f:
             json.dump(self.models, f, indent=2)

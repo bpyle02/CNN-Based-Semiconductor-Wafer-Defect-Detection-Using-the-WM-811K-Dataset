@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.semi_supervised &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.training.semi_supervised</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.training.semi_supervised</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">FixMatch semi-supervised training for wafer defect detection.</span>
+
+<span class="sd">Leverages the ~640K unlabeled wafers in WM-811K alongside the ~172K labeled</span>
+<span class="sd">ones. High-confidence pseudo-labels on weakly-augmented unlabeled samples</span>
+<span class="sd">supervise strongly-augmented versions, yielding consistency regularization</span>
+<span class="sd">without external labeling effort.</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [111] Sohn et al. (2020). &quot;FixMatch: Simplifying Semi-Supervised Learning</span>
+<span class="sd">          with Consistency and Confidence&quot;. arXiv:2001.07685</span>
+<span class="sd">    [114] Berthelot et al. (2019). &quot;MixMatch: A Holistic Approach to</span>
+<span class="sd">          Semi-Supervised Learning&quot;. arXiv:1905.02249</span>
+<span class="sd">    [117] Zhu et al. (2005). &quot;Semi-Supervised Learning Literature Survey&quot;</span>
+<span class="sd">    [118] Zhai et al. (2019). &quot;S4L: Self-Supervised Semi-Supervised Learning&quot;.</span>
+<span class="sd">          arXiv:1905.03670</span>
+<span class="sd">    [120] Lee (2013). &quot;Pseudo-Label: The Simple and Efficient Semi-Supervised</span>
+<span class="sd">          Learning Method&quot;. ICML Workshop</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">transforms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">skimage.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">resize</span> <span class="k">as</span> <span class="n">skimage_resize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">f1_score</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Augmentation helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_GaussianNoise</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add Gaussian noise to a tensor (strong augmentation component).&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">tensor</span> <span class="o">+</span> <span class="n">noise</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+
+<div class="viewcode-block" id="get_weak_transform">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.get_weak_transform">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_weak_transform</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weak augmentation: horizontal flip only.</span>
+
+<span class="sd">    FixMatch uses minimal augmentation for the &quot;teacher&quot; branch so that the</span>
+<span class="sd">    pseudo-label is as clean as possible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+    <span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="get_strong_transform">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.get_strong_transform">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_strong_transform</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strong augmentation: flip + rotation + affine + noise + erasing.</span>
+
+<span class="sd">    FixMatch uses aggressive augmentation for the &quot;student&quot; branch so that</span>
+<span class="sd">    the model learns invariance to a wide range of perturbations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomVerticalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomRotation</span><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomAffine</span><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">translate</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)),</span>
+        <span class="n">_GaussianNoise</span><span class="p">(</span><span class="n">std</span><span class="o">=</span><span class="mf">0.05</span><span class="p">),</span>
+        <span class="n">transforms</span><span class="o">.</span><span class="n">RandomErasing</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">ratio</span><span class="o">=</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">3.3</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">])</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Unlabeled dataset</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="UnlabeledWaferDataset">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.UnlabeledWaferDataset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnlabeledWaferDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for unlabeled wafer maps (no class labels).</span>
+
+<span class="sd">    Each __getitem__ call returns two views of the same wafer map:</span>
+<span class="sd">    one with weak augmentation and one with strong augmentation, as</span>
+<span class="sd">    required by the FixMatch consistency loss.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        raw_maps: List of raw numpy wafer-map arrays (variable size).</span>
+<span class="sd">        weak_transform: Transform pipeline for the weak (teacher) view.</span>
+<span class="sd">        strong_transform: Transform pipeline for the strong (student) view.</span>
+<span class="sd">        target_size: Spatial size to resize each map to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">raw_maps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">weak_transform</span><span class="p">:</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">,</span>
+        <span class="n">strong_transform</span><span class="p">:</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">,</span>
+        <span class="n">target_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="UnlabeledWaferDataset.maps">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.UnlabeledWaferDataset.maps">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maps</span> <span class="o">=</span> <span class="n">raw_maps</span></div>
+
+<div class="viewcode-block" id="UnlabeledWaferDataset.weak_transform">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.UnlabeledWaferDataset.weak_transform">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weak_transform</span> <span class="o">=</span> <span class="n">weak_transform</span></div>
+
+<div class="viewcode-block" id="UnlabeledWaferDataset.strong_transform">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.UnlabeledWaferDataset.strong_transform">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strong_transform</span> <span class="o">=</span> <span class="n">strong_transform</span></div>
+
+<div class="viewcode-block" id="UnlabeledWaferDataset.target_size">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.UnlabeledWaferDataset.target_size">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_size</span> <span class="o">=</span> <span class="n">target_size</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (weak_aug_image, strong_aug_image) for FixMatch.</span>
+
+<span class="sd">        Both views start from the same preprocessed base image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">skimage_resize</span><span class="p">(</span>
+            <span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_size</span><span class="p">,</span> <span class="n">anti_aliasing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">/</span> <span class="mf">2.0</span>  <span class="c1"># WM-811K: {0,1,2} -&gt; [0, 1]</span>
+
+        <span class="c1"># Stack grayscale -&gt; 3 channels</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">arr</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">base_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="n">weak_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weak_transform</span><span class="p">(</span><span class="n">base_tensor</span><span class="p">)</span>
+        <span class="n">strong_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strong_transform</span><span class="p">(</span><span class="n">base_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">weak_img</span><span class="p">,</span> <span class="n">strong_img</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Infinite data iterator</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_InfiniteDataIterator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps a DataLoader to iterate indefinitely (restarts on exhaustion).&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># FixMatch trainer</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="FixMatchTrainer">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FixMatchTrainer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;FixMatch semi-supervised training for wafer defect detection.</span>
+
+<span class="sd">    Uses labeled data with standard cross-entropy loss combined with unlabeled</span>
+<span class="sd">    data via a pseudo-label consistency loss.  High-confidence predictions on</span>
+<span class="sd">    weakly-augmented unlabeled samples become pseudo-labels for the</span>
+<span class="sd">    corresponding strongly-augmented versions.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        model: The classification model being trained.</span>
+<span class="sd">        num_classes: Number of target classes (9 for WM-811K).</span>
+<span class="sd">        confidence_threshold: Minimum softmax probability to accept a</span>
+<span class="sd">            pseudo-label (tau in the paper).</span>
+<span class="sd">        lambda_u: Weight for the unsupervised consistency loss.</span>
+<span class="sd">        device: Compute device string (&quot;cpu&quot; or &quot;cuda&quot;).</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [111] Sohn et al. (2020). &quot;FixMatch&quot;. arXiv:2001.07685</span>
+<span class="sd">        [114] Berthelot et al. (2019). &quot;MixMatch&quot;. arXiv:1905.02249</span>
+<span class="sd">        [120] Lee (2013). &quot;Pseudo-Label&quot;. arXiv:1908.02983</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="n">confidence_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+        <span class="n">lambda_u</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="FixMatchTrainer.model">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.model">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span></div>
+
+<div class="viewcode-block" id="FixMatchTrainer.num_classes">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.num_classes">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span></div>
+
+<div class="viewcode-block" id="FixMatchTrainer.confidence_threshold">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.confidence_threshold">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span> <span class="o">=</span> <span class="n">confidence_threshold</span></div>
+
+<div class="viewcode-block" id="FixMatchTrainer.lambda_u">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.lambda_u">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lambda_u</span> <span class="o">=</span> <span class="n">lambda_u</span></div>
+
+<div class="viewcode-block" id="FixMatchTrainer.device">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.device">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Core algorithm</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="FixMatchTrainer.train">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.FixMatchTrainer.train">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">labeled_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">unlabeled_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">val_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">LRScheduler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">gradient_clip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">monitored_metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;val_macro_f1&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train with the FixMatch algorithm.</span>
+
+<span class="sd">        Per iteration:</span>
+<span class="sd">            1. Sample labeled batch ``(x_l, y_l)`` and unlabeled batch</span>
+<span class="sd">               ``(x_u_weak, x_u_strong)``.</span>
+<span class="sd">            2. Supervised loss: ``L_s = CE(model(x_l), y_l)``.</span>
+<span class="sd">            3. Pseudo-labels: ``q = softmax(model(x_u_weak))``,</span>
+<span class="sd">               ``mask = max(q, dim=1) &gt;= threshold``.</span>
+<span class="sd">            4. Unsupervised loss: ``L_u = CE(model(x_u_strong[mask]),</span>
+<span class="sd">               argmax(q[mask]))``.</span>
+<span class="sd">            5. Total: ``L = L_s + lambda_u * L_u``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labeled_loader: DataLoader yielding ``(images, labels)``.</span>
+<span class="sd">            unlabeled_loader: DataLoader yielding ``(weak_images, strong_images)``.</span>
+<span class="sd">            val_loader: DataLoader for validation (labeled).</span>
+<span class="sd">            optimizer: Optimizer instance.</span>
+<span class="sd">            criterion: Loss function for supervised branch.</span>
+<span class="sd">            epochs: Number of training epochs.</span>
+<span class="sd">            scheduler: Optional LR scheduler.</span>
+<span class="sd">            gradient_clip: Optional max gradient norm.</span>
+<span class="sd">            monitored_metric: Metric used for best-model selection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``(best_model, history_dict)`` where *history_dict* contains</span>
+<span class="sd">            per-epoch losses, accuracies, F1 scores, and pseudo-label</span>
+<span class="sd">            statistics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">best_model_wts</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+        <span class="n">best_metric</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+        <span class="n">best_epoch</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">history</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;train_loss&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;train_supervised_loss&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;train_unsupervised_loss&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;train_acc&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;val_loss&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;val_acc&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;val_macro_f1&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;pseudo_label_ratio&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;pseudo_label_count&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;learning_rate&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;total_time&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;best_epoch&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;best_metric&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;best_metric_name&quot;</span><span class="p">:</span> <span class="n">monitored_metric</span><span class="p">,</span>
+            <span class="s2">&quot;epochs_ran&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Number of training iterations per epoch = length of labeled loader</span>
+        <span class="c1"># Unlabeled loader cycles infinitely to keep up.</span>
+        <span class="n">iters_per_epoch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">labeled_loader</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">epoch_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_one_epoch</span><span class="p">(</span>
+                <span class="n">labeled_loader</span><span class="o">=</span><span class="n">labeled_loader</span><span class="p">,</span>
+                <span class="n">unlabeled_loader</span><span class="o">=</span><span class="n">unlabeled_loader</span><span class="p">,</span>
+                <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">criterion</span><span class="o">=</span><span class="n">criterion</span><span class="p">,</span>
+                <span class="n">iters_per_epoch</span><span class="o">=</span><span class="n">iters_per_epoch</span><span class="p">,</span>
+                <span class="n">gradient_clip</span><span class="o">=</span><span class="n">gradient_clip</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">val_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">val_loader</span><span class="p">,</span> <span class="n">criterion</span><span class="p">)</span>
+
+            <span class="n">current_lr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;lr&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;train_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;train_supervised_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;sup_loss&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;train_unsupervised_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;unsup_loss&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;train_acc&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;val_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;val_acc&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;val_macro_f1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;macro_f1&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;pseudo_label_ratio&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;pseudo_ratio&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;pseudo_label_count&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;pseudo_count&quot;</span><span class="p">])</span>
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;learning_rate&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_lr</span><span class="p">)</span>
+
+            <span class="c1"># Scheduler step</span>
+            <span class="k">if</span> <span class="n">scheduler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">metric_for_scheduler</span> <span class="o">=</span> <span class="n">val_metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;macro_f1&quot;</span><span class="p">,</span> <span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">):</span>
+                    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">metric_for_scheduler</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="c1"># Best model tracking</span>
+            <span class="n">current_metric</span> <span class="o">=</span> <span class="n">val_metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;macro_f1&quot;</span><span class="p">,</span> <span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">current_metric</span> <span class="o">&gt;</span> <span class="n">best_metric</span><span class="p">:</span>
+                <span class="n">best_metric</span> <span class="o">=</span> <span class="n">current_metric</span>
+                <span class="n">best_epoch</span> <span class="o">=</span> <span class="n">epoch</span>
+                <span class="n">best_model_wts</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;[FixMatch] Epoch </span><span class="si">%2d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> | LR: </span><span class="si">%.6f</span><span class="s2"> | &quot;</span>
+                <span class="s2">&quot;Train: loss=</span><span class="si">%.4f</span><span class="s2"> (sup=</span><span class="si">%.4f</span><span class="s2">, unsup=</span><span class="si">%.4f</span><span class="s2">), acc=</span><span class="si">%.4f</span><span class="s2"> | &quot;</span>
+                <span class="s2">&quot;Val: loss=</span><span class="si">%.4f</span><span class="s2">, acc=</span><span class="si">%.4f</span><span class="s2">, F1=</span><span class="si">%.4f</span><span class="s2"> | &quot;</span>
+                <span class="s2">&quot;Pseudo: </span><span class="si">%d</span><span class="s2"> (</span><span class="si">%.1f%%</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">epoch</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">current_lr</span><span class="p">,</span>
+                <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">],</span> <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;sup_loss&quot;</span><span class="p">],</span>
+                <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;unsup_loss&quot;</span><span class="p">],</span> <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">],</span>
+                <span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">],</span> <span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">],</span>
+                <span class="n">val_metrics</span><span class="p">[</span><span class="s2">&quot;macro_f1&quot;</span><span class="p">],</span>
+                <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;pseudo_count&quot;</span><span class="p">],</span>
+                <span class="n">epoch_metrics</span><span class="p">[</span><span class="s2">&quot;pseudo_ratio&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">history</span><span class="p">[</span><span class="s2">&quot;epochs_ran&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">epoch</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">best_model_wts</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">history</span><span class="p">[</span><span class="s2">&quot;total_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed</span>
+        <span class="n">history</span><span class="p">[</span><span class="s2">&quot;best_epoch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_epoch</span>
+        <span class="n">history</span><span class="p">[</span><span class="s2">&quot;best_metric&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_metric</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;FixMatch training complete in </span><span class="si">%.1f</span><span class="s2">s (best </span><span class="si">%s</span><span class="s2">: </span><span class="si">%.4f</span><span class="s2"> at epoch </span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="n">elapsed</span><span class="p">,</span> <span class="n">monitored_metric</span><span class="p">,</span> <span class="n">best_metric</span><span class="p">,</span> <span class="n">best_epoch</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">history</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Single-epoch training</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_train_one_epoch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">labeled_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">unlabeled_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">iters_per_epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">gradient_clip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run one epoch of FixMatch training.</span>
+
+<span class="sd">        Returns a dict with keys: loss, sup_loss, unsup_loss, acc,</span>
+<span class="sd">        pseudo_ratio, pseudo_count.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">unlabeled_iter</span> <span class="o">=</span> <span class="n">_InfiniteDataIterator</span><span class="p">(</span><span class="n">unlabeled_loader</span><span class="p">)</span>
+
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">total_sup_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">total_unsup_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">correct</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_samples</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_pseudo_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_unlabeled_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">images_l</span><span class="p">,</span> <span class="n">labels_l</span> <span class="ow">in</span> <span class="n">labeled_loader</span><span class="p">:</span>
+            <span class="n">images_l</span> <span class="o">=</span> <span class="n">images_l</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">labels_l</span> <span class="o">=</span> <span class="n">labels_l</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="c1"># Unlabeled batch: (weak_aug, strong_aug)</span>
+            <span class="n">weak_u</span><span class="p">,</span> <span class="n">strong_u</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">unlabeled_iter</span><span class="p">)</span>
+            <span class="n">weak_u</span> <span class="o">=</span> <span class="n">weak_u</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">strong_u</span> <span class="o">=</span> <span class="n">strong_u</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="c1"># --- Supervised loss ---</span>
+            <span class="n">logits_l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images_l</span><span class="p">)</span>
+            <span class="n">loss_s</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">logits_l</span><span class="p">,</span> <span class="n">labels_l</span><span class="p">)</span>
+
+            <span class="c1"># --- Pseudo-label generation (no gradient through teacher) ---</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">logits_u_weak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">weak_u</span><span class="p">)</span>
+                <span class="n">probs_u_weak</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits_u_weak</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">max_probs</span><span class="p">,</span> <span class="n">pseudo_labels</span> <span class="o">=</span> <span class="n">probs_u_weak</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">max_probs</span><span class="o">.</span><span class="n">ge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span><span class="p">)</span>
+
+            <span class="c1"># --- Unsupervised loss (only on confident pseudo-labels) ---</span>
+            <span class="n">num_above</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">total_pseudo_count</span> <span class="o">+=</span> <span class="n">num_above</span>
+            <span class="n">total_unlabeled_count</span> <span class="o">+=</span> <span class="n">weak_u</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">num_above</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logits_u_strong</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">strong_u</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+                <span class="n">loss_u</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">logits_u_strong</span><span class="p">,</span> <span class="n">pseudo_labels</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loss_u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="c1"># --- Combined loss ---</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_s</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_u</span> <span class="o">*</span> <span class="n">loss_u</span>
+
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">gradient_clip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">gradient_clip</span><span class="p">)</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="n">batch_size</span> <span class="o">=</span> <span class="n">labels_l</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">batch_size</span>
+            <span class="n">total_sup_loss</span> <span class="o">+=</span> <span class="n">loss_s</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">batch_size</span>
+            <span class="n">total_unsup_loss</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_u</span> <span class="o">*</span> <span class="n">loss_u</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="o">*</span> <span class="n">batch_size</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">logits_l</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels_l</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">total_samples</span> <span class="o">+=</span> <span class="n">batch_size</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pseudo_ratio</span> <span class="o">=</span> <span class="n">total_pseudo_count</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_unlabeled_count</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;sup_loss&quot;</span><span class="p">:</span> <span class="n">total_sup_loss</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;unsup_loss&quot;</span><span class="p">:</span> <span class="n">total_unsup_loss</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;acc&quot;</span><span class="p">:</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;pseudo_ratio&quot;</span><span class="p">:</span> <span class="n">pseudo_ratio</span><span class="p">,</span>
+            <span class="s2">&quot;pseudo_count&quot;</span><span class="p">:</span> <span class="n">total_pseudo_count</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Validation</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">val_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate on validation set (labeled data only).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">val_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">val_correct</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">val_total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">all_preds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_targets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">val_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+                <span class="n">predicted</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="n">val_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">val_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">val_total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">all_preds</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                <span class="n">all_targets</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">val_total</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">macro_f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">all_targets</span><span class="p">,</span> <span class="n">all_preds</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;macro&quot;</span><span class="p">,</span> <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">val_loss</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;acc&quot;</span><span class="p">:</span> <span class="n">val_correct</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span>
+            <span class="s2">&quot;macro_f1&quot;</span><span class="p">:</span> <span class="n">macro_f1</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Data extraction helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="extract_unlabeled_maps">
+<a class="viewcode-back" href="../../../api/src/training/semi_supervised/index.html#src.training.semi_supervised.extract_unlabeled_maps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_unlabeled_maps</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">,</span>
+    <span class="n">known_classes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract wafer maps that are NOT in known_classes.</span>
+
+<span class="sd">    The WM-811K dataset has ~811K total wafers but only ~172K have a failure</span>
+<span class="sd">    type label in ``known_classes``. The remaining ~640K are either marked</span>
+<span class="sd">    as empty/unknown or have no label at all. This function collects those</span>
+<span class="sd">    unlabeled maps for use in semi-supervised training.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Full WM-811K DataFrame with ``failureClass`` and ``waferMap`` columns.</span>
+<span class="sd">        known_classes: List of valid label strings (e.g., KNOWN_CLASSES).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of raw numpy wafer-map arrays (variable sizes).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unlabeled_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;failureClass&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">known_classes</span><span class="p">)</span>
+    <span class="n">unlabeled_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">unlabeled_mask</span><span class="p">]</span>
+
+    <span class="n">maps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">wm</span> <span class="ow">in</span> <span class="n">unlabeled_df</span><span class="p">[</span><span class="s2">&quot;waferMap&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wm</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">wm</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">wm</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wm</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Extracted </span><span class="si">%d</span><span class="s2"> unlabeled wafer maps (out of </span><span class="si">%d</span><span class="s2"> non-labeled rows)&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">maps</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">unlabeled_df</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">maps</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

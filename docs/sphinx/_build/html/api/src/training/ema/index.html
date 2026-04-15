@@ -1,0 +1,250 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.ema &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.training.losses" href="../losses/index.html" />
+    <link rel="prev" title="src.training.domain_adaptation" href="../domain_adaptation/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.ema</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/ema/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.ema">
+<span id="src-training-ema"></span><h1>src.training.ema<a class="headerlink" href="#module-src.training.ema" title="Link to this heading"></a></h1>
+<p>Exponential Moving Average (EMA) of model parameters.</p>
+<p>Maintains a shadow copy of model weights that is updated as an
+exponential moving average of the training weights after each
+optimizer step.  The EMA model typically generalizes better than
+the final training checkpoint because it smooths over the noisy
+trajectory of SGD / Adam.</p>
+<blockquote>
+<div><p>shadow = decay * shadow + (1 - decay) * current</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Reference:</dt><dd><p>Polyak &amp; Juditsky (1992). “Acceleration of Stochastic Approximation
+by Averaging”. SIAM Journal on Control and Optimization.</p>
+</dd>
+</dl>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.ema.EMAModel" title="src.training.ema.EMAModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EMAModel</span></code></a></p></td>
+<td><p>Exponential Moving Average of model parameters.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.ema.</span></span><span class="sig-name descname"><span class="pre">EMAModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.999</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel" title="Link to this definition"></a></dt>
+<dd><p>Exponential Moving Average of model parameters.</p>
+<dl class="simple">
+<dt>Maintains a shadow copy of model weights updated as:</dt><dd><p>shadow = decay * shadow + (1 - decay) * current</p>
+</dd>
+</dl>
+<p>The EMA model typically generalizes better than the final checkpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The source model whose parameters will be tracked.</p></li>
+<li><p><strong>decay</strong> – Smoothing factor in [0, 1). Higher values produce smoother
+averages (0.999 is typical for medium-length training runs).</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ema = EMAModel(model, decay=0.999)
+for batch in train_loader:
+    loss = criterion(model(batch), targets)
+    loss.backward()
+    optimizer.step()
+    ema.update(model)
+
+# For evaluation:
+ema.apply_shadow(model)
+val_metrics = evaluate(model, val_loader)
+ema.restore(model)  # return model to training weights
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.decay">
+<span class="sig-name descname"><span class="pre">decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.999</span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.decay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.decay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.shadow">
+<span class="sig-name descname"><span class="pre">shadow</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.shadow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.shadow" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.backup">
+<span class="sig-name descname"><span class="pre">backup</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.backup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.backup" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.update" title="Link to this definition"></a></dt>
+<dd><p>Update shadow weights with current model weights.</p>
+<p>Should be called once after each <code class="docutils literal notranslate"><span class="pre">optimizer.step()</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.apply_shadow">
+<span class="sig-name descname"><span class="pre">apply_shadow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.apply_shadow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.apply_shadow" title="Link to this definition"></a></dt>
+<dd><p>Replace model weights with shadow weights (for evaluation).</p>
+<p>The original weights are saved internally so they can be restored
+afterwards with <a class="reference internal" href="#src.training.ema.EMAModel.restore" title="src.training.ema.EMAModel.restore"><code class="xref py py-meth docutils literal notranslate"><span class="pre">restore()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.ema.EMAModel.restore">
+<span class="sig-name descname"><span class="pre">restore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/ema.html#EMAModel.restore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.ema.EMAModel.restore" title="Link to this definition"></a></dt>
+<dd><p>Restore model weights from backup (after evaluation).</p>
+<p>Must be preceded by a call to <a class="reference internal" href="#src.training.ema.EMAModel.apply_shadow" title="src.training.ema.EMAModel.apply_shadow"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_shadow()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../domain_adaptation/index.html" class="btn btn-neutral float-left" title="src.training.domain_adaptation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../losses/index.html" class="btn btn-neutral float-right" title="src.training.losses" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

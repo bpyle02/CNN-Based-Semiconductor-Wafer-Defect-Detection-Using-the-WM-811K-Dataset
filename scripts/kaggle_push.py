@@ -1,70 +1,64 @@
 #!/usr/bin/env python3
-"""Publish or update docs/kaggle_quickstart.ipynb as a Kaggle Kernel.
+"""Backwards-compat shim — use ``wafer-cli kaggle push`` instead.
 
-Reads kernel-metadata.json at the repo root and calls Kaggle's
-`kernels push` under the hood, with one critical adjustment:
+This script has been migrated into the unified ``wafer-cli`` framework.
+The real implementation now lives in :mod:`src.cli.commands.kaggle`.
 
-  - Kaggle's newer KGAT-format API tokens are BEARER tokens. The CLI
-    and SDK default to Basic auth (HTTP username:password), which
-    Kaggle's kernel endpoints reject with a 401 for KGAT_ tokens.
-  - Setting KAGGLE_API_TOKEN before importing the SDK flips it onto
-    the Bearer-auth path internally.
-
-This script handles that transparently — all you need is a valid
-~/.kaggle/kaggle.json.
-
-Usage:
-    python scripts/kaggle_push.py
-
-Re-run the same command after any change to
-docs/kaggle_quickstart.ipynb, kernel-metadata.json, or the source code
-the notebook pulls. The URL stays stable so the README badge keeps
-working.
+This shim is kept so that existing CI jobs, docs, and muscle memory
+(``python scripts/kaggle_push.py``) keep working — it just forwards
+to the new CLI with a deprecation warning.
 """
 
 from __future__ import annotations
 
-import json
-import os
 import sys
+import warnings
 from pathlib import Path
+
+# Ensure the repo root is importable when invoked as
+# ``python scripts/kaggle_push.py`` (no editable install).
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def main() -> int:
-    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
-    if not kaggle_json.exists():
-        print(
-            f"error: {kaggle_json} not found. Create an API token at "
-            "https://www.kaggle.com/settings/account and save it there.",
-            file=sys.stderr,
-        )
-        return 1
+    warnings.warn(
+        "scripts/kaggle_push.py is deprecated; use "
+        "`wafer-cli kaggle push` (or `python -m src.cli.main kaggle push`) "
+        "instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    # Also print to stderr so users actually see it regardless of
+    # -W filters.
+    print(
+        "[deprecated] scripts/kaggle_push.py — forwarding to " "`wafer-cli kaggle push`.",
+        file=sys.stderr,
+    )
 
-    creds = json.loads(kaggle_json.read_text())
-    os.environ["KAGGLE_API_TOKEN"] = creds["key"]
+    # If the user passed --help, show the new CLI's help for the push
+    # subcommand and exit 0 (preserving old help-flag UX).
+    argv = sys.argv[1:]
+    from typer.testing import CliRunner
 
-    # Import AFTER setting the env var — the SDK snapshots it at init time.
-    from kaggle import api
+    from src.cli.main import app
 
-    repo = Path(__file__).resolve().parents[1]
-    metadata_path = repo / "kernel-metadata.json"
-    if not metadata_path.exists():
-        print(f"error: {metadata_path} not found.", file=sys.stderr)
-        return 1
+    if any(arg in ("-h", "--help") for arg in argv):
+        runner = CliRunner()
+        result = runner.invoke(app, ["kaggle", "push", "--help"])
+        # Windows cp1252 can't encode Typer's box-drawing chars; write
+        # bytes directly with a safe fallback.
+        try:
+            sys.stdout.write(result.output)
+        except UnicodeEncodeError:
+            sys.stdout.write(result.output.encode("ascii", errors="replace").decode("ascii"))
+        return result.exit_code
 
-    resp = api.kernels_push(str(repo))
-    error = getattr(resp, "error", None) or getattr(resp, "error_nullable", None)
-    if error:
-        print(f"push failed: {error}", file=sys.stderr)
-        return 1
+    # Otherwise, invoke the real command directly.
+    from src.cli.commands.kaggle import main as kaggle_main
 
-    ref = getattr(resp, "ref", "?")
-    url = getattr(resp, "url", None)
-    version = getattr(resp, "version_number", None)
-    print(f"OK — pushed version {version}")
-    print(f"  ref: {ref}")
-    print(f"  url: {url}")
-    return 0
+    return kaggle_main()
 
 
 if __name__ == "__main__":

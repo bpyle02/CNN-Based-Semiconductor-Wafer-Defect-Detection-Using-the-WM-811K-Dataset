@@ -1,0 +1,32 @@
+src.training
+============
+
+.. py:module:: src.training
+
+.. autoapi-nested-parse::
+
+   Training utilities and configuration.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/training/base_trainer/index
+   /api/src/training/builders/index
+   /api/src/training/config/index
+   /api/src/training/distributed/index
+   /api/src/training/domain_adaptation/index
+   /api/src/training/ema/index
+   /api/src/training/losses/index
+   /api/src/training/metrics_tracker/index
+   /api/src/training/pipeline/index
+   /api/src/training/semi_supervised/index
+   /api/src/training/simclr/index
+   /api/src/training/supcon/index
+   /api/src/training/trainer/index
+
+

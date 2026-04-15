@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Card &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Related Work" href="related_work.html" />
+    <link rel="prev" title="Model Card" href="model_card.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="model_card.html">Model Card</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Card</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-card-wm-811k">Data Card: WM-811K</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-overview">Dataset Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensitive-data">Sensitive Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-version-license">Dataset Version &amp; License</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-collection-process">Data Collection Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#class-distribution">Class Distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#known-biases">Known Biases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#splits">Splits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#intended-use">Intended Use</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#out-of-scope-use">Out-of-Scope Use</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data Card</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data_card.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-card">
+<h1>Data Card<a class="headerlink" href="#data-card" title="Link to this heading"></a></h1>
+<section id="data-card-wm-811k">
+<h2>Data Card: WM-811K<a class="headerlink" href="#data-card-wm-811k" title="Link to this heading"></a></h2>
+<p>Format based on the <a class="reference external" href="https://modelcards.withgoogle.com/about">Google Data Card</a>
+template. This card describes the WM-811K dataset as used by this repository.</p>
+<hr class="docutils" />
+<section id="dataset-overview">
+<h3>Dataset Overview<a class="headerlink" href="#dataset-overview" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Name</strong>: WM-811K (Wafer Map 811K).</p></li>
+<li><p><strong>Primary citation</strong>: M.-J. Wu, J.-S. R. Jang, and J.-L. Chen, “Wafer Map
+Failure Pattern Recognition and Similarity Ranking for Large-Scale Data Sets,”
+<em>IEEE Transactions on Semiconductor Manufacturing</em>, vol. 28, no. 1, pp. 1-12,
+Feb. 2015.</p></li>
+<li><p><strong>Total wafer maps</strong>: 811,457.</p></li>
+<li><p><strong>Labeled subset</strong>: 172,950 wafers across 9 classes (the remainder are
+unlabeled / “unknown” and are excluded from supervised training in this
+repository).</p></li>
+<li><p><strong>Classes (9)</strong>: <code class="docutils literal notranslate"><span class="pre">Center</span></code>, <code class="docutils literal notranslate"><span class="pre">Donut</span></code>, <code class="docutils literal notranslate"><span class="pre">Edge-Loc</span></code>, <code class="docutils literal notranslate"><span class="pre">Edge-Ring</span></code>, <code class="docutils literal notranslate"><span class="pre">Loc</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Near-full</span></code>, <code class="docutils literal notranslate"><span class="pre">Random</span></code>, <code class="docutils literal notranslate"><span class="pre">Scratch</span></code>, <code class="docutils literal notranslate"><span class="pre">none</span></code>.</p></li>
+<li><p><strong>Modality</strong>: 2-D integer wafer bin maps (values in <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">1,</span> <span class="pre">2}</span></code> for
+<code class="docutils literal notranslate"><span class="pre">background</span> <span class="pre">/</span> <span class="pre">pass</span> <span class="pre">/</span> <span class="pre">fail</span></code>) of heterogeneous native resolution.</p></li>
+<li><p><strong>Format in this repo</strong>: <code class="docutils literal notranslate"><span class="pre">data/LSWMD_new.pkl</span></code> (pandas pickle, shape
+<code class="docutils literal notranslate"><span class="pre">(811457,</span> <span class="pre">7)</span></code>), schema: <code class="docutils literal notranslate"><span class="pre">waferMap</span></code>, <code class="docutils literal notranslate"><span class="pre">failureType</span></code>, <code class="docutils literal notranslate"><span class="pre">trianTestLabel</span></code>,
+plus lot/die metadata.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="sensitive-data">
+<h3>Sensitive Data<a class="headerlink" href="#sensitive-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>None.</strong> Wafer maps contain no PII, personal data, or identifiable
+operator information.</p></li>
+<li><p>Lot IDs are pseudonymous integers; no original manufacturer or
+individual is identifiable from the data as distributed.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="dataset-version-license">
+<h3>Dataset Version &amp; License<a class="headerlink" href="#dataset-version-license" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Dataset version used</strong>: The Kaggle redistribution at
+<a class="reference external" href="https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map">https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map</a>, preprocessed
+into <code class="docutils literal notranslate"><span class="pre">LSWMD_new.pkl</span></code>.</p></li>
+<li><p><strong>Original rights holder</strong>: The dataset accompanies Wu et al. 2015
+(IEEE TSM). The 2015 paper and associated MIR Lab release define the
+terms of academic use.</p></li>
+<li><p><strong>Redistribution</strong>: The raw pickle is not versioned in this repository
+(2.2 GB). Users must obtain it from Kaggle or a permitted mirror.</p></li>
+<li><p><strong>License of this card and any derived metrics</strong>: Same as the host
+repository (coursework / All Rights Reserved on code; facts about the
+dataset are not themselves copyrightable).</p></li>
+<li><p><strong>Allowed uses</strong>: Academic research, benchmarking, and coursework. Any
+commercial or production deployment must revisit the upstream rights.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="data-collection-process">
+<h3>Data Collection Process<a class="headerlink" href="#data-collection-process" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Source</strong>: Pulled from real production semiconductor fabs, circa 2013-2015,
+as reported by Wu et al. 2015.</p></li>
+<li><p><strong>Collection mechanism</strong>: Inline electrical test results were rasterized
+into per-wafer die-bin maps.</p></li>
+<li><p><strong>Labeling mechanism</strong>: Human fab engineers inspected each wafer map and
+assigned one of the 9 pattern labels. The bulk of the dataset (~639,000
+wafers) was left unlabeled.</p></li>
+<li><p><strong>Time span</strong>: 2013-2015.</p></li>
+<li><p><strong>Process technology</strong>: Commercial foundry processes of that era;
+specific node(s) are not published.</p></li>
+<li><p><strong>Inter-annotator agreement</strong>: Not reported by the source paper. Labels
+must be treated as single-annotator expert judgments.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="class-distribution">
+<h3>Class Distribution<a class="headerlink" href="#class-distribution" title="Link to this heading"></a></h3>
+<p>From the labeled subset (n = 172,950):</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Defect Class</p></th>
+<th class="head text-right"><p>Count</p></th>
+<th class="head text-right"><p>Percent</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>none</p></td>
+<td class="text-right"><p>147,431</p></td>
+<td class="text-right"><p>85.24%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Edge-Ring</p></td>
+<td class="text-right"><p>9,680</p></td>
+<td class="text-right"><p>5.60%</p></td>
+</tr>
+<tr class="row-even"><td><p>Edge-Loc</p></td>
+<td class="text-right"><p>5,189</p></td>
+<td class="text-right"><p>3.00%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Center</p></td>
+<td class="text-right"><p>4,294</p></td>
+<td class="text-right"><p>2.48%</p></td>
+</tr>
+<tr class="row-even"><td><p>Loc</p></td>
+<td class="text-right"><p>3,593</p></td>
+<td class="text-right"><p>2.08%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Scratch</p></td>
+<td class="text-right"><p>1,193</p></td>
+<td class="text-right"><p>0.69%</p></td>
+</tr>
+<tr class="row-even"><td><p>Random</p></td>
+<td class="text-right"><p>866</p></td>
+<td class="text-right"><p>0.50%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Donut</p></td>
+<td class="text-right"><p>555</p></td>
+<td class="text-right"><p>0.32%</p></td>
+</tr>
+<tr class="row-even"><td><p>Near-full</p></td>
+<td class="text-right"><p>149</p></td>
+<td class="text-right"><p>0.09%</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Total</strong></p></td>
+<td class="text-right"><p><strong>172,950</strong></p></td>
+<td class="text-right"><p><strong>100.00%</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>Imbalance ratio (<code class="docutils literal notranslate"><span class="pre">none</span></code> : <code class="docutils literal notranslate"><span class="pre">Near-full</span></code>) is ~990:1. Any evaluation on this
+dataset must report Macro F1 or another imbalance-aware aggregate;
+accuracy alone is uninformative.</p>
+</section>
+<hr class="docutils" />
+<section id="known-biases">
+<h3>Known Biases<a class="headerlink" href="#known-biases" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Severe class imbalance (85% “none”)</strong>. Naive training converges to an
+“always predict none” classifier unless inverse-frequency weighting,
+DRW, focal loss, or a balanced sampler is used.</p></li>
+<li><p><strong>Rare-class instability</strong>. Classes with &lt;1% prevalence (Donut, Random,
+Near-full) produce high-variance per-class metrics; single-seed
+experiments can shift F1 by 0.05-0.10 between runs.</p></li>
+<li><p><strong>Labeler drift</strong>. With single-expert labels over a 2-3 year collection
+window, gradual drift in the boundary between adjacent classes
+(e.g., Loc vs Edge-Loc vs Scratch) is plausible but unmeasured.</p></li>
+<li><p><strong>Era-specific pattern prevalence</strong>. The frequency of each failure mode
+reflects the process tech, defect-density, and tooling of early-2010s
+fabs. A modern advanced-node fab will have a different prior over
+failure classes (e.g., more patterning-related, fewer particle-type
+defects).</p></li>
+<li><p><strong>Resolution heterogeneity</strong>. Native wafer-map resolution varies widely
+across lots; resizing to 96x96 loses fine-structure information on
+large wafers and over-smooths on small ones.</p></li>
+<li><p><strong>Unlabeled majority</strong>. 78% of the dataset is unlabeled. Training on
+only the labeled subset means the supervised estimator sees a
+non-random sample of production wafers — engineers may have preferentially
+labeled interesting / ambiguous cases.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="preprocessing">
+<h3>Preprocessing<a class="headerlink" href="#preprocessing" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Resize</strong>: All wafer maps resized to <strong>96 x 96</strong> via
+<code class="docutils literal notranslate"><span class="pre">skimage.transform.resize</span></code> (bilinear, anti-aliasing on).</p></li>
+<li><p><strong>Value normalization</strong>: Integer values <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">1,</span> <span class="pre">2}</span></code> divided by <code class="docutils literal notranslate"><span class="pre">2.0</span></code> to
+land in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">0.5,</span> <span class="pre">1.0]</span></code>.</p></li>
+<li><p><strong>Channel replication</strong>: The single resulting channel is replicated to
+3 channels so that ImageNet-pretrained backbones
+(ResNet, EfficientNet, ViT, Swin) ingest the expected shape.</p></li>
+<li><p><strong>No mean/std standardization</strong>: Inputs are passed as-is to the model;
+models that need ImageNet statistics apply them inside their first layer
+or first normalization module.</p></li>
+<li><p><strong>Label encoding</strong>: The 9 classes are mapped to integer IDs (0-8) in a
+deterministic order defined in <code class="docutils literal notranslate"><span class="pre">src/data/dataset.py</span></code>.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="splits">
+<h3>Splits<a class="headerlink" href="#splits" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Strategy</strong>: Stratified 70 / 15 / 15 (train / val / test).</p></li>
+<li><p><strong>Seed</strong>: <code class="docutils literal notranslate"><span class="pre">42</span></code> (global, fixed; also controls shuffling and weight init).</p></li>
+<li><p><strong>Rationale</strong>: Stratification preserves the 85% “none” prevalence in
+every split so reported metrics generalize to the overall label
+distribution. Fixed seed enables exact reproducibility.</p></li>
+<li><p><strong>Approximate sizes</strong>:</p>
+<ul>
+<li><p>Train: ~121,000 wafers.</p></li>
+<li><p>Val: ~25,950 wafers.</p></li>
+<li><p>Test: ~25,950 wafers (Near-full test support = 22).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="intended-use">
+<h3>Intended Use<a class="headerlink" href="#intended-use" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Benchmarking wafer-map defect-pattern classifiers.</p></li>
+<li><p>Long-tail / imbalanced-classification research.</p></li>
+<li><p>Coursework and didactic examples of ML on real industrial data.</p></li>
+<li><p>Baseline for anomaly / OOD detection on structured binary-valued images.</p></li>
+</ul>
+</section>
+<section id="out-of-scope-use">
+<h3>Out-of-Scope Use<a class="headerlink" href="#out-of-scope-use" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Production fab deployment without domain adaptation and drift monitoring.</p></li>
+<li><p>Training a model intended for a non-WM-811K wafer inspection task
+(different sensor, different technology node) without re-labeling.</p></li>
+<li><p>Any privacy / demographic inference (no such information exists in
+the data).</p></li>
+<li><p>Claims of generality across fab technologies or vendors — this dataset
+is from one documented study and should not be interpreted as a global
+wafer-defect prior.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="model_card.html" class="btn btn-neutral float-left" title="Model Card" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="related_work.html" class="btn btn-neutral float-right" title="Related Work" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -12,18 +12,24 @@ Usage:
 
 import ast
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 from typing import Optional
-
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 
 # Packages that get subgraphs
 SUBPACKAGES = [
-    "data", "models", "training", "analysis",
-    "inference", "augmentation", "detection", "federated", "mlops",
+    "data",
+    "models",
+    "training",
+    "analysis",
+    "inference",
+    "augmentation",
+    "detection",
+    "federated",
+    "mlops",
 ]
 
 
@@ -219,17 +225,17 @@ def generate_mermaid(edges: dict[str, set[str]], all_modules: set[str]) -> str:
 
     # Package display names and style mapping
     pkg_meta = {
-        "root":         ("Root Modules",   "entrypoint"),
-        "data":         ("Data",           "datamod"),
-        "models":       ("Models",         "modelmod"),
-        "training":     ("Training",       "trainmod"),
-        "analysis":     ("Analysis",       "analysismod"),
-        "inference":    ("Inference",      "inframod"),
-        "augmentation": ("Augmentation",   "inframod"),
-        "detection":    ("Detection",      "inframod"),
-        "federated":    ("Federated",      "inframod"),
-        "mlops":        ("MLOps",          "inframod"),
-        "scripts":      ("Scripts",        "scriptmod"),
+        "root": ("Root Modules", "entrypoint"),
+        "data": ("Data", "datamod"),
+        "models": ("Models", "modelmod"),
+        "training": ("Training", "trainmod"),
+        "analysis": ("Analysis", "analysismod"),
+        "inference": ("Inference", "inframod"),
+        "augmentation": ("Augmentation", "inframod"),
+        "detection": ("Detection", "inframod"),
+        "federated": ("Federated", "inframod"),
+        "mlops": ("MLOps", "inframod"),
+        "scripts": ("Scripts", "scriptmod"),
     }
 
     # Emit subgraphs
@@ -298,7 +304,8 @@ def main() -> None:
         description="Generate Mermaid dependency diagram for the project."
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default=None,
         help="Write markdown output to this file (default: stdout)",

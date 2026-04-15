@@ -1,0 +1,208 @@
+src.training.config
+===================
+
+.. py:module:: src.training.config
+
+.. autoapi-nested-parse::
+
+   Training configuration and hyperparameters.
+
+   Centralizes all training settings in a single dataclass for reproducibility
+   and easy experimentation.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.training.config.TrainConfig
+   src.training.config.AnalysisConfig
+
+
+Module Contents
+---------------
+
+.. py:class:: TrainConfig
+
+   Training configuration for wafer defect detection models.
+
+   .. attribute:: num_epochs
+
+      Number of training epochs (default: 5 for CPU feasibility)
+
+   .. attribute:: batch_size
+
+      Mini-batch size (default: 64)
+
+   .. attribute:: learning_rate
+
+      Initial learning rate (default: 1e-3 for CNN, 1e-4 for pretrained)
+
+   .. attribute:: weight_decay
+
+      L2 regularization coefficient (default: 1e-4)
+
+   .. attribute:: num_classes
+
+      Number of output classes (default: 9)
+
+   .. attribute:: seed
+
+      Random seed for reproducibility (default: 42)
+
+   .. attribute:: device
+
+      Compute device ('cuda' or 'cpu')
+
+   .. attribute:: scheduler_patience
+
+      Patience for ReduceLROnPlateau (default: 3)
+
+   .. attribute:: scheduler_factor
+
+      LR reduction factor (default: 0.5)
+
+   .. attribute:: loss_weights
+
+      Per-class weights for CrossEntropyLoss (set during data prep)
+
+
+   .. py:attribute:: num_epochs
+      :type:  int
+      :value: 25
+
+
+
+   .. py:attribute:: batch_size
+      :type:  int
+      :value: 64
+
+
+
+   .. py:attribute:: learning_rate
+      :type:  float
+      :value: 0.001
+
+
+
+   .. py:attribute:: weight_decay
+      :type:  float
+      :value: 0.0001
+
+
+
+   .. py:attribute:: num_classes
+      :type:  int
+      :value: 9
+
+
+
+   .. py:attribute:: seed
+      :type:  int
+      :value: 42
+
+
+
+   .. py:attribute:: device
+      :type:  str
+      :value: 'cpu'
+
+
+
+   .. py:attribute:: scheduler_patience
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: scheduler_factor
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: loss_weights
+      :type:  Optional[Any]
+      :value: None
+
+
+
+   .. py:attribute:: model_name
+      :type:  str
+      :value: 'model'
+
+
+
+   .. py:attribute:: gradient_clip
+      :type:  Optional[float]
+      :value: None
+
+
+
+   .. py:attribute:: warmup_epochs
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: mixed_precision
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: num_workers
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: pin_memory
+      :type:  bool
+      :value: True
+
+
+
+   .. py:method:: to_dict() -> Dict[str, Any]
+
+      Convert config to dictionary for logging.
+
+
+
+.. py:class:: AnalysisConfig
+
+   Configuration for model analysis and visualization.
+
+
+   .. py:attribute:: num_samples_per_class
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: confusion_matrix_normalize
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: plot_dpi
+      :type:  int
+      :value: 120
+
+
+
+   .. py:attribute:: font_size
+      :type:  int
+      :value: 11
+
+
+
+   .. py:attribute:: style
+      :type:  str
+      :value: 'seaborn-v0_8-whitegrid'
+
+
+

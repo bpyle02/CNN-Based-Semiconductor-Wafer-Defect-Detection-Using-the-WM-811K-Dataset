@@ -31,9 +31,9 @@ References:
 import copy
 import logging
 import time
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -41,7 +41,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
-
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +99,7 @@ class FedAvgConfig:
         if not 0.0 <= self.trim_ratio < 0.5:
             raise ValueError(f"trim_ratio must be in [0, 0.5), got {self.trim_ratio}")
         if self.byzantine_tolerance < 0:
-            raise ValueError(
-                f"byzantine_tolerance must be >= 0, got {self.byzantine_tolerance}"
-            )
+            raise ValueError(f"byzantine_tolerance must be >= 0, got {self.byzantine_tolerance}")
 
 
 class FedAveragingClient:
@@ -270,7 +267,7 @@ class ByzantineRobustAggregator:
 
     def __init__(
         self,
-        method: str = 'median',
+        method: str = "median",
         trim_ratio: float = 0.2,
         byzantine_tolerance: int = 0,
     ) -> None:
@@ -288,14 +285,14 @@ class ByzantineRobustAggregator:
         if not client_weights:
             raise ValueError("client_weights cannot be empty")
 
-        if self.method == 'median':
+        if self.method == "median":
             return self._median_aggregation(client_weights)
-        elif self.method == 'trimmed_mean':
+        elif self.method == "trimmed_mean":
             return self._trimmed_mean_aggregation(
                 client_weights,
                 trim_ratio=self.trim_ratio,
             )
-        elif self.method == 'krum':
+        elif self.method == "krum":
             return self._krum_aggregation(
                 client_weights,
                 byzantine_tolerance=self.byzantine_tolerance,
@@ -303,7 +300,9 @@ class ByzantineRobustAggregator:
         else:
             raise ValueError(f"Unknown aggregation method: {self.method}")
 
-    def _median_aggregation(self, weights_list: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
+    def _median_aggregation(
+        self, weights_list: List[Dict[str, torch.Tensor]]
+    ) -> Dict[str, torch.Tensor]:
         """Median aggregation - robust to 50% poisoned clients."""  # Ref [35]: Yin et al. — coordinate-wise median
         aggregated = {}
         for key in weights_list[0].keys():
@@ -311,7 +310,9 @@ class ByzantineRobustAggregator:
             aggregated[key] = torch.median(values, dim=0)[0]
         return aggregated
 
-    def _trimmed_mean_aggregation(self, weights_list: List[Dict[str, torch.Tensor]], trim_ratio: float = 0.2) -> Dict[str, torch.Tensor]:
+    def _trimmed_mean_aggregation(
+        self, weights_list: List[Dict[str, torch.Tensor]], trim_ratio: float = 0.2
+    ) -> Dict[str, torch.Tensor]:
         """Trimmed mean aggregation - removes outlier updates."""  # Ref [35]: Yin et al. — coordinate-wise trimmed mean
         aggregated = {}
         trim_count = int(len(weights_list) * trim_ratio)
@@ -467,7 +468,7 @@ class FedAveragingServer:
         if self.config.learning_rate_schedule == "constant":
             return self.config.learning_rate
         elif self.config.learning_rate_schedule == "exponential":
-            return self.config.learning_rate * (self.config.lr_decay_rate ** round_num)
+            return self.config.learning_rate * (self.config.lr_decay_rate**round_num)
         else:
             return self.config.learning_rate
 
@@ -475,8 +476,8 @@ class FedAveragingServer:
         self, client_indices: List[int], client_weights: List[Dict[str, torch.Tensor]]
     ) -> Dict[str, torch.Tensor]:
         """Compute average of client model weights."""
-        
-        if getattr(self.config, 'aggregation_method', 'weighted_avg') != 'weighted_avg':
+
+        if getattr(self.config, "aggregation_method", "weighted_avg") != "weighted_avg":
             # Use Byzantine Robust Aggregator
             aggregator = ByzantineRobustAggregator(
                 method=self.config.aggregation_method,
@@ -575,9 +576,9 @@ class FedAveragingServer:
         avg_weights = self.aggregate_weights(client_indices, client_weights_list)
         self.global_model.load_state_dict(avg_weights)
 
-        # Metrics
-        round_loss = np.mean(local_losses)
-        round_acc = np.mean(local_accs)
+        # Metrics — coerce numpy scalars to plain floats for consistent typing.
+        round_loss = float(np.mean(local_losses))
+        round_acc = float(np.mean(local_accs))
         self.round_loss_history.append(round_loss)
         self.round_acc_history.append(round_acc)
 
@@ -627,9 +628,7 @@ class FedAveragingServer:
         elapsed = time.time() - start_time
 
         if self.config.verbose:
-            final_test_acc = (
-                self.test_acc_history[-1] if self.test_acc_history else None
-            )
+            final_test_acc = self.test_acc_history[-1] if self.test_acc_history else None
             msg = (
                 f"FedAvg training complete in {elapsed:.1f}s. "
                 f"Final avg acc: {self.round_acc_history[-1]:.4f}"
@@ -639,12 +638,12 @@ class FedAveragingServer:
             logger.info(msg)
 
         return {
-            'global_model': self.global_model,
-            'round_loss': self.round_loss_history,
-            'round_acc': self.round_acc_history,
-            'test_acc': self.test_acc_history,
-            'total_time': elapsed,
-            'communication_rounds': self.communication_rounds,
+            "global_model": self.global_model,
+            "round_loss": self.round_loss_history,
+            "round_acc": self.round_acc_history,
+            "test_acc": self.test_acc_history,
+            "total_time": elapsed,
+            "communication_rounds": self.communication_rounds,
         }
 
     def get_global_model(self) -> nn.Module:
@@ -662,11 +661,11 @@ class FedAveragingServer:
             path: Path to save checkpoint
         """
         checkpoint = {
-            'global_model': self.global_model.state_dict(),
-            'round_loss': self.round_loss_history,
-            'round_acc': self.round_acc_history,
-            'test_acc': self.test_acc_history,
-            'config': self.config.__dict__,
+            "global_model": self.global_model.state_dict(),
+            "round_loss": self.round_loss_history,
+            "round_acc": self.round_acc_history,
+            "test_acc": self.test_acc_history,
+            "config": self.config.__dict__,
         }
         file_hash = save_checkpoint_with_hash(checkpoint, Path(path))
         if self.config.verbose:
@@ -686,10 +685,10 @@ class FedAveragingServer:
             )
 
         checkpoint = torch.load(path, map_location=self.device, weights_only=False)
-        self.global_model.load_state_dict(checkpoint['global_model'])
-        self.round_loss_history = checkpoint['round_loss']
-        self.round_acc_history = checkpoint['round_acc']
-        self.test_acc_history = checkpoint['test_acc']
+        self.global_model.load_state_dict(checkpoint["global_model"])
+        self.round_loss_history = checkpoint["round_loss"]
+        self.round_acc_history = checkpoint["round_acc"]
+        self.test_acc_history = checkpoint["test_acc"]
         if self.config.verbose:
             logger.info(f"Checkpoint loaded from {path}")
 

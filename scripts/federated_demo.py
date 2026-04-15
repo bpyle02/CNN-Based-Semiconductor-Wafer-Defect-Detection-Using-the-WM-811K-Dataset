@@ -52,9 +52,9 @@ from src.data import (  # noqa: E402
     seed_worker,
 )
 from src.federated.fed_avg import (  # noqa: E402
-    FedAvgConfig,
     FedAveragingClient,
     FedAveragingServer,
+    FedAvgConfig,
 )
 from src.models import WaferCNN  # noqa: E402
 
@@ -62,9 +62,9 @@ logger = logging.getLogger(__name__)
 
 # Fab specialization mapping: class -> fab_id that gets 50% of those samples
 PRIMARY_FAB_FOR_CLASS = {
-    "Center": 0,   # Fab A
-    "Donut": 0,    # Fab A
-    "Loc": 1,      # Fab B
+    "Center": 0,  # Fab A
+    "Donut": 0,  # Fab A
+    "Loc": 1,  # Fab B
     "Scratch": 1,  # Fab B
 }
 
@@ -85,8 +85,7 @@ def partition_by_fab(
     fabs: List[List[int]] = [[], [], []]
     name_to_idx = {n: i for i, n in enumerate(class_names)}
     specialized_idx = {
-        name_to_idx[n]: fab for n, fab in PRIMARY_FAB_FOR_CLASS.items()
-        if n in name_to_idx
+        name_to_idx[n]: fab for n, fab in PRIMARY_FAB_FOR_CLASS.items() if n in name_to_idx
     }
 
     for cls_idx in range(len(class_names)):
@@ -123,8 +122,11 @@ def make_loader(
 ) -> DataLoader:
     g = torch.Generator().manual_seed(42)
     return DataLoader(
-        ds, batch_size=batch_size, shuffle=shuffle,
-        worker_init_fn=seed_worker, generator=g,
+        ds,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        worker_init_fn=seed_worker,
+        generator=g,
     )
 
 
@@ -178,8 +180,13 @@ def train_centralized(
             loss_sum += loss.item() * yb.size(0)
             correct += (out.argmax(1) == yb).sum().item()
             seen += yb.size(0)
-        logger.info("  [centralized] epoch %d/%d loss=%.4f acc=%.4f",
-                    ep + 1, total_epochs, loss_sum / seen, correct / seen)
+        logger.info(
+            "  [centralized] epoch %d/%d loss=%.4f acc=%.4f",
+            ep + 1,
+            total_epochs,
+            loss_sum / seen,
+            correct / seen,
+        )
     elapsed = time.time() - t0
     acc, f1 = evaluate(model, test_loader, device)
     return model, acc, f1, elapsed
@@ -207,15 +214,17 @@ def train_federated(
     clients = []
     for fab_id, loader in enumerate(fab_loaders):
         client_model = WaferCNN(num_classes=num_classes)
-        clients.append(FedAveragingClient(
-            client_id=fab_id,
-            train_loader=loader,
-            model=client_model,
-            criterion=criterion,
-            local_epochs=local_epochs,
-            learning_rate=lr,
-            device=device,
-        ))
+        clients.append(
+            FedAveragingClient(
+                client_id=fab_id,
+                train_loader=loader,
+                model=client_model,
+                criterion=criterion,
+                local_epochs=local_epochs,
+                learning_rate=lr,
+                device=device,
+            )
+        )
 
     cfg = FedAvgConfig(
         num_rounds=rounds,
@@ -227,7 +236,10 @@ def train_federated(
         verbose=False,
     )
     server = FedAveragingServer(
-        model=global_model, clients=clients, config=cfg, test_loader=test_loader,
+        model=global_model,
+        clients=clients,
+        config=cfg,
+        test_loader=test_loader,
     )
 
     t0 = time.time()
@@ -235,15 +247,23 @@ def train_federated(
     for r in range(rounds):
         loss, acc, test_acc = server.train_round(r)
         round_acc, round_f1 = evaluate(server.get_global_model(), test_loader, device)
-        round_history.append({
-            "round": r + 1,
-            "train_loss_avg": float(loss),
-            "train_acc_avg": float(acc),
-            "test_accuracy": float(round_acc),
-            "test_macro_f1": float(round_f1),
-        })
-        logger.info("  [fedavg] round %d/%d train_loss=%.4f test_acc=%.4f test_f1=%.4f",
-                    r + 1, rounds, loss, round_acc, round_f1)
+        round_history.append(
+            {
+                "round": r + 1,
+                "train_loss_avg": float(loss),
+                "train_acc_avg": float(acc),
+                "test_accuracy": float(round_acc),
+                "test_macro_f1": float(round_f1),
+            }
+        )
+        logger.info(
+            "  [fedavg] round %d/%d train_loss=%.4f test_acc=%.4f test_f1=%.4f",
+            r + 1,
+            rounds,
+            loss,
+            round_acc,
+            round_f1,
+        )
     elapsed = time.time() - t0
     final_acc, final_f1 = evaluate(server.get_global_model(), test_loader, device)
     return server.get_global_model(), final_acc, final_f1, elapsed, round_history
@@ -311,16 +331,18 @@ def main() -> int:
     parser.add_argument("--local-epochs", type=int, default=2)
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--subsample", type=int, default=0,
-                        help="Subsample train set to N examples (0 = all)")
-    parser.add_argument("--quick", action="store_true",
-                        help="Tiny demo: 2 rounds, 1 local epoch, 2k subsample")
+    parser.add_argument(
+        "--subsample", type=int, default=0, help="Subsample train set to N examples (0 = all)"
+    )
+    parser.add_argument(
+        "--quick", action="store_true", help="Tiny demo: 2 rounds, 1 local epoch, 2k subsample"
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--data-path", type=Path, default=None)
-    parser.add_argument("--out-json", type=Path,
-                        default=REPO_ROOT / "results" / "federated_demo.json")
-    parser.add_argument("--out-md", type=Path,
-                        default=REPO_ROOT / "docs" / "federated_demo.md")
+    parser.add_argument(
+        "--out-json", type=Path, default=REPO_ROOT / "results" / "federated_demo.json"
+    )
+    parser.add_argument("--out-md", type=Path, default=REPO_ROOT / "docs" / "federated_demo.md")
     args = parser.parse_args()
 
     if args.quick:
@@ -342,8 +364,10 @@ def main() -> int:
     maps_all = df["waferMap"].values
 
     tr_idx, te_idx = train_test_split(
-        np.arange(len(labels_all)), test_size=0.20,
-        stratify=labels_all, random_state=42,
+        np.arange(len(labels_all)),
+        test_size=0.20,
+        stratify=labels_all,
+        random_state=42,
     )
     train_labels = labels_all[tr_idx]
     test_labels = labels_all[te_idx]
@@ -353,13 +377,14 @@ def main() -> int:
     if args.subsample > 0 and args.subsample < len(train_labels):
         logger.info("Subsampling train: %d -> %d", len(train_labels), args.subsample)
         sub = np.random.RandomState(0).choice(
-            len(train_labels), args.subsample, replace=False,
+            len(train_labels),
+            args.subsample,
+            replace=False,
         )
         train_labels = train_labels[sub]
         train_maps_raw = [train_maps_raw[i] for i in sub]
 
-    logger.info("Preprocessing train (%d) + test (%d) ...",
-                len(train_labels), len(test_labels))
+    logger.info("Preprocessing train (%d) + test (%d) ...", len(train_labels), len(test_labels))
     train_maps = np.array(preprocess_wafer_maps(train_maps_raw))
     test_maps = np.array(preprocess_wafer_maps(test_maps_raw))
 
@@ -378,48 +403,68 @@ def main() -> int:
 
     logger.info("=== Centralized baseline (%d epochs) ===", total_epochs)
     _, c_acc, c_f1, c_time = train_centralized(
-        train_ds, test_loader, num_classes,
-        total_epochs=total_epochs, lr=args.lr,
-        batch_size=args.batch_size, device=args.device,
+        train_ds,
+        test_loader,
+        num_classes,
+        total_epochs=total_epochs,
+        lr=args.lr,
+        batch_size=args.batch_size,
+        device=args.device,
     )
 
-    logger.info("=== FedAvg (%d rounds x %d local epochs x 3 fabs) ===",
-                args.rounds, args.local_epochs)
+    logger.info(
+        "=== FedAvg (%d rounds x %d local epochs x 3 fabs) ===", args.rounds, args.local_epochs
+    )
     _, f_acc, f_f1, f_time, round_hist = train_federated(
-        train_ds, fab_indices, test_loader, num_classes,
-        rounds=args.rounds, local_epochs=args.local_epochs,
-        lr=args.lr, batch_size=args.batch_size, device=args.device,
+        train_ds,
+        fab_indices,
+        test_loader,
+        num_classes,
+        rounds=args.rounds,
+        local_epochs=args.local_epochs,
+        lr=args.lr,
+        batch_size=args.batch_size,
+        device=args.device,
     )
 
-    cent = {"accuracy": c_acc, "macro_f1": c_f1, "wall_time_s": c_time,
-            "epochs": total_epochs}
-    fed = {"accuracy": f_acc, "macro_f1": f_f1, "wall_time_s": f_time,
-           "rounds": args.rounds, "local_epochs": args.local_epochs,
-           "num_fabs": 3}
+    cent = {"accuracy": c_acc, "macro_f1": c_f1, "wall_time_s": c_time, "epochs": total_epochs}
+    fed = {
+        "accuracy": f_acc,
+        "macro_f1": f_f1,
+        "wall_time_s": f_time,
+        "rounds": args.rounds,
+        "local_epochs": args.local_epochs,
+        "num_fabs": 3,
+    }
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_md.parent.mkdir(parents=True, exist_ok=True)
 
-    args.out_json.write_text(json.dumps({
-        "config": {
-            "rounds": args.rounds,
-            "local_epochs": args.local_epochs,
-            "batch_size": args.batch_size,
-            "lr": args.lr,
-            "subsample": args.subsample,
-        },
-        "class_names": class_names,
-        "partition": partition_rows,
-        "centralized": cent,
-        "federated": fed,
-        "fedavg_round_history": round_hist,
-    }, indent=2), encoding="utf-8")
+    args.out_json.write_text(
+        json.dumps(
+            {
+                "config": {
+                    "rounds": args.rounds,
+                    "local_epochs": args.local_epochs,
+                    "batch_size": args.batch_size,
+                    "lr": args.lr,
+                    "subsample": args.subsample,
+                },
+                "class_names": class_names,
+                "partition": partition_rows,
+                "centralized": cent,
+                "federated": fed,
+                "fedavg_round_history": round_hist,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     logger.info("Wrote %s", args.out_json)
 
     write_report(args.out_md, partition_rows, cent, fed, round_hist)
     logger.info("Wrote %s", args.out_md)
-    logger.info("Centralized acc=%.4f f1=%.4f | FedAvg acc=%.4f f1=%.4f",
-                c_acc, c_f1, f_acc, f_f1)
+    logger.info("Centralized acc=%.4f f1=%.4f | FedAvg acc=%.4f f1=%.4f", c_acc, c_f1, f_acc, f_f1)
     return 0
 
 

@@ -1,0 +1,40 @@
+src.cli.commands.calibrate
+==========================
+
+.. py:module:: src.cli.commands.calibrate
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli calibrate`` — temperature scaling / calibration metrics.
+
+   No dedicated legacy script exists for just "calibrate"; the closest
+   existing CLIs are:
+
+   * ``scripts/validate_model.py`` — full MC-Dropout + calibration audit
+     (reused by ``wafer-cli eval``), and
+   * ``scripts/pr_curves_ece.py`` — per-class PR + ECE
+     (reused by ``wafer-cli pr-ece``).
+
+   For CLI parity we forward to ``scripts/validate_model.py`` since its
+   ``--- Fitting Temperature Scaling ---`` block is exactly the
+   calibration workflow a user would expect from ``calibrate``. When a
+   standalone calibration CLI is introduced later, swap the import here.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.calibrate.calibrate
+
+
+Module Contents
+---------------
+
+.. py:function:: calibrate(ctx: typer.Context) -> None
+
+   Fit temperature scaling + report ECE. Flags forwarded to scripts/validate_model.py.
+
+

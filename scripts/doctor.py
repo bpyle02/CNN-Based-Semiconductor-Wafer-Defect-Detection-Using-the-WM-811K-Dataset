@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import os
 import json
 import logging
+import os
 import platform
 import re
 import shutil
@@ -166,7 +166,9 @@ def run_command(command: Iterable[str]) -> tuple[int, str]:
         text=True,
         check=False,
     )
-    output = "\n".join(part.strip() for part in (completed.stdout, completed.stderr) if part.strip())
+    output = "\n".join(
+        part.strip() for part in (completed.stdout, completed.stderr) if part.strip()
+    )
     return completed.returncode, output
 
 
@@ -241,7 +243,11 @@ def build_summary() -> DoctorSummary:
             summary.issues.append(f"Package {package.name} is not installed.")
             continue
 
-        if summary.conda_prefix and package.location and not _is_under_prefix(package.location, summary.conda_prefix):
+        if (
+            summary.conda_prefix
+            and package.location
+            and not _is_under_prefix(package.location, summary.conda_prefix)
+        ):
             summary.notes.append(
                 f"Package {package.name} resolves outside the conda prefix: {package.location}"
             )
@@ -272,8 +278,12 @@ def print_human_report(summary: DoctorSummary) -> None:
     logger.info("pytest executable: %s", summary.pytest_executable or "not found")
     logger.info("pip executable: %s", summary.pip_executable or "not found")
     logger.info("Python prefix: %s", summary.env_prefix)
-    logger.info("Config: %s (%s)", summary.config_path, "found" if summary.config_exists else "missing")
-    logger.info("Dataset: %s (%s)", summary.dataset_path, "found" if summary.dataset_exists else "missing")
+    logger.info(
+        "Config: %s (%s)", summary.config_path, "found" if summary.config_exists else "missing"
+    )
+    logger.info(
+        "Dataset: %s (%s)", summary.dataset_path, "found" if summary.dataset_exists else "missing"
+    )
     logger.info("Package resolution:")
     for pkg in summary.package_resolution:
         if pkg.installed:

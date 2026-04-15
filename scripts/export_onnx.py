@@ -79,6 +79,7 @@ def _validate_onnx(
     Returns a dict with ``mean_abs_diff`` and ``max_abs_diff`` in float.
     """
     import onnxruntime as ort  # imported lazily so the script runs even if
+
     # ``onnxruntime`` is missing (the export itself would still succeed).
 
     model.eval()
@@ -98,7 +99,9 @@ def _validate_onnx(
     if stats["mean_abs_diff"] > tolerance:
         logger.warning(
             "ONNX validation: mean|Δ|=%.3e > tol=%.0e for %s",
-            stats["mean_abs_diff"], tolerance, onnx_path.name,
+            stats["mean_abs_diff"],
+            tolerance,
+            onnx_path.name,
         )
     return stats
 
@@ -205,16 +208,18 @@ def export_all(
     for ckpt in discover_checkpoints(checkpoints_dir):
         name = infer_model_name(ckpt)
         if name is None or name not in KNOWN_MODEL_NAMES:
-            results.append(ExportResult(
-                model=ckpt.stem,
-                onnx_path=None,
-                size_mb=None,
-                mean_abs_diff=None,
-                max_abs_diff=None,
-                tolerance=tolerance,
-                ok=False,
-                error=f"unknown model in filename '{ckpt.name}'",
-            ))
+            results.append(
+                ExportResult(
+                    model=ckpt.stem,
+                    onnx_path=None,
+                    size_mb=None,
+                    mean_abs_diff=None,
+                    max_abs_diff=None,
+                    tolerance=tolerance,
+                    ok=False,
+                    error=f"unknown model in filename '{ckpt.name}'",
+                )
+            )
             continue
         logger.info("Exporting %s -> ONNX ...", name)
         results.append(
@@ -229,16 +234,22 @@ def export_all(
 
 
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--model", type=str, default=None,
-                   help="Architecture name (e.g. cnn, resnet, vit).")
-    p.add_argument("--checkpoint", type=Path, default=None,
-                   help="Checkpoint file to load before export.")
-    p.add_argument("--all", action="store_true",
-                   help="Export every *_best.pth under --checkpoints-dir.")
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    p.add_argument(
+        "--model", type=str, default=None, help="Architecture name (e.g. cnn, resnet, vit)."
+    )
+    p.add_argument(
+        "--checkpoint", type=Path, default=None, help="Checkpoint file to load before export."
+    )
+    p.add_argument(
+        "--all", action="store_true", help="Export every *_best.pth under --checkpoints-dir."
+    )
     p.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
-    p.add_argument("--out", type=Path, default=None,
-                   help="Output path; defaults to checkpoints/<model>.onnx.")
+    p.add_argument(
+        "--out", type=Path, default=None, help="Output path; defaults to checkpoints/<model>.onnx."
+    )
     p.add_argument("--opset", type=int, default=DEFAULT_OPSET)
     p.add_argument("--tolerance", type=float, default=DEFAULT_TOLERANCE)
     p.add_argument("--no-validate", action="store_true")
@@ -254,9 +265,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     if args.all:
-        results = export_all(
-            args.checkpoints_dir, opset=args.opset, tolerance=args.tolerance
-        )
+        results = export_all(args.checkpoints_dir, opset=args.opset, tolerance=args.tolerance)
     else:
         if args.model is None and args.checkpoint is None:
             logger.error("Pass --model, --checkpoint, or --all.")
@@ -265,18 +274,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         if name is None:
             name = infer_model_name(args.checkpoint)
             if name is None:
-                logger.error(
-                    "Cannot infer model from '%s'; pass --model.", args.checkpoint
-                )
+                logger.error("Cannot infer model from '%s'; pass --model.", args.checkpoint)
                 return 2
-        results = [export_single(
-            name,
-            checkpoint=args.checkpoint,
-            out_path=args.out,
-            opset=args.opset,
-            tolerance=args.tolerance,
-            validate=not args.no_validate,
-        )]
+        results = [
+            export_single(
+                name,
+                checkpoint=args.checkpoint,
+                out_path=args.out,
+                opset=args.opset,
+                tolerance=args.tolerance,
+                validate=not args.no_validate,
+            )
+        ]
 
     for r in results:
         line = (

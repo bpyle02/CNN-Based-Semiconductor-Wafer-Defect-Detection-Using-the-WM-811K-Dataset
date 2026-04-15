@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.trainer &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.utils" href="../../utils/index.html" />
+    <link rel="prev" title="src.training.supcon" href="../supcon/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.trainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/trainer/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.trainer">
+<span id="src-training-trainer"></span><h1>src.training.trainer<a class="headerlink" href="#module-src.training.trainer" title="Link to this heading"></a></h1>
+<p>Training loop for wafer defect classification models.</p>
+<p>Implements a supervised training loop with validation, learning rate
+scheduling, early stopping, optional mixed precision, metric tracking,
+Deferred Re-Weighting (DRW), Adaptive Re-Balancing (AREA), and
+Exponential Moving Average (EMA).</p>
+<p class="rubric">References</p>
+<p>[45] Kingma &amp; Ba (2015). “Adam: A Method for Stochastic Optimization”. arXiv:1412.6980
+[46] Loshchilov &amp; Hutter (2019). “Decoupled Weight Decay Regularization”. arXiv:1711.05101
+[133] Loshchilov &amp; Hutter (2017). “SGDR: Warm Restarts”. arXiv:1608.03983
+[134] Gotmare et al. (2019). “A Closer Look at Deep Learning Heuristics”. arXiv:1811.03716
+[135] Goyal et al. (2017). “Large Minibatch SGD”. arXiv:1706.02677
+[136] Smith &amp; Topin (2019). “Super-Convergence”. arXiv:1708.07120
+[137] Cao et al. (2019). “LDAM + DRW”. arXiv:1906.07413
+[138] Polyak &amp; Juditsky (1992). “Acceleration of Stochastic Approximation”
+[190] Chen et al. (2022). “AREA: Adaptive Re-balancing via an Effective Approach”. arXiv:2206.02841</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.trainer.logger" title="src.training.trainer.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.trainer.MONITORED_METRICS" title="src.training.trainer.MONITORED_METRICS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MONITORED_METRICS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.trainer.train_model" title="src.training.trainer.train_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train_model</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.trainer.AdaptiveRebalancer" title="src.training.trainer.AdaptiveRebalancer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdaptiveRebalancer</span></code></a></p></td>
+<td><p>Adaptive re-balancing: gradually increase class weights from uniform to</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.trainer.core_training_loop" title="src.training.trainer.core_training_loop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">core_training_loop</span></code></a>(→ Tuple[torch.nn.Module, Dict[str, ...)</p></td>
+<td><p>Train a model and return the best checkpoint according to <code class="docutils literal notranslate"><span class="pre">monitored_metric</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.training.trainer.logger">
+<span class="sig-prename descclassname"><span class="pre">src.training.trainer.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.trainer.</span></span><span class="sig-name descname"><span class="pre">AdaptiveRebalancer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_frequencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer" title="Link to this definition"></a></dt>
+<dd><p>Adaptive re-balancing: gradually increase class weights from uniform to
+inverse-frequency based on per-class validation performance.</p>
+<p>Instead of a hard DRW cutoff, smoothly interpolates:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>w_c(t) = (1 - alpha(t)) * uniform + alpha(t) * inverse_freq
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">alpha(t)</span></code> increases from 0 to 1 over training using a cosine
+schedule.  When per-class F1 scores are supplied the weights are further
+modulated so that poorly-performing classes receive larger weights.</p>
+<dl class="simple">
+<dt>Reference:</dt><dd><p>[190] Chen et al. (2022). “AREA: Adaptive Re-balancing via an
+Effective Approach”. arXiv:2206.02841</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.warmup_epochs">
+<span class="sig-name descname"><span class="pre">warmup_epochs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.warmup_epochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.warmup_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.total_epochs">
+<span class="sig-name descname"><span class="pre">total_epochs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">50</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.total_epochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.total_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.uniform">
+<span class="sig-name descname"><span class="pre">uniform</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.uniform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.uniform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.target_weights">
+<span class="sig-name descname"><span class="pre">target_weights</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.target_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.target_weights" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.trainer.AdaptiveRebalancer.get_weights">
+<span class="sig-name descname"><span class="pre">get_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_class_f1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#AdaptiveRebalancer.get_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.AdaptiveRebalancer.get_weights" title="Link to this definition"></a></dt>
+<dd><p>Return class weights for the current epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> – Current epoch number (1-indexed).</p></li>
+<li><p><strong>per_class_f1</strong> – Optional tensor of per-class F1 scores from the
+previous validation pass.  When provided, classes with low
+F1 receive a proportionally higher weight boost.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(num_classes,)</span></code> with non-negative weights.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="src.training.trainer.MONITORED_METRICS">
+<span class="sig-prename descclassname"><span class="pre">src.training.trainer.</span></span><span class="sig-name descname"><span class="pre">MONITORED_METRICS</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#MONITORED_METRICS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.MONITORED_METRICS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.trainer.core_training_loop">
+<span class="sig-prename descclassname"><span class="pre">src.training.trainer.</span></span><span class="sig-name descname"><span class="pre">core_training_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.lr_scheduler.LRScheduler</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_tracker</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../metrics_tracker/index.html#src.training.metrics_tracker.MetricsTracker" title="src.training.metrics_tracker.MetricsTracker"><span class="pre">src.training.metrics_tracker.MetricsTracker</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mixed_precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">early_stopping_enabled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">early_stopping_patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">early_stopping_min_delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitored_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'val_macro_f1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drw_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ema_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_rebalance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#core_training_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.core_training_loop" title="Link to this definition"></a></dt>
+<dd><p>Train a model and return the best checkpoint according to <code class="docutils literal notranslate"><span class="pre">monitored_metric</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – PyTorch model to train.</p></li>
+<li><p><strong>train_loader</strong> – DataLoader for the training set.</p></li>
+<li><p><strong>val_loader</strong> – DataLoader for the validation set.</p></li>
+<li><p><strong>criterion</strong> – Loss function.</p></li>
+<li><p><strong>optimizer</strong> – Optimizer instance.</p></li>
+<li><p><strong>scheduler</strong> – Optional learning-rate scheduler.</p></li>
+<li><p><strong>epochs</strong> – Number of epochs to train.</p></li>
+<li><p><strong>model_name</strong> – Human-readable name for logging.</p></li>
+<li><p><strong>device</strong> – Compute device.</p></li>
+<li><p><strong>gradient_clip</strong> – Optional gradient norm clipping threshold.</p></li>
+<li><p><strong>metrics_tracker</strong> – Optional metrics tracker.</p></li>
+<li><p><strong>metrics_output_path</strong> – Optional JSON path for tracked metrics.</p></li>
+<li><p><strong>mixed_precision</strong> – Enable CUDA mixed precision if available.</p></li>
+<li><p><strong>early_stopping_enabled</strong> – Whether to stop after repeated non-improving epochs.</p></li>
+<li><p><strong>early_stopping_patience</strong> – Number of bad epochs to tolerate.</p></li>
+<li><p><strong>early_stopping_min_delta</strong> – Minimum metric improvement to reset patience.</p></li>
+<li><p><strong>monitored_metric</strong> – One of <code class="docutils literal notranslate"><span class="pre">val_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">val_acc</span></code>, or <code class="docutils literal notranslate"><span class="pre">val_macro_f1</span></code>.</p></li>
+<li><p><strong>batch_transform</strong> – Optional callable (e.g. MixupCutmix) applied to each
+training batch. Must return <code class="docutils literal notranslate"><span class="pre">(mixed_images,</span> <span class="pre">labels_a,</span> <span class="pre">labels_b,</span> <span class="pre">lam)</span></code>.</p></li>
+<li><p><strong>drw_epoch</strong> – Deferred Re-Weighting schedule epoch. When set, epochs 1
+through <code class="docutils literal notranslate"><span class="pre">drw_epoch</span></code> use unweighted cross-entropy (representation
+learning phase), and epochs after <code class="docutils literal notranslate"><span class="pre">drw_epoch</span></code> switch to the
+weighted <code class="docutils literal notranslate"><span class="pre">criterion</span></code> (classifier adaptation phase). <code class="docutils literal notranslate"><span class="pre">None</span></code> or
+<code class="docutils literal notranslate"><span class="pre">0</span></code> disables DRW entirely. Ref: Cao et al. (2019) arXiv:1906.07413</p></li>
+<li><p><strong>use_ema</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, maintain an Exponential Moving Average of the
+model weights and use EMA weights for validation. The returned
+best model will have EMA weights applied. Ref: Polyak &amp;
+Juditsky (1992).</p></li>
+<li><p><strong>ema_decay</strong> – Decay factor for EMA (only used when <code class="docutils literal notranslate"><span class="pre">use_ema=True</span></code>).
+Typical range: 0.99 – 0.9999.</p></li>
+<li><p><strong>adaptive_rebalance</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use an <a class="reference internal" href="#src.training.trainer.AdaptiveRebalancer" title="src.training.trainer.AdaptiveRebalancer"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveRebalancer</span></code></a>
+to smoothly interpolate class weights from uniform to
+inverse-frequency over training instead of the hard DRW
+cutoff.  Requires the <code class="docutils literal notranslate"><span class="pre">criterion</span></code> to have a <code class="docutils literal notranslate"><span class="pre">weight</span></code>
+attribute (e.g. <code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code>).  Mutually exclusive
+with DRW (<code class="docutils literal notranslate"><span class="pre">drw_epoch</span></code> is ignored when enabled).
+Ref: Chen et al. (2022) arXiv:2206.02841</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of <code class="docutils literal notranslate"><span class="pre">(best_model,</span> <span class="pre">history_dict)</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="src.training.trainer.train_model">
+<span class="sig-prename descclassname"><span class="pre">src.training.trainer.</span></span><span class="sig-name descname"><span class="pre">train_model</span></span><a class="reference internal" href="../../../../_modules/src/training/trainer.html#train_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.trainer.train_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../supcon/index.html" class="btn btn-neutral float-left" title="src.training.supcon" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../utils/index.html" class="btn btn-neutral float-right" title="src.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

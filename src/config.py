@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 
@@ -18,7 +19,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 logger = logging.getLogger(__name__)
 
-MODEL_ALIASES = {"effnet": "efficientnet", "vit_small": "vit", "vit_tiny": "vit", "swin_tiny": "swin", "swin_micro": "swin"}
+MODEL_ALIASES = {
+    "effnet": "efficientnet",
+    "vit_small": "vit",
+    "vit_tiny": "vit",
+    "swin_tiny": "swin",
+    "swin_micro": "swin",
+}
 SUPPORTED_MODELS = {"cnn", "cnn_fpn", "resnet", "efficientnet", "vit", "swin", "ride"}
 
 
@@ -42,6 +49,7 @@ class StrictConfigModel(BaseModel):
 
 class SyntheticAugConfig(StrictConfigModel):
     """Config for synthetic defect generation to balance rare classes."""
+
     enabled: bool = False
     target_per_class: Optional[int] = None  # None = match max class count
 
@@ -110,6 +118,11 @@ class ModelConfig(StrictConfigModel):
     head_dropout: Optional[float] = None
     freeze_until: Optional[str] = None
     frozen_prefixes: Optional[List[str]] = None
+    # When True (default), frozen pretrained-backbone BN layers are kept in
+    # .eval() so their running stats don't drift on the target distribution.
+    # Critical for EfficientNet-B0 on WM-811K; see
+    # src/models/pretrained.py::freeze_batchnorm_stats.
+    freeze_bn: bool = True
     fpn_out_channels: Optional[int] = None
     attention_type: Optional[str] = None  # None, "se", or "cbam"
     attention_reduction: int = 16
@@ -240,6 +253,7 @@ class SchedulerConfig(StrictConfigModel):
 
 class MixupConfig(StrictConfigModel):
     """Mixup / CutMix batch augmentation configuration."""
+
     enabled: bool = False
     mixup_alpha: float = Field(default=0.2, ge=0.0)
     cutmix_alpha: float = Field(default=1.0, ge=0.0)
@@ -252,6 +266,7 @@ class EMAConfig(StrictConfigModel):
 
     Reference: Polyak & Juditsky (1992). "Acceleration of Stochastic Approximation"
     """
+
     enabled: bool = False
     decay: float = Field(default=0.999, ge=0.0, lt=1.0)
 
@@ -261,6 +276,7 @@ class TTAConfig(StrictConfigModel):
 
     Reference: Shanmugam et al. (2021). "Better Aggregation in TTA". arXiv:2011.11156
     """
+
     enabled: bool = False
     num_views: int = Field(default=5, ge=1)
 
@@ -270,6 +286,7 @@ class SemiSupervisedConfig(StrictConfigModel):
 
     Reference: [111] Sohn et al. (2020). "FixMatch". arXiv:2001.07685
     """
+
     enabled: bool = False
     method: str = "fixmatch"
     confidence_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
@@ -508,7 +525,9 @@ class WandbConfig(StrictConfigModel):
 
 class MLflowConfig(StrictConfigModel):
     enabled: bool = False
-    tracking_uri: str = "http://localhost:5000"
+    tracking_uri: str = Field(
+        default_factory=lambda: os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    )
     experiment_name: str = "wafer_defect"
 
 
@@ -553,6 +572,7 @@ class DistributedConfig(StrictConfigModel):
 
 class CalibrationConfig(StrictConfigModel):
     """Post-hoc probability calibration via temperature scaling or asymmetric."""
+
     enabled: bool = False
     method: str = "temperature_scaling"
 
@@ -610,6 +630,7 @@ class SupConConfig(StrictConfigModel):
 
     Reference: Khosla et al. (2020). "Supervised Contrastive Learning". arXiv:2004.11362
     """
+
     enabled: bool = False
     temperature: float = Field(default=0.07, gt=0.0)
     projection_dim: int = Field(default=128, gt=0)
@@ -624,6 +645,7 @@ class SemiSupervisedConfig(StrictConfigModel):
 
     Reference: Sohn et al. (2020). "FixMatch". arXiv:2001.07685
     """
+
     enabled: bool = False
     method: str = "fixmatch"
     confidence_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
@@ -647,7 +669,9 @@ class Config(StrictConfigModel):
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     mlops: MLOpsConfig = Field(default_factory=MLOpsConfig)
     cross_validation: CrossValidationConfig = Field(default_factory=CrossValidationConfig)
-    progressive_training: ProgressiveTrainingConfig = Field(default_factory=ProgressiveTrainingConfig)
+    progressive_training: ProgressiveTrainingConfig = Field(
+        default_factory=ProgressiveTrainingConfig
+    )
     distributed: DistributedConfig = Field(default_factory=DistributedConfig)
     calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
     uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
@@ -728,7 +752,9 @@ class Config(StrictConfigModel):
         if isinstance(training_cfg, dict):
             checkpointing_cfg = training_cfg.get("checkpointing")
             if isinstance(checkpointing_cfg, dict):
-                config_dict.setdefault("checkpoint_dir", checkpointing_cfg.get("save_dir", "checkpoints"))
+                config_dict.setdefault(
+                    "checkpoint_dir", checkpointing_cfg.get("save_dir", "checkpoints")
+                )
             config_dict.setdefault("seed", training_cfg.get("seed", config_dict.get("seed", 42)))
 
         mlops_cfg = config_dict.get("mlops")
@@ -786,7 +812,9 @@ def load_config(config_path: str = "config.yaml") -> Config:
 def load_merged_config(config_paths: Iterable[Union[str, Path]]) -> Config:
     """Load a merged configuration from multiple YAML files."""
     config_paths = list(config_paths)
-    logger.info("Loading merged configuration from %s", ", ".join(str(path) for path in config_paths))
+    logger.info(
+        "Loading merged configuration from %s", ", ".join(str(path) for path in config_paths)
+    )
     return Config.from_files(config_paths)
 
 
@@ -794,11 +822,7 @@ def deep_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str
     """Recursively merge dictionaries, with override taking precedence."""
     result = dict(base)
     for key, value in override.items():
-        if (
-            key in result
-            and isinstance(result[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = deep_merge_dicts(result[key], value)
         else:
             result[key] = value

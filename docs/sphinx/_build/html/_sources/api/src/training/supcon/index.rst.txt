@@ -1,0 +1,291 @@
+src.training.supcon
+===================
+
+.. py:module:: src.training.supcon
+
+.. autoapi-nested-parse::
+
+   Supervised Contrastive Learning (SupCon) for wafer defect detection.
+
+   Two-stage training: (1) pretrain backbone with SupConLoss to learn discriminative
+   embeddings that pull same-class samples together and push different-class samples
+   apart, then (2) fine-tune a linear classifier on the frozen backbone.
+
+   Especially effective for imbalanced datasets like WM-811K (150:1 class ratio)
+   because the contrastive objective treats every same-class pair equally regardless
+   of class size.
+
+   Also includes Parametric Contrastive Learning (PaCo) which extends SupCon with
+   learnable class-specific prototype centers, giving rare classes more positive
+   anchors and compensating for imbalance.
+
+   .. rubric:: References
+
+   [76] Khosla et al. (2020). "Supervised Contrastive Learning". arXiv:2004.11362
+   [37] Chen et al. (2020). "SimCLR: Contrastive Learning of Visual Representations". arXiv:2002.05709
+   [182] Cui et al. (2021). "PaCo: Parametric Contrastive Learning". arXiv:2109.01903
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.training.supcon.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.training.supcon.SupConLoss
+   src.training.supcon.PaCoLoss
+   src.training.supcon.SupConProjectionHead
+   src.training.supcon.SupConTrainer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.training.supcon.extract_backbone_features
+   src.training.supcon.get_backbone_feature_dim
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: SupConLoss(temperature: float = 0.07, base_temperature: float = 0.07)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Supervised Contrastive Loss.
+
+   For each anchor, positives are same-class samples in the batch, negatives are
+   different-class samples.  The loss maximises the log-ratio of positive-pair
+   similarity to all-pair similarity:
+
+       L = -1/(|P(i)|) * sum_{p in P(i)} log( exp(sim(i,p)/tau) / sum_{a!=i} exp(sim(i,a)/tau) )
+
+   averaged over all anchors *i* in the batch.
+
+   Reference: [76] Khosla et al. (2020). arXiv:2004.11362
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: temperature
+      :value: 0.07
+
+
+
+   .. py:attribute:: base_temperature
+      :value: 0.07
+
+
+
+   .. py:method:: forward(features: torch.Tensor, labels: torch.Tensor) -> torch.Tensor
+
+      Compute supervised contrastive loss.
+
+      :param features: (B, D) L2-normalized embedding vectors.
+      :param labels: (B,) integer class labels.
+
+      :returns: Scalar loss value.
+
+
+
+.. py:class:: PaCoLoss(num_classes: int = 9, feat_dim: int = 128, temperature: float = 0.07, base_temperature: float = 0.07)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Parametric Contrastive Loss for long-tailed recognition.
+
+   Extends SupConLoss with learnable class-specific prototype centers.
+   Each class has a learnable center vector; these act as additional
+   positives in the contrastive objective, ensuring rare classes always
+   have sufficient positive pairs.
+
+   Reference: [182] Cui et al. (2021). "PaCo". arXiv:2109.01903
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: temperature
+      :value: 0.07
+
+
+
+   .. py:attribute:: base_temperature
+      :value: 0.07
+
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+   .. py:attribute:: centers
+
+
+   .. py:method:: forward(features: torch.Tensor, labels: torch.Tensor) -> torch.Tensor
+
+      Compute parametric contrastive loss.
+
+      :param features: (B, D) L2-normalized embeddings.
+      :param labels: (B,) integer class labels.
+
+      :returns: Scalar loss value.
+
+
+
+.. py:class:: SupConProjectionHead(in_dim: int, hidden_dim: int = 256, out_dim: int = 128)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   MLP projection head for supervised contrastive learning.
+
+   Maps backbone features to a lower-dimensional space where the contrastive
+   loss is applied.  The architecture follows the standard 2-layer MLP with
+   ReLU activation and L2-normalised output.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: projection
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      Project and L2-normalise features.
+
+      :param x: (B, in_dim) backbone features.
+
+      :returns: (B, out_dim) L2-normalised embeddings.
+
+
+
+.. py:function:: extract_backbone_features(model: torch.nn.Module, x: torch.Tensor, model_type: str = 'auto') -> torch.Tensor
+
+   Extract features from a backbone model (without the classification head).
+
+   Supported model types:
+       - ``"cnn"`` / ``"wafercnn"``: Uses ``model.features`` + ``model.avg_pool``
+       - ``"resnet"``: Forward through all layers except ``model.fc``
+       - ``"efficientnet"``: Uses ``model.features`` + adaptive pool
+       - ``"auto"``: Detect automatically from model class / attributes
+
+   :param model: The backbone model.
+   :param x: (B, C, H, W) input images.
+   :param model_type: Architecture hint.
+
+   :returns: (B, D) flattened feature tensor.
+
+
+.. py:function:: get_backbone_feature_dim(model: torch.nn.Module, model_type: str = 'auto') -> int
+
+   Infer the feature dimensionality produced by the backbone.
+
+   :param model: The backbone model.
+   :param model_type: Architecture hint (``"cnn"``, ``"resnet"``, ``"efficientnet"``, ``"auto"``).
+
+   :returns: Integer feature dimension.
+
+
+.. py:class:: SupConTrainer(backbone: torch.nn.Module, num_classes: int, projection_head: Optional[SupConProjectionHead] = None, model_type: str = 'auto', device: str = 'cpu')
+
+   Two-stage Supervised Contrastive Learning trainer.
+
+   Stage 1 (pretrain): Train backbone + projection head with ``SupConLoss``.
+   Stage 2 (finetune): Freeze backbone, train a linear classifier with CrossEntropy.
+
+   :param backbone: The base model (WaferCNN, ResNet-18, EfficientNet-B0, etc.).
+   :param num_classes: Number of output classes.
+   :param projection_head: Optional custom projection head.  When ``None`` a
+                           ``SupConProjectionHead`` is built automatically.
+   :param model_type: Architecture hint for feature extraction.
+   :param device: ``"cuda"`` or ``"cpu"``.
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: num_classes
+
+
+   .. py:attribute:: model_type
+      :value: 'auto'
+
+
+
+   .. py:attribute:: backbone
+
+
+   .. py:attribute:: feature_dim
+
+
+   .. py:attribute:: classifier
+      :type:  Optional[torch.nn.Module]
+      :value: None
+
+
+
+   .. py:method:: pretrain(train_loader: torch.utils.data.DataLoader, epochs: int = 50, lr: float = 0.05, temperature: float = 0.07, weight_decay: float = 0.0001) -> Dict[str, List[float]]
+
+      Stage 1: Pretrain backbone + projection head with SupConLoss.
+
+      :param train_loader: DataLoader yielding ``(images, labels)`` batches.
+      :param epochs: Number of pretraining epochs.
+      :param lr: Learning rate for SGD optimizer.
+      :param temperature: Temperature for SupConLoss.
+      :param weight_decay: L2 regularisation strength.
+
+      :returns: Dictionary with ``"loss"`` key mapping to per-epoch loss values.
+
+
+
+   .. py:method:: pretrain_paco(train_loader: torch.utils.data.DataLoader, epochs: int = 50, lr: float = 0.05, temperature: float = 0.07, weight_decay: float = 0.0001) -> Dict[str, List[float]]
+
+      Stage 1 (PaCo variant): Pretrain backbone + projection head with PaCoLoss.
+
+      Identical to ``pretrain()`` but uses Parametric Contrastive Loss with
+      learnable class-specific prototype centers.  The centers are included
+      in the optimizer so they are updated jointly with the backbone and
+      projection head.
+
+      :param train_loader: DataLoader yielding ``(images, labels)`` batches.
+      :param epochs: Number of pretraining epochs.
+      :param lr: Learning rate for SGD optimizer.
+      :param temperature: Temperature for PaCoLoss.
+      :param weight_decay: L2 regularisation strength.
+
+      :returns: Dictionary with ``"loss"`` key mapping to per-epoch loss values.
+
+
+
+   .. py:method:: finetune(train_loader: torch.utils.data.DataLoader, val_loader: torch.utils.data.DataLoader, epochs: int = 25, lr: float = 0.01, weight_decay: float = 0.0001, class_weights: Optional[torch.Tensor] = None) -> Tuple[torch.nn.Module, Dict[str, List[float]]]
+
+      Stage 2: Train a linear classifier on frozen backbone features.
+
+      :param train_loader: Training DataLoader.
+      :param val_loader: Validation DataLoader.
+      :param epochs: Number of fine-tuning epochs.
+      :param lr: Learning rate for the linear classifier.
+      :param weight_decay: L2 regularisation strength.
+      :param class_weights: Optional per-class weights for CrossEntropyLoss.
+
+      :returns: Tuple of ``(full_model, history)`` where ``full_model`` is an
+                ``nn.Sequential(backbone_features, classifier)`` and ``history``
+                contains ``"train_loss"``, ``"val_loss"``, and ``"val_acc"`` lists.
+
+
+

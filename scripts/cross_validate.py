@@ -74,8 +74,10 @@ VALID_MODELS = ("cnn", "resnet", "efficientnet", "ride", "swin")
 # Setup helpers
 # ---------------------------------------------------------------------------
 
+
 def set_seed(seed: int) -> None:
     import random
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -133,13 +135,16 @@ def build_model(model_type: str, num_classes: int, device: str) -> Tuple[nn.Modu
     if model_type == "swin":
         return get_swin_tiny(num_classes=num_classes).to(device), False
     if model_type == "ride":
-        return build_ride_model(
-            backbone_name="cnn",
-            num_classes=num_classes,
-            num_experts=3,
-            reduction=4,
-            device=device,
-        ), False
+        return (
+            build_ride_model(
+                backbone_name="cnn",
+                num_classes=num_classes,
+                num_experts=3,
+                reduction=4,
+                device=device,
+            ),
+            False,
+        )
     raise ValueError(f"Unknown model_type={model_type!r}; expected one of {VALID_MODELS}")
 
 
@@ -155,6 +160,7 @@ def compute_loss_weights(y: np.ndarray, num_classes: int) -> torch.Tensor:
 # ---------------------------------------------------------------------------
 # CV loop
 # ---------------------------------------------------------------------------
+
 
 def run_fold(
     fold_idx: int,
@@ -204,8 +210,7 @@ def run_fold(
     test_ds = WaferMapDataset(test_maps, y_test, transform=eval_transform)
 
     g = torch.Generator().manual_seed(seed)
-    loader_kw = dict(batch_size=batch_size, num_workers=0,
-                     worker_init_fn=seed_worker, generator=g)
+    loader_kw = dict(batch_size=batch_size, num_workers=0, worker_init_fn=seed_worker, generator=g)
     train_loader = DataLoader(train_ds, shuffle=True, **loader_kw)
     val_loader = DataLoader(val_ds, shuffle=False, **loader_kw)
     test_loader = DataLoader(test_ds, shuffle=False, **loader_kw)
@@ -216,20 +221,31 @@ def run_fold(
     lr = 1e-3 if model_type in ("cnn", "ride") else 1e-4
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
-        lr=lr, weight_decay=1e-4,
+        lr=lr,
+        weight_decay=1e-4,
     )
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=3
-    )
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=3)
 
-    logger.info("  Fold %d/%d: train=%d val=%d test=%d (model=%s, lr=%g)",
-                fold_idx + 1, n_folds, len(inner_train_idx), len(inner_val_idx),
-                len(test_idx), model_type, lr)
+    logger.info(
+        "  Fold %d/%d: train=%d val=%d test=%d (model=%s, lr=%g)",
+        fold_idx + 1,
+        n_folds,
+        len(inner_train_idx),
+        len(inner_val_idx),
+        len(test_idx),
+        model_type,
+        lr,
+    )
 
     t0 = time.time()
     model, _ = train_model(
-        model, train_loader, val_loader, criterion, optimizer,
-        scheduler=scheduler, epochs=epochs,
+        model,
+        train_loader,
+        val_loader,
+        criterion,
+        optimizer,
+        scheduler=scheduler,
+        epochs=epochs,
         model_name=f"{model_type.upper()} (fold {fold_idx + 1}/{n_folds})",
         device=device,
     )
@@ -249,8 +265,13 @@ def run_fold(
     mf1 = float(f1_score(targets, preds, average="macro", zero_division=0))
     wf1 = float(f1_score(targets, preds, average="weighted", zero_division=0))
 
-    logger.info("    -> test_acc=%.4f test_macro_f1=%.4f test_weighted_f1=%.4f (%.1fs)",
-                acc, mf1, wf1, train_time)
+    logger.info(
+        "    -> test_acc=%.4f test_macro_f1=%.4f test_weighted_f1=%.4f (%.1fs)",
+        acc,
+        mf1,
+        wf1,
+        train_time,
+    )
 
     return {
         "fold": fold_idx + 1,
@@ -276,8 +297,7 @@ def cross_validate(
     seed: int,
 ) -> Dict[str, Any]:
     logger.info("=" * 70)
-    logger.info("CV: model=%s folds=%d epochs=%d device=%s",
-                model_type, n_folds, epochs, device)
+    logger.info("CV: model=%s folds=%d epochs=%d device=%s", model_type, n_folds, epochs, device)
     logger.info("=" * 70)
 
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=seed)
@@ -285,10 +305,18 @@ def cross_validate(
     per_fold: List[Dict[str, float]] = []
     for fold_idx, (train_idx, test_idx) in enumerate(skf.split(maps, labels)):
         r = run_fold(
-            fold_idx=fold_idx, n_folds=n_folds, model_type=model_type,
-            train_idx=train_idx, test_idx=test_idx,
-            maps=maps, labels=labels, class_names=class_names,
-            batch_size=batch_size, epochs=epochs, device=device, seed=seed,
+            fold_idx=fold_idx,
+            n_folds=n_folds,
+            model_type=model_type,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            maps=maps,
+            labels=labels,
+            class_names=class_names,
+            batch_size=batch_size,
+            epochs=epochs,
+            device=device,
+            seed=seed,
         )
         per_fold.append(r)
 
@@ -323,6 +351,7 @@ def cross_validate(
 # ---------------------------------------------------------------------------
 # Output writers
 # ---------------------------------------------------------------------------
+
 
 def write_json(results: Dict[str, Any], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -366,8 +395,7 @@ def write_markdown(results: Dict[str, Any], out_path: Path) -> None:
     for metric in ("accuracy", "macro_f1", "weighted_f1"):
         a = agg[metric]
         lines.append(
-            f"| {metric} | {a['mean']:.4f} | {a['std']:.4f} | "
-            f"{a['min']:.4f} | {a['max']:.4f} |"
+            f"| {metric} | {a['mean']:.4f} | {a['std']:.4f} | " f"{a['min']:.4f} | {a['max']:.4f} |"
         )
     lines.append("")
     lines.append(
@@ -384,13 +412,19 @@ def write_markdown(results: Dict[str, Any], out_path: Path) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Stratified K-fold CV for wafer defect models")
     parser.add_argument("--model", choices=VALID_MODELS, default="cnn")
-    parser.add_argument("--n-folds", "--n-splits", dest="n_folds",
-                        type=int, default=5, help="Number of stratified folds (default 5)")
-    parser.add_argument("--epochs", type=int, default=10,
-                        help="Epochs per fold (default 10)")
+    parser.add_argument(
+        "--n-folds",
+        "--n-splits",
+        dest="n_folds",
+        type=int,
+        default=5,
+        help="Number of stratified folds (default 5)",
+    )
+    parser.add_argument("--epochs", type=int, default=10, help="Epochs per fold (default 10)")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--device", choices=["cuda", "cpu"], default=None)
     parser.add_argument("--seed", type=int, default=SEED)
@@ -409,12 +443,14 @@ def main() -> int:
     try:
         cfg = load_config(args.config)
     except Exception as exc:
-        logger.warning("load_config(%s) failed (%s); using built-in defaults",
-                       args.config, exc)
+        logger.warning("load_config(%s) failed (%s); using built-in defaults", args.config, exc)
         cfg = None
 
-    device = args.device or (getattr(cfg, "device", None) if cfg else None) or (
-        "cuda" if torch.cuda.is_available() else "cpu")
+    device = (
+        args.device
+        or (getattr(cfg, "device", None) if cfg else None)
+        or ("cuda" if torch.cuda.is_available() else "cpu")
+    )
 
     if args.data_path is None:
         if cfg is not None:
@@ -431,9 +467,14 @@ def main() -> int:
 
     results = cross_validate(
         model_type=args.model,
-        maps=maps, labels=labels, class_names=class_names,
-        n_folds=args.n_folds, batch_size=args.batch_size,
-        epochs=args.epochs, device=device, seed=args.seed,
+        maps=maps,
+        labels=labels,
+        class_names=class_names,
+        n_folds=args.n_folds,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
+        device=device,
+        seed=args.seed,
     )
 
     json_path = args.results_dir / f"cv_{args.model}.json"
@@ -443,12 +484,12 @@ def main() -> int:
 
     agg = results["aggregate"]
     logger.info("=" * 70)
-    logger.info("CV SUMMARY — %s (%d folds, %d epochs/fold)",
-                args.model, args.n_folds, args.epochs)
+    logger.info("CV SUMMARY — %s (%d folds, %d epochs/fold)", args.model, args.n_folds, args.epochs)
     for metric in ("accuracy", "macro_f1", "weighted_f1"):
         a = agg[metric]
-        logger.info("  %s: %.4f ± %.4f (min=%.4f max=%.4f)",
-                    metric, a["mean"], a["std"], a["min"], a["max"])
+        logger.info(
+            "  %s: %.4f ± %.4f (min=%.4f max=%.4f)", metric, a["mean"], a["std"], a["min"], a["max"]
+        )
     logger.info("=" * 70)
 
     return 0

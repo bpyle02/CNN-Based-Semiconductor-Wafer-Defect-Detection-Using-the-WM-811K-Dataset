@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.pipeline &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.training.semi_supervised" href="../semi_supervised/index.html" />
+    <link rel="prev" title="src.training.metrics_tracker" href="../metrics_tracker/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/pipeline/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.pipeline">
+<span id="src-training-pipeline"></span><h1>src.training.pipeline<a class="headerlink" href="#module-src.training.pipeline" title="Link to this heading"></a></h1>
+<p>TrainingPipeline orchestrator.</p>
+<p>The pipeline resolves CLI args vs config, prepares data, builds models one at
+a time, runs the inner training loop (<code class="docutils literal notranslate"><span class="pre">core_training_loop</span></code>), evaluates, and
+optionally runs ensemble evaluation + MLflow/W&amp;B logging.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.pipeline.TrainingPipeline" title="src.training.pipeline.TrainingPipeline"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrainingPipeline</span></code></a></p></td>
+<td><p>Orchestrates the full training pipeline with clear phase methods.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.pipeline.set_seed" title="src.training.pipeline.set_seed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_seed</span></code></a>(→ None)</p></td>
+<td><p>Set random seeds for reproducibility.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.pipeline.set_seed">
+<span class="sig-prename descclassname"><span class="pre">src.training.pipeline.</span></span><span class="sig-name descname"><span class="pre">set_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deterministic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#set_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.set_seed" title="Link to this definition"></a></dt>
+<dd><p>Set random seeds for reproducibility.</p>
+<p>By default we enable <code class="docutils literal notranslate"><span class="pre">torch.backends.cudnn.benchmark</span></code> (autotuner picks
+the fastest conv algorithm per input shape) and leave determinism off —
+this gives ~8-15% speedup on Ampere+ GPUs like Colab Pro’s A100. Pass
+<code class="docutils literal notranslate"><span class="pre">deterministic=True</span></code> to trade that for bit-for-bit reproducibility
+between runs on the same hardware (needed for CI metric gating).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.pipeline.</span></span><span class="sig-name descname"><span class="pre">TrainingPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline" title="Link to this definition"></a></dt>
+<dd><p>Orchestrates the full training pipeline with clear phase methods.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.data">
+<span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.criterion">
+<span class="sig-name descname"><span class="pre">criterion</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.criterion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.criterion" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.train_aug">
+<span class="sig-name descname"><span class="pre">train_aug</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.train_aug"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.train_aug" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.pretrained_train_transform">
+<span class="sig-name descname"><span class="pre">pretrained_train_transform</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.pretrained_train_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.pretrained_train_transform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.pretrained_val_transform">
+<span class="sig-name descname"><span class="pre">pretrained_val_transform</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.pretrained_val_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.pretrained_val_transform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.training_cfg">
+<span class="sig-name descname"><span class="pre">training_cfg</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.training_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.training_cfg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.data_cfg">
+<span class="sig-name descname"><span class="pre">data_cfg</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.data_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.data_cfg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.ckpt_dir">
+<span class="sig-name descname"><span class="pre">ckpt_dir</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.ckpt_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.ckpt_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.results_dir">
+<span class="sig-name descname"><span class="pre">results_dir</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.results_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.results_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.wb_logger">
+<span class="sig-name descname"><span class="pre">wb_logger</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.wb_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.wb_logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.mf_logger">
+<span class="sig-name descname"><span class="pre">mf_logger</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.mf_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.mf_logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.results" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.configure">
+<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.configure" title="Link to this definition"></a></dt>
+<dd><p>Resolve CLI args vs config.yaml vs hardcoded defaults.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.prepare_data" title="Link to this definition"></a></dt>
+<dd><p>Call load_and_preprocess_data(), create transforms, set up loss function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.build_model">
+<span class="sig-name descname"><span class="pre">build_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.build_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.build_model" title="Link to this definition"></a></dt>
+<dd><p>Construct model, optimizer, scheduler for a given model name.</p>
+<p>Also loads pretrained checkpoint and wraps with DataParallel if configured.
+Returns (model, display_name).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.train_and_evaluate">
+<span class="sig-name descname"><span class="pre">train_and_evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.train_and_evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.train_and_evaluate" title="Link to this definition"></a></dt>
+<dd><p>Train one model, evaluate on test set, return results dict.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.pipeline.TrainingPipeline.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../../_modules/src/training/pipeline.html#TrainingPipeline.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.pipeline.TrainingPipeline.run" title="Link to this definition"></a></dt>
+<dd><p>Orchestrate the full pipeline: configure, prepare_data, loop over models,
+print summary, save metrics JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../metrics_tracker/index.html" class="btn btn-neutral float-left" title="src.training.metrics_tracker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../semi_supervised/index.html" class="btn btn-neutral float-right" title="src.training.semi_supervised" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

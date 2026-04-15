@@ -13,8 +13,8 @@ Usage:
 
 import ast
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -25,33 +25,40 @@ OUTPUT_DOT = OUTPUT_DIR / "dependency_graph.dot"
 
 # Packages inside src/ that get their own cluster
 SRC_PACKAGES = [
-    "data", "models", "training", "analysis",
-    "inference", "augmentation", "detection", "federated", "mlops",
+    "data",
+    "models",
+    "training",
+    "analysis",
+    "inference",
+    "augmentation",
+    "detection",
+    "federated",
+    "mlops",
 ]
 
 # Colors per package cluster (pastel-ish for readability)
 CLUSTER_COLORS = {
-    "data":          "#E8F5E9",  # green
-    "models":        "#E3F2FD",  # blue
-    "training":      "#FFF3E0",  # orange
-    "analysis":      "#F3E5F5",  # purple
-    "inference":     "#E0F7FA",  # cyan
-    "augmentation":  "#FFF9C4",  # yellow
-    "detection":     "#FFEBEE",  # red
-    "federated":     "#F1F8E9",  # lime
-    "mlops":         "#EFEBE9",  # brown
+    "data": "#E8F5E9",  # green
+    "models": "#E3F2FD",  # blue
+    "training": "#FFF3E0",  # orange
+    "analysis": "#F3E5F5",  # purple
+    "inference": "#E0F7FA",  # cyan
+    "augmentation": "#FFF9C4",  # yellow
+    "detection": "#FFEBEE",  # red
+    "federated": "#F1F8E9",  # lime
+    "mlops": "#EFEBE9",  # brown
 }
 
 CLUSTER_BORDER_COLORS = {
-    "data":          "#4CAF50",
-    "models":        "#2196F3",
-    "training":      "#FF9800",
-    "analysis":      "#9C27B0",
-    "inference":     "#00BCD4",
-    "augmentation":  "#FFC107",
-    "detection":     "#F44336",
-    "federated":     "#8BC34A",
-    "mlops":         "#795548",
+    "data": "#4CAF50",
+    "models": "#2196F3",
+    "training": "#FF9800",
+    "analysis": "#9C27B0",
+    "inference": "#00BCD4",
+    "augmentation": "#FFC107",
+    "detection": "#F44336",
+    "federated": "#8BC34A",
+    "mlops": "#795548",
 }
 
 
@@ -165,9 +172,7 @@ def extract_imports_detailed(filepath: Path) -> Set[str]:
         elif isinstance(node, ast.ImportFrom):
             if node.level and node.level > 0:
                 # Relative import
-                resolved = resolve_relative_import(
-                    filepath, node.module or "", node.level
-                )
+                resolved = resolve_relative_import(filepath, node.module or "", node.level)
                 imports.add(resolved)
             elif node.module:
                 imports.add(node.module)
@@ -254,21 +259,21 @@ def generate_dot(
     """Generate the Graphviz DOT source."""
 
     lines = []
-    lines.append('digraph DependencyGraph {')
-    lines.append('    // Graph settings')
-    lines.append('    rankdir=LR;')
+    lines.append("digraph DependencyGraph {")
+    lines.append("    // Graph settings")
+    lines.append("    rankdir=LR;")
     lines.append('    fontname="Times";')
-    lines.append('    fontsize=14;')
+    lines.append("    fontsize=14;")
     lines.append('    label="\\nCNN Wafer Defect Detection - Internal Dependency Graph\\n";')
-    lines.append('    labelloc=t;')
-    lines.append('    compound=true;')
-    lines.append('    nodesep=0.4;')
-    lines.append('    ranksep=1.0;')
-    lines.append('')
-    lines.append('    // Default node style')
+    lines.append("    labelloc=t;")
+    lines.append("    compound=true;")
+    lines.append("    nodesep=0.4;")
+    lines.append("    ranksep=1.0;")
+    lines.append("")
+    lines.append("    // Default node style")
     lines.append('    node [shape=box, style="filled,rounded", fontname="Times", fontsize=10];')
     lines.append('    edge [color="#555555", arrowsize=0.7];')
-    lines.append('')
+    lines.append("")
 
     # Group modules by their group key
     groups: Dict[str, List[str]] = defaultdict(list)
@@ -294,96 +299,96 @@ def generate_dot(
         bg = CLUSTER_COLORS.get(pkg, "#F5F5F5")
         border = CLUSTER_BORDER_COLORS.get(pkg, "#999999")
 
-        lines.append(f'    subgraph cluster_{pkg} {{')
+        lines.append(f"    subgraph cluster_{pkg} {{")
         lines.append(f'        label="{pkg}";')
         lines.append(f'        style="filled,rounded";')
         lines.append(f'        fillcolor="{bg}";')
         lines.append(f'        color="{border}";')
         lines.append(f'        fontname="Times";')
-        lines.append(f'        fontsize=12;')
-        lines.append('')
+        lines.append(f"        fontsize=12;")
+        lines.append("")
         for mod in all_mods:
             nid = dot_node_id(mod)
             display = mod.split(".")[-1]
             if display == "__init__":
                 display = f"{pkg} (init)"
             lines.append(f'        {nid} [label="{display}", fillcolor="white"];')
-        lines.append('    }')
-        lines.append('')
+        lines.append("    }")
+        lines.append("")
 
     # src root modules (config.py, exceptions.py, model_registry.py, __init__.py)
     src_root_mods = groups.get("src_root", [])
     if src_root_mods:
-        lines.append('    subgraph cluster_src_root {')
+        lines.append("    subgraph cluster_src_root {")
         lines.append('        label="src (root)";')
         lines.append('        style="filled,rounded";')
         lines.append('        fillcolor="#ECEFF1";')
         lines.append('        color="#607D8B";')
         lines.append('        fontname="Times";')
-        lines.append('        fontsize=12;')
-        lines.append('')
+        lines.append("        fontsize=12;")
+        lines.append("")
         for mod in src_root_mods:
             nid = dot_node_id(mod)
             display = mod.split(".")[-1]
             if display == "src":
                 display = "src (init)"
             lines.append(f'        {nid} [label="{display}", fillcolor="white"];')
-        lines.append('    }')
-        lines.append('')
+        lines.append("    }")
+        lines.append("")
 
     # Root-level scripts (train.py, setup.py)
     root_mods = groups.get("root", [])
     if root_mods:
-        lines.append('    // Root-level scripts')
+        lines.append("    // Root-level scripts")
         for mod in root_mods:
             nid = dot_node_id(mod)
             lines.append(
                 f'    {nid} [label="{mod}.py", fillcolor="#BBDEFB", '
                 f'style="filled,bold", shape=box];'
             )
-        lines.append('')
+        lines.append("")
 
     # Scripts
     script_mods = groups.get("scripts", [])
     if script_mods:
-        lines.append('    subgraph cluster_scripts {')
+        lines.append("    subgraph cluster_scripts {")
         lines.append('        label="scripts/";')
         lines.append('        style="filled,rounded";')
         lines.append('        fillcolor="#F5F5F5";')
         lines.append('        color="#9E9E9E";')
         lines.append('        fontname="Times";')
-        lines.append('        fontsize=12;')
-        lines.append('')
+        lines.append("        fontsize=12;")
+        lines.append("")
         for mod in script_mods:
             nid = dot_node_id(mod)
             display = mod.split(".")[-1]
             lines.append(f'        {nid} [label="{display}", fillcolor="#E1BEE7"];')
-        lines.append('    }')
-        lines.append('')
+        lines.append("    }")
+        lines.append("")
 
     # Edges
-    lines.append('    // Dependencies')
+    lines.append("    // Dependencies")
     for src, tgt in sorted(edges):
         src_id = dot_node_id(src)
         tgt_id = dot_node_id(tgt)
-        lines.append(f'    {src_id} -> {tgt_id};')
+        lines.append(f"    {src_id} -> {tgt_id};")
 
     # Legend
-    lines.append('')
-    lines.append('    // Legend')
-    lines.append('    subgraph cluster_legend {')
+    lines.append("")
+    lines.append("    // Legend")
+    lines.append("    subgraph cluster_legend {")
     lines.append('        label="Legend";')
     lines.append('        style="filled,rounded";')
     lines.append('        fillcolor="white";')
     lines.append('        color="#BDBDBD";')
     lines.append('        fontname="Helvetica Bold";')
-    lines.append('        fontsize=11;')
-    lines.append('        node [shape=box, width=1.2, fontsize=9];')
+    lines.append("        fontsize=11;")
+    lines.append("        node [shape=box, width=1.2, fontsize=9];")
 
     legend_items = [
-        ("leg_root",   "Root Script",   "#BBDEFB"),
-        ("leg_script", "Script",        "#E1BEE7"),
-        ("leg_src",    "src module",    "white"),
+        ("leg_root", "Root Script", "#BBDEFB"),
+        ("leg_script", "Script", "#E1BEE7"),
+        ("leg_src", "src module", "white"),
     ]
     for pkg in SRC_PACKAGES:
         legend_items.append((f"leg_{pkg}", pkg, CLUSTER_COLORS[pkg]))
@@ -393,13 +398,10 @@ def generate_dot(
 
     # invisible edges to keep legend vertical
     for i in range(len(legend_items) - 1):
-        lines.append(
-            f'        {legend_items[i][0]} -> {legend_items[i+1][0]} '
-            f'[style=invis];'
-        )
+        lines.append(f"        {legend_items[i][0]} -> {legend_items[i+1][0]} " f"[style=invis];")
 
-    lines.append('    }')
-    lines.append('}')
+    lines.append("    }")
+    lines.append("}")
 
     return "\n".join(lines)
 

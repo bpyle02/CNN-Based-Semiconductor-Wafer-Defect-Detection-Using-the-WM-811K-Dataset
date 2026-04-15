@@ -23,7 +23,7 @@ from __future__ import annotations
 import copy
 import logging
 import time
-from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -31,6 +31,7 @@ import torch.nn as nn
 
 if TYPE_CHECKING:
     import pandas as pd
+
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from skimage.transform import resize as skimage_resize
@@ -66,9 +67,11 @@ def get_weak_transform() -> transforms.Compose:
     FixMatch uses minimal augmentation for the "teacher" branch so that the
     pseudo-label is as clean as possible.
     """
-    return transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-    ])
+    return transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(p=0.5),
+        ]
+    )
 
 
 def get_strong_transform() -> transforms.Compose:
@@ -77,14 +80,16 @@ def get_strong_transform() -> transforms.Compose:
     FixMatch uses aggressive augmentation for the "student" branch so that
     the model learns invariance to a wide range of perturbations.
     """
-    return transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomRotation(degrees=30),
-        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
-        _GaussianNoise(std=0.05),
-        transforms.RandomErasing(p=0.4, scale=(0.02, 0.15), ratio=(0.3, 3.3), value=0),
-    ])
+    return transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.RandomRotation(degrees=30),
+            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+            _GaussianNoise(std=0.05),
+            transforms.RandomErasing(p=0.4, scale=(0.02, 0.15), ratio=(0.3, 3.3), value=0),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +134,10 @@ class UnlabeledWaferDataset(Dataset):
         wm = self.maps[idx]
         arr = wm.astype(np.float32)
         arr = skimage_resize(
-            arr, self.target_size, anti_aliasing=True, preserve_range=True,
+            arr,
+            self.target_size,
+            anti_aliasing=True,
+            preserve_range=True,
         ).astype(np.float32)
         arr = arr / 2.0  # WM-811K: {0,1,2} -> [0, 1]
 
@@ -322,10 +330,15 @@ class FixMatchTrainer:
                 "Train: loss=%.4f (sup=%.4f, unsup=%.4f), acc=%.4f | "
                 "Val: loss=%.4f, acc=%.4f, F1=%.4f | "
                 "Pseudo: %d (%.1f%%)",
-                epoch, epochs, current_lr,
-                epoch_metrics["loss"], epoch_metrics["sup_loss"],
-                epoch_metrics["unsup_loss"], epoch_metrics["acc"],
-                val_metrics["loss"], val_metrics["acc"],
+                epoch,
+                epochs,
+                current_lr,
+                epoch_metrics["loss"],
+                epoch_metrics["sup_loss"],
+                epoch_metrics["unsup_loss"],
+                epoch_metrics["acc"],
+                val_metrics["loss"],
+                val_metrics["acc"],
                 val_metrics["macro_f1"],
                 epoch_metrics["pseudo_count"],
                 epoch_metrics["pseudo_ratio"] * 100,
@@ -341,7 +354,10 @@ class FixMatchTrainer:
 
         logger.info(
             "FixMatch training complete in %.1fs (best %s: %.4f at epoch %d)",
-            elapsed, monitored_metric, best_metric, best_epoch,
+            elapsed,
+            monitored_metric,
+            best_metric,
+            best_epoch,
         )
 
         return self.model, history
@@ -507,6 +523,7 @@ def extract_unlabeled_maps(
 
     logger.info(
         "Extracted %d unlabeled wafer maps (out of %d non-labeled rows)",
-        len(maps), len(unlabeled_df),
+        len(maps),
+        len(unlabeled_df),
     )
     return maps

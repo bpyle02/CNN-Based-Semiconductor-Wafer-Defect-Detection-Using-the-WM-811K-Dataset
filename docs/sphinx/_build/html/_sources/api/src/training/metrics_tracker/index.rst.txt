@@ -1,0 +1,180 @@
+src.training.metrics_tracker
+============================
+
+.. py:module:: src.training.metrics_tracker
+
+.. autoapi-nested-parse::
+
+   Training metrics tracker with moving averages and trend detection.
+
+   Inspired by RL training curve tracking where episode rewards are noisy
+   and moving averages reveal true learning progress. Adapted for supervised
+   learning metrics (loss, accuracy, learning rate).
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.training.metrics_tracker.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.training.metrics_tracker.MetricsTracker
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: MetricsTracker(window_size: int = 5)
+
+   Track training metrics with moving averages and trend detection.
+
+   Features:
+   - Raw metric storage per step/epoch
+   - Configurable moving average window
+   - Trend detection (improving, plateau, degrading)
+   - Best metric tracking with patience
+   - Export to JSON for analysis
+   - Plotting with moving average overlay
+
+   .. rubric:: Example
+
+   tracker = MetricsTracker(window_size=5)
+   for epoch in range(50):
+       tracker.update('train_loss', loss_val, step=epoch)
+       tracker.update('val_acc', acc_val, step=epoch)
+   tracker.plot_all()
+   tracker.to_json('metrics.json')
+
+   Initialize metrics tracker.
+
+   :param window_size: Default window size for moving average computation.
+                       Must be >= 1.
+
+
+   .. py:attribute:: window_size
+      :value: 5
+
+
+
+   .. py:attribute:: metrics
+      :type:  Dict[str, List[float]]
+
+
+   .. py:attribute:: steps
+      :type:  Dict[str, List[int]]
+
+
+   .. py:method:: update(metric_name: str, value: float, step: Optional[int] = None) -> None
+
+      Record a metric value.
+
+      :param metric_name: Name of the metric (e.g. 'train_loss', 'val_acc')
+      :param value: Metric value to record
+      :param step: Optional step/epoch number. If None, auto-increments.
+
+
+
+   .. py:method:: get_moving_average(metric_name: str, window: Optional[int] = None) -> List[float]
+
+      Compute moving average of a metric.
+
+      For the first (window - 1) values, the average uses all available
+      values up to that point (expanding window).
+
+      :param metric_name: Name of the metric
+      :param window: Window size. If None, uses self.window_size.
+
+      :returns: List of moving average values, same length as raw values.
+
+      :raises KeyError: If metric_name has not been recorded.
+
+
+
+   .. py:method:: get_trend(metric_name: str, lookback: int = 10) -> str
+
+      Detect trend direction using linear regression slope on recent values.
+
+      :param metric_name: Name of the metric
+      :param lookback: Number of recent values to consider
+
+      :returns: One of 'improving', 'plateau', or 'degrading'.
+                For loss-like metrics (name contains 'loss'), a negative slope
+                means improving. For accuracy-like metrics, a positive slope
+                means improving.
+
+      :raises KeyError: If metric_name has not been recorded.
+
+
+
+   .. py:method:: get_best(metric_name: str, mode: str = 'max') -> Tuple[float, int]
+
+      Return the best value and its step for a metric.
+
+      :param metric_name: Name of the metric
+      :param mode: 'max' for metrics where higher is better (accuracy),
+                   'min' for metrics where lower is better (loss)
+
+      :returns: Tuple of (best_value, best_step)
+
+      :raises KeyError: If metric_name has not been recorded.
+      :raises ValueError: If no values have been recorded for the metric.
+
+
+
+   .. py:method:: get_summary() -> Dict[str, Dict[str, Any]]
+
+      Return summary of all tracked metrics.
+
+      :returns:
+
+                - last: Most recent value
+                - best: Best value
+                - best_step: Step of best value
+                - moving_avg: Current moving average value
+                - trend: Current trend direction
+                - count: Number of recorded values
+      :rtype: Dict mapping metric names to summary dicts containing
+
+
+
+   .. py:method:: to_json(path: str) -> None
+
+      Export all metrics and summary to a JSON file.
+
+      :param path: File path for the JSON output
+
+
+
+   .. py:method:: plot_metric(metric_name: str, ax: Optional[matplotlib.pyplot.Axes] = None, show_ma: bool = True, show_best: bool = True) -> matplotlib.pyplot.Axes
+
+      Plot a single metric with optional moving average overlay and best marker.
+
+      :param metric_name: Name of the metric to plot
+      :param ax: Matplotlib axes to plot on. If None, creates a new figure.
+      :param show_ma: Whether to overlay the moving average line
+      :param show_best: Whether to mark the best value with a star
+
+      :returns: The matplotlib Axes object used for plotting.
+
+      :raises KeyError: If metric_name has not been recorded.
+
+
+
+   .. py:method:: plot_all(figsize: Tuple[int, int] = (14, 10)) -> None
+
+      Plot all tracked metrics in a grid layout.
+
+      :param figsize: Figure size (width, height)
+
+
+

@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.losses &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.training.metrics_tracker" href="../metrics_tracker/index.html" />
+    <link rel="prev" title="src.training.ema" href="../ema/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.losses</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/losses/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.losses">
+<span id="src-training-losses"></span><h1>src.training.losses<a class="headerlink" href="#module-src.training.losses" title="Link to this heading"></a></h1>
+<p>Custom loss functions and builders for training on imbalanced datasets.</p>
+<p class="rubric">References</p>
+<p>[15] Lin et al. (2017). “Focal Loss for Dense Object Detection”. arXiv:1708.02002
+[16] Cui et al. (2019). “Class-Balanced Loss”. arXiv:1901.05555
+[19] He &amp; Garcia (2009). “Learning from Imbalanced Data”. DOI:10.1109/TKDE.2008.239
+[20] Muller et al. (2019). “When Does Label Smoothing Help?”. arXiv:1906.02629
+[73] Cao et al. (2019). “Learning Imbalanced Datasets with Label-Distribution-Aware Margin Loss”. arXiv:1906.07413
+[79] Deng et al. (2019). “ArcFace: Additive Angular Margin Loss”. arXiv:1801.07698
+[80] Wang et al. (2018). “CosFace: Large Margin Cosine Loss”. arXiv:1801.09414
+[81] Wen et al. (2016). “Center Loss for Face Recognition”. ECCV
+[83] Wang et al. (2019). “Multi-Similarity Loss”. arXiv:1904.06627
+[84] Kim et al. (2020). “Proxy Anchor Loss for Deep Metric Learning”. arXiv:2003.13911
+[131] Sudre et al. (2017). “Generalised Dice Loss”. arXiv:1707.03237
+[132] Salehi et al. (2017). “Tversky Loss”. arXiv:1706.05721</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.losses.FocalLoss" title="src.training.losses.FocalLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FocalLoss</span></code></a></p></td>
+<td><p>Focal loss for addressing class imbalance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.losses.LogitAdjustedLoss" title="src.training.losses.LogitAdjustedLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogitAdjustedLoss</span></code></a></p></td>
+<td><p>Logit-adjusted softmax cross-entropy for long-tail classification.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.losses.DiceLoss" title="src.training.losses.DiceLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiceLoss</span></code></a></p></td>
+<td><p>Dice loss for multi-class classification.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.losses.TverskyLoss" title="src.training.losses.TverskyLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TverskyLoss</span></code></a></p></td>
+<td><p>Tversky loss with controllable FP/FN tradeoff.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.losses.CosineClassifier" title="src.training.losses.CosineClassifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CosineClassifier</span></code></a></p></td>
+<td><p>Cosine similarity classifier with learnable temperature.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.losses.CostSensitiveCE" title="src.training.losses.CostSensitiveCE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CostSensitiveCE</span></code></a></p></td>
+<td><p>Cross-entropy with a per-class-pair misclassification cost matrix.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.losses.build_cost_matrix_wm811k" title="src.training.losses.build_cost_matrix_wm811k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_cost_matrix_wm811k</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Construct the defensible WM-811K cost matrix used by cost_sensitive.yaml.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.losses.build_classification_loss" title="src.training.losses.build_classification_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_classification_loss</span></code></a>(→ torch.nn.Module)</p></td>
+<td><p>Create a classification loss function from normalized config values.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.FocalLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">FocalLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moderate_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#FocalLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.FocalLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Focal loss for addressing class imbalance.</p>
+<p>The loss down-weights easy examples by scaling the standard cross-entropy
+term with <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">pt)</span> <span class="pre">**</span> <span class="pre">gamma</span></code>.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.FocalLoss.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#FocalLoss.gamma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.FocalLoss.gamma" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.FocalLoss.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mean'</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#FocalLoss.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.FocalLoss.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.FocalLoss.label_smoothing">
+<span class="sig-name descname"><span class="pre">label_smoothing</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#FocalLoss.label_smoothing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.FocalLoss.label_smoothing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.FocalLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#FocalLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.FocalLoss.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.LogitAdjustedLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">LogitAdjustedLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_frequencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#LogitAdjustedLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.LogitAdjustedLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Logit-adjusted softmax cross-entropy for long-tail classification.</p>
+<p>Adds log(class_prior) to logits before computing CE, correcting the
+decision boundary shift caused by class imbalance. Fisher-consistent
+for balanced error rate.</p>
+<p>L = CE(logits + tau * log(pi), y)</p>
+<p>Reference: Menon et al. (2021). “Long-tail learning via logit adjustment”. arXiv:2007.07314</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.LogitAdjustedLoss.tau">
+<span class="sig-name descname"><span class="pre">tau</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#LogitAdjustedLoss.tau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.LogitAdjustedLoss.tau" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.LogitAdjustedLoss.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mean'</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#LogitAdjustedLoss.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.LogitAdjustedLoss.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.LogitAdjustedLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#LogitAdjustedLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.LogitAdjustedLoss.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.DiceLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">DiceLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#DiceLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.DiceLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Dice loss for multi-class classification.</p>
+<p>Treats classification as soft set-overlap optimization.
+L_c = 1 - (2 * sum(p_c * y_c) + smooth) / (sum(p_c) + sum(y_c) + smooth)</p>
+<p>Reference: [131] Sudre et al. (2017). “Generalised Dice Loss”. arXiv:1707.03237</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.DiceLoss.smooth">
+<span class="sig-name descname"><span class="pre">smooth</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#DiceLoss.smooth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.DiceLoss.smooth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.DiceLoss.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mean'</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#DiceLoss.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.DiceLoss.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.DiceLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#DiceLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.DiceLoss.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">TverskyLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Tversky loss with controllable FP/FN tradeoff.</p>
+<p>Generalizes Dice loss with alpha (FP weight) and beta (FN weight).
+Setting alpha=beta=0.5 recovers Dice loss.
+Setting alpha&lt;beta penalizes false negatives more (better for recall on rare classes).</p>
+<p>Reference: [132] Salehi et al. (2017). “Tversky Loss”. arXiv:1706.05721</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.3</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss.alpha"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss.alpha" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss.beta">
+<span class="sig-name descname"><span class="pre">beta</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.7</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss.beta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss.beta" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss.smooth">
+<span class="sig-name descname"><span class="pre">smooth</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss.smooth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss.smooth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mean'</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.TverskyLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#TverskyLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.TverskyLoss.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.CosineClassifier">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">CosineClassifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CosineClassifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CosineClassifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Cosine similarity classifier with learnable temperature.</p>
+<p>Replaces standard Linear(in, out) with normalized weight vectors and
+cosine similarity, preventing magnitude bias in imbalanced settings.</p>
+<p>logits = temperature * cos(features, W) = temperature * (F/||F|| . W/||W||)</p>
+<dl class="simple">
+<dt>References: [79] Deng et al. (2019). “ArcFace”. arXiv:1801.07698</dt><dd><p>[80] Wang et al. (2018). “CosFace”. arXiv:1801.09414</p>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.CosineClassifier.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CosineClassifier.weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CosineClassifier.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.CosineClassifier.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CosineClassifier.temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CosineClassifier.temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.CosineClassifier.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CosineClassifier.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CosineClassifier.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.losses.CostSensitiveCE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">CostSensitiveCE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CostSensitiveCE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CostSensitiveCE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Cross-entropy with a per-class-pair misclassification cost matrix.</p>
+<p>The cost matrix <code class="docutils literal notranslate"><span class="pre">cost[true,</span> <span class="pre">pred]</span></code> specifies the penalty for predicting
+class <code class="docutils literal notranslate"><span class="pre">pred</span></code> when the true class is <code class="docutils literal notranslate"><span class="pre">true</span></code>. The default (identity on
+diagonal, 1 elsewhere) recovers vanilla cross-entropy. Off-diagonal
+entries can be raised to express domain-specific priorities, e.g. a
+missed Near-full pattern on a wafer is far costlier than confusing two
+visually similar edge-localized patterns.</p>
+<dl class="simple">
+<dt>Formally, for softmax probabilities p_k(x) and true label y,</dt><dd><p>L(x, y) = - sum_k cost[y, k] * log p_k(x)</p>
+</dd>
+</dl>
+<p>when reduction=’mean’ we average over the batch. This matches the
+cost-sensitive CE of Elkan (2001), “The Foundations of Cost-Sensitive
+Learning”, and the “cost-weighted cross-entropy” used in imbalanced
+manufacturing defect classification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cost_matrix</strong> – (C, C) tensor. Entry (i, j) is the cost of predicting
+j when truth is i. Diagonal entries are typically 0 or 1;
+off-diagonals are &gt;= 1 to penalize misclassifications.</p></li>
+<li><p><strong>class_weights</strong> – Optional (C,) tensor multiplied onto per-sample loss
+based on the true class (for prior re-weighting, e.g. inverse
+frequency). Orthogonal to the cost matrix.</p></li>
+<li><p><strong>reduction</strong> – ‘mean’ | ‘sum’ | ‘none’.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.losses.CostSensitiveCE.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mean'</span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CostSensitiveCE.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CostSensitiveCE.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.losses.CostSensitiveCE.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#CostSensitiveCE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.CostSensitiveCE.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.losses.build_cost_matrix_wm811k">
+<span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">build_cost_matrix_wm811k</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near_full_missed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rare_missed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_confusion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#build_cost_matrix_wm811k"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.build_cost_matrix_wm811k" title="Link to this definition"></a></dt>
+<dd><p>Construct the defensible WM-811K cost matrix used by cost_sensitive.yaml.</p>
+<p>Convention: cost[true, pred]. Diagonal (correct) = 0. Off-diagonal rules
+are applied in the order below; later rules override earlier ones.</p>
+<ol class="arabic simple">
+<li><p>All off-diagonals default to <code class="docutils literal notranslate"><span class="pre">default</span></code> (=1).</p></li>
+<li><p>Rows for Near-full and rare classes (Donut, Random) assign
+<code class="docutils literal notranslate"><span class="pre">near_full_missed</span></code> / <code class="docutils literal notranslate"><span class="pre">rare_missed</span></code> to their off-diagonal entries
+(missing these is catastrophic / high-impact).</p></li>
+<li><p>Pairwise confusion within {Loc, Edge-Loc, Edge-Ring} is soft-penalized
+at <code class="docutils literal notranslate"><span class="pre">edge_confusion</span></code> &lt; 1 (patterns look similar, penalize less).</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.losses.build_classification_loss">
+<span class="sig-prename descclassname"><span class="pre">src.training.losses.</span></span><span class="sig-name descname"><span class="pre">build_classification_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CrossEntropyLoss'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moderate_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_frequencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logit_adjustment_tau</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tversky_alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tversky_beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Module</span></span></span><a class="reference internal" href="../../../../_modules/src/training/losses.html#build_classification_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.losses.build_classification_loss" title="Link to this definition"></a></dt>
+<dd><p>Create a classification loss function from normalized config values.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ema/index.html" class="btn btn-neutral float-left" title="src.training.ema" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../metrics_tracker/index.html" class="btn btn-neutral float-right" title="src.training.metrics_tracker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

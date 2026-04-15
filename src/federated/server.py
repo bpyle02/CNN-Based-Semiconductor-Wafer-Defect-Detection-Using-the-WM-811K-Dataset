@@ -10,21 +10,20 @@ import json
 import logging
 import pickle
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional, Sequence, Sized, Tuple, Union, cast
 
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Subset
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader, Subset
 
-from src.federated.fed_avg import FedAveragingServer, FedAveragingClient, FedAvgConfig
-from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
-from src.model_registry import save_checkpoint_with_hash
-from src.training.config import TrainConfig
 from src.data.dataset import KNOWN_CLASSES
 from src.data.preprocessing import seed_worker
-
+from src.federated.fed_avg import FedAveragingClient, FedAveragingServer, FedAvgConfig
+from src.model_registry import save_checkpoint_with_hash
+from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
+from src.training.config import TrainConfig
 
 logger = logging.getLogger(__name__)
 
@@ -55,24 +54,27 @@ def create_client_loaders(
     Returns:
         List of DataLoaders, one per client
     """
-    num_samples = len(train_dataset)
+    num_samples = len(cast(Sized, train_dataset))
     indices = np.arange(num_samples)
+    # Normalize to a uniform List[List[int]] so the downstream loop and
+    # Subset() get a Sequence[int] (not an ndarray, which mypy rejects).
+    client_indices: List[List[int]]
 
     if non_iid_alpha is None:
         # IID partitioning: each client gets equal random subset
         np.random.shuffle(indices)
-        client_indices = np.array_split(indices, num_clients)
+        client_indices = [arr.tolist() for arr in np.array_split(indices, num_clients)]
     else:
         # Non-IID partitioning using Dirichlet distribution
-        if hasattr(train_dataset, 'targets'):
+        if hasattr(train_dataset, "targets"):
             labels = np.array(train_dataset.targets)
-        elif hasattr(train_dataset, 'tensors'):
+        elif hasattr(train_dataset, "tensors"):
             # TensorDataset case
             labels = train_dataset.tensors[1].numpy()
         else:
             # Fallback: use uniform partitioning
             np.random.shuffle(indices)
-            client_indices = np.array_split(indices, num_clients)
+            client_indices = [arr.tolist() for arr in np.array_split(indices, num_clients)]
             client_loaders = [
                 DataLoader(
                     Subset(train_dataset, subset),
@@ -96,16 +98,14 @@ def create_client_loaders(
             np.random.shuffle(class_samples)
 
             # Draw proportions from Dirichlet
-            proportions = np.random.dirichlet(
-                np.repeat(non_iid_alpha, num_clients)
-            )
+            proportions = np.random.dirichlet(np.repeat(non_iid_alpha, num_clients))
             proportions = (np.cumsum(proportions) * len(class_samples)).astype(int)
             proportions[-1] = len(class_samples)
 
             # Assign to clients
             start = 0
             for client_id, end in enumerate(proportions):
-                client_indices[client_id].extend(class_samples[start:end])
+                client_indices[client_id].extend(int(i) for i in class_samples[start:end])
                 start = end
 
     client_loaders = [
@@ -120,10 +120,11 @@ def create_client_loaders(
         for subset in client_indices
     ]
 
-    if len(client_loaders[0].dataset) > 0:
+    first_dataset = cast(Sized, client_loaders[0].dataset)
+    if len(first_dataset) > 0:
         logger.info(
             f"Created {num_clients} clients with {num_samples} total samples. "
-            f"Client 0 has {len(client_loaders[0].dataset)} samples."
+            f"Client 0 has {len(first_dataset)} samples."
         )
 
     return client_loaders
@@ -174,31 +175,34 @@ def federated_train(
 
     # Load or create training data (dummy data for testing)
     try:
+        import torchvision.transforms as transforms
+
         from src.data import (
-            load_dataset,
-            preprocess_wafer_maps,
             WaferMapDataset,
             get_image_transforms,
             get_imagenet_normalize,
+            load_dataset,
+            preprocess_wafer_maps,
         )
-        import torchvision.transforms as transforms
 
         logger.info("Loading WM-811K dataset...")
         df = load_dataset()
-        labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
+        labeled_mask = df["failureClass"].isin(KNOWN_CLASSES)
         df = df[labeled_mask].reset_index(drop=True)
         label_encoder = LabelEncoder()
-        raw_maps = df['waferMap'].values
-        labels = label_encoder.fit_transform(df['failureClass'])
+        raw_maps = df["waferMap"].values
+        labels = label_encoder.fit_transform(df["failureClass"])
 
         # Preprocess
         processed_maps = preprocess_wafer_maps(raw_maps)
         train_transform = get_image_transforms()
         if model_name != "cnn":
             train_transform = transforms.Compose([train_transform, get_imagenet_normalize()])
-        train_dataset = WaferMapDataset(processed_maps, labels, transform=train_transform)
+        train_dataset: torch.utils.data.Dataset = WaferMapDataset(
+            processed_maps, labels, transform=train_transform
+        )
 
-        logger.info(f"Loaded dataset with {len(train_dataset)} labeled samples")
+        logger.info(f"Loaded dataset with {len(cast(Sized, train_dataset))} labeled samples")
     except Exception as e:
         logger.warning(f"Could not load real dataset: {e}")
         logger.info("Creating synthetic dummy dataset for demonstration...")
@@ -219,6 +223,7 @@ def federated_train(
 
     # Create model
     logger.info(f"Creating {model_name} model...")
+    global_model: nn.Module
     if model_name == "cnn":
         global_model = WaferCNN(num_classes=9)
     elif model_name == "resnet":
@@ -246,9 +251,14 @@ def federated_train(
     logger.info("Initializing federated clients...")
     clients = []
     for client_id, loader in enumerate(client_loaders):
-        client_model = WaferCNN(num_classes=9) if model_name == "cnn" else (
-            get_resnet18(num_classes=9, pretrained=False) if model_name == "resnet"
-            else get_efficientnet_b0(num_classes=9, pretrained=False)
+        client_model = (
+            WaferCNN(num_classes=9)
+            if model_name == "cnn"
+            else (
+                get_resnet18(num_classes=9, pretrained=False)
+                if model_name == "resnet"
+                else get_efficientnet_b0(num_classes=9, pretrained=False)
+            )
         )
         client = FedAveragingClient(
             client_id=client_id,
@@ -275,36 +285,34 @@ def federated_train(
 
     # Save results with integrity hash
     model_path = checkpoint_path / f"fed_{model_name}_final.pth"
-    file_hash = save_checkpoint_with_hash(results['global_model'].state_dict(), model_path)
+    file_hash = save_checkpoint_with_hash(results["global_model"].state_dict(), model_path)
     logger.info(f"Model saved to {model_path} (SHA-256: {file_hash[:16]}...)")
 
     # Save metrics
     metrics = {
-        'model': model_name,
-        'num_rounds': num_rounds,
-        'clients_per_round': clients_per_round,
-        'local_epochs': local_epochs,
-        'num_clients': num_clients,
-        'round_losses': results['round_loss'],
-        'round_accuracies': results['round_acc'],
-        'test_accuracies': results['test_acc'],
-        'total_time': results['total_time'],
-        'communication_rounds': results['communication_rounds'],
+        "model": model_name,
+        "num_rounds": num_rounds,
+        "clients_per_round": clients_per_round,
+        "local_epochs": local_epochs,
+        "num_clients": num_clients,
+        "round_losses": results["round_loss"],
+        "round_accuracies": results["round_acc"],
+        "test_accuracies": results["test_acc"],
+        "total_time": results["total_time"],
+        "communication_rounds": results["communication_rounds"],
     }
 
     if log_file:
-        with open(log_file, 'w') as f:
+        with open(log_file, "w") as f:
             json.dump(metrics, f, indent=2)
         logger.info(f"Metrics saved to {log_file}")
 
-    return results['global_model'], metrics
+    return results["global_model"], metrics
 
 
 def main() -> None:
     """CLI entry point for federated training."""
-    parser = argparse.ArgumentParser(
-        description="Federated Learning Training (FedAvg)"
-    )
+    parser = argparse.ArgumentParser(description="Federated Learning Training (FedAvg)")
     parser.add_argument(
         "--model",
         choices=["cnn", "resnet", "efficientnet"],

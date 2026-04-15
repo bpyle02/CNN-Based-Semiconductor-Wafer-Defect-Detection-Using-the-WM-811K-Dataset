@@ -2,7 +2,21 @@
 
 AI 570 - Team 4: Anindita Paul, Brandon Pyle, Anand Rajan, Brett Rettura
 
-A PyTorch pipeline for multi-class wafer defect classification on the WM-811K dataset (~120K labeled wafer maps, 9 classes). Compares a custom CNN, ResNet-18, and EfficientNet-B0 with transfer learning, plus optional extensions (Grad-CAM, MC dropout uncertainty, OOD detection, federated learning, ensembling, SimCLR).
+A research-grade PyTorch pipeline for multi-class wafer defect classification on the WM-811K dataset (~172K labeled wafer maps, 9 classes). Compares **7 architectures** (custom CNN, ResNet-18, EfficientNet-B0, ViT-Tiny, Swin-Tiny, FPN-CNN, RIDE long-tail expert ensemble), trains a **distilled student**, evaluates the **weighted-Nelder-Mead ensemble** with **8-view TTA + temperature-scaled calibration**, and ships a deployment story (ONNX export, INT8 quantization, FastAPI inference server, federated demo).
+
+**Headline result (overnight 2026-04-15 Kaggle T4):** Custom CNN macro F1 = **0.8323** at 10 epochs, seed 42. ResNet-18 = 0.7800. The weighted ensemble target after Cells 11-12 is ~0.92.
+
+## What's new in v0.2.1
+
+[See `CHANGELOG.md`](CHANGELOG.md) for the full list. Highlights:
+
+- **Long-tail learning**: RIDE experts, focal loss, DRW switch, class-balanced sampling, synthetic rare-class augmentation — measured against vanilla CE in a 5-condition × 3-seed rare-class study.
+- **Calibration & uncertainty**: temperature scaling, MC Dropout, ECE + reliability diagrams.
+- **Interpretability**: Grad-CAM on the 5 most-confident mispredictions per class.
+- **Statistical rigor**: bootstrap 95% CIs, per-class PR curves, 5-fold stratified CV, reproducibility manifest (SHA-256 of data + code + config + git SHA).
+- **Deployment**: ONNX export, INT8 quantization, p50/p95 latency benchmarking, knowledge distillation.
+- **Engineering hygiene**: `wafer-cli` unified CLI (16 subcommands), Sphinx docs site, GitHub Actions release automation, CodeQL security scanning, multi-OS CI matrix, mypy `py.typed` package, structured logging with run-IDs.
+- **Documentation**: Google-format Model Card, Data Card, related-work comparison (Wu 2015 → Kim 2023), ICML-grade reproducibility recipe.
 
 > **Academic integrity notice.** This repository is coursework for Penn State **AI 570 (Applied Machine Learning)**, Team 4. It is shared publicly for review, reuse of techniques, and citation. **Do not copy this code into your own AI 570 (or equivalent) submission** — your institution's academic integrity policies still apply. If you're a student taking the same class, read for ideas, cite, and write your own implementation.
 

@@ -1,0 +1,156 @@
+src.mlops.wandb_logger
+======================
+
+.. py:module:: src.mlops.wandb_logger
+
+.. autoapi-nested-parse::
+
+   Weights & Biases integration for experiment tracking.
+
+   Logs training metrics, hyperparameters, model checkpoints, and evaluation results.
+
+   .. rubric:: References
+
+   [147] Biewald (2020). "Experiment Tracking with Weights and Biases"
+   [148] Zaharia et al. (2018). "Accelerating the ML Lifecycle with MLflow". DOI:10.1109/DSAA.2018.00032
+   [149] Amershi et al. (2019). "Software Engineering for ML". arXiv:1904.07204
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.mlops.wandb_logger.logger
+   src.mlops.wandb_logger.HAS_WANDB
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.mlops.wandb_logger.WandBLogger
+   src.mlops.wandb_logger.MLFlowLogger
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: HAS_WANDB
+   :value: True
+
+
+.. py:class:: WandBLogger(project: str = 'wafer-defect-detection', entity: Optional[str] = None, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None, enabled: bool = True)
+
+   Weights & Biases experiment logger.
+
+   Initialize W&B logger.
+
+   :param project: W&B project name
+   :param entity: W&B entity/team name
+   :param name: Experiment name
+   :param config: Hyperparameter dictionary
+   :param enabled: Enable logging
+
+
+   .. py:attribute:: enabled
+      :value: True
+
+
+
+   .. py:attribute:: project
+      :value: 'wafer-defect-detection'
+
+
+
+   .. py:attribute:: entity
+      :value: None
+
+
+
+   .. py:attribute:: name
+      :value: None
+
+
+
+   .. py:attribute:: config
+
+
+   .. py:method:: log_metrics(metrics: Dict[str, float], step: Optional[int] = None) -> None
+
+      Log metrics.
+
+
+
+   .. py:method:: log_model(model: torch.nn.Module, checkpoint_path: str) -> None
+
+      Log model artifact.
+
+
+
+   .. py:method:: log_confusion_matrix(y_true: Union[List[int], numpy.ndarray], y_pred: Union[List[int], numpy.ndarray], class_names: List[str]) -> None
+
+      Log confusion matrix.
+
+
+
+   .. py:method:: finish() -> None
+
+      Finish logging run.
+
+
+
+.. py:class:: MLFlowLogger(experiment_name: str = 'wafer-defect-detection', tracking_uri: str = 'http://localhost:5000', enabled: bool = True)
+
+   MLflow experiment logger.
+
+   Initialize MLFlow logger.
+
+   :param experiment_name: Experiment name
+   :param tracking_uri: MLflow tracking server URI
+   :param enabled: Enable logging
+
+
+   .. py:attribute:: enabled
+      :value: True
+
+
+
+   .. py:attribute:: experiment_name
+      :value: 'wafer-defect-detection'
+
+
+
+   .. py:attribute:: tracking_uri
+      :value: 'http://localhost:5000'
+
+
+
+   .. py:method:: log_params(params: Dict[str, Any]) -> None
+
+      Log parameters.
+
+
+
+   .. py:method:: log_metrics(metrics: Dict[str, float], step: Optional[int] = None) -> None
+
+      Log metrics.
+
+
+
+   .. py:method:: log_model(model: torch.nn.Module, artifact_path: str = 'model') -> None
+
+      Log model.
+
+
+
+   .. py:method:: finish() -> None
+
+      End logging run.
+
+
+

@@ -55,9 +55,9 @@ class RIDEModel(nn.Module):
         self.feature_dim = feature_dim
 
         # K expert classifiers (each is a Linear layer)
-        self.experts = nn.ModuleList([
-            nn.Linear(feature_dim, num_classes) for _ in range(num_experts)
-        ])
+        self.experts = nn.ModuleList(
+            [nn.Linear(feature_dim, num_classes) for _ in range(num_experts)]
+        )
 
         # Gating network: routes each sample to experts
         gate_hidden = max(feature_dim // reduction, 1)
@@ -237,7 +237,7 @@ class RIDELoss(nn.Module):
 
         # Convert logits to log-probs and probs
         log_probs = F.log_softmax(expert_outputs, dim=-1)  # (B, K, C)
-        probs = F.softmax(expert_outputs, dim=-1)           # (B, K, C)
+        probs = F.softmax(expert_outputs, dim=-1)  # (B, K, C)
 
         # Compute mean pairwise KL divergence
         total_kl = torch.tensor(0.0, device=expert_outputs.device)
@@ -250,7 +250,7 @@ class RIDELoss(nn.Module):
                 # KL(p_i || p_j) = sum(p_i * (log p_i - log p_j))
                 kl_ij = F.kl_div(
                     log_probs[:, j, :],  # input: log Q
-                    probs[:, i, :],       # target: P
+                    probs[:, i, :],  # target: P
                     reduction="batchmean",
                 )
                 total_kl = total_kl + kl_ij
@@ -381,8 +381,8 @@ def build_ride_model(
     """
     from src.models.cnn import WaferCNN
     from src.models.fpn import WaferCNNFPN
-    from src.models.vit import get_vit_small
     from src.models.swin import get_swin_tiny
+    from src.models.vit import get_vit_small
 
     name = backbone_name.lower()
 
@@ -392,9 +392,11 @@ def build_ride_model(
         backbone = WaferCNNFPN(num_classes=num_classes)
     elif name == "resnet":
         from src.models.pretrained import get_resnet18
+
         backbone = get_resnet18(num_classes=num_classes, pretrained=True, freeze_until=None)
     elif name in ("efficientnet", "effnet"):
         from src.models.pretrained import get_efficientnet_b0
+
         backbone = get_efficientnet_b0(num_classes=num_classes, pretrained=True, freeze_until=None)
     elif name == "vit":
         backbone = get_vit_small(num_classes=num_classes, image_size=96, in_channels=3)
@@ -409,7 +411,10 @@ def build_ride_model(
     feature_dim = _get_feature_dim_for_backbone(name, backbone)
     logger.info(
         "RIDE: backbone=%s, feature_dim=%d, num_experts=%d, num_classes=%d",
-        name, feature_dim, num_experts, num_classes,
+        name,
+        feature_dim,
+        num_experts,
+        num_classes,
     )
 
     model = RIDEModel(

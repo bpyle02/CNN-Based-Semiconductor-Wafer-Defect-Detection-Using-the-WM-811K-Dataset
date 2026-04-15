@@ -1,0 +1,625 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.domain_adaptation &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.training.domain_adaptation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.training.domain_adaptation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Domain Adaptation for cross-plant wafer defect detection.</span>
+
+<span class="sd">Implements techniques to adapt models trained on one wafer plant</span>
+<span class="sd">to generalize to different plants with different defect characteristics.</span>
+
+<span class="sd">Methods:</span>
+<span class="sd">    - Fine-tuning: Simple transfer learning on target domain</span>
+<span class="sd">    - CORAL: Correlation Alignment for domain-invariant features</span>
+<span class="sd">    - Domain-adversarial training: Adversarial loss to align source and target</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [40] Sun &amp; Saenko (2016). &quot;Deep CORAL&quot;. arXiv:1607.01719</span>
+<span class="sd">    [41] Ganin et al. (2016). &quot;Domain-Adversarial Training&quot;. arXiv:1505.07818</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">ConcatDataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CORLAlignmentLoss">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.CORLAlignmentLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CORLAlignmentLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    CORAL (Correlation Alignment) loss for domain adaptation.</span>
+
+<span class="sd">    Aligns the second-order statistics (correlations) between source and target domains.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lambda_coral: Weight of CORAL loss (default 1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lambda_coral</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<div class="viewcode-block" id="CORLAlignmentLoss.lambda_coral">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.CORLAlignmentLoss.lambda_coral">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coral</span> <span class="o">=</span> <span class="n">lambda_coral</span></div>
+
+
+<div class="viewcode-block" id="CORLAlignmentLoss.forward">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.CORLAlignmentLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">target_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute CORAL loss.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_features: Features from source domain of shape (B_s, feat_dim)</span>
+<span class="sd">            target_features: Features from target domain of shape (B_t, feat_dim)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Scalar CORAL loss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">source_features</span> <span class="o">=</span> <span class="n">source_features</span> <span class="o">-</span> <span class="n">source_features</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">target_features</span> <span class="o">=</span> <span class="n">target_features</span> <span class="o">-</span> <span class="n">target_features</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Covariance matrices</span>
+        <span class="n">source_cov</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span>
+            <span class="n">source_features</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">source_features</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">source_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">target_cov</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span>
+            <span class="n">target_features</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">target_features</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">target_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># CORAL loss: Frobenius norm of difference</span>
+        <span class="n">coral_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">source_cov</span> <span class="o">-</span> <span class="n">target_cov</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coral</span> <span class="o">*</span> <span class="n">coral_loss</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DomainAdversarialLoss">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdversarialLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DomainAdversarialLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Domain-adversarial loss for unsupervised domain adaptation.</span>
+
+<span class="sd">    Uses an adversarial discriminator to make features domain-invariant.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        feature_dim: Dimension of input features</span>
+<span class="sd">        hidden_dim: Dimension of discriminator hidden layer (default 256)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">feature_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Domain discriminator</span>
+<div class="viewcode-block" id="DomainAdversarialLoss.discriminator">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdversarialLoss.discriminator">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">(),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DomainAdversarialLoss.forward">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdversarialLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">target_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute domain adversarial loss.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_features: Features from source domain of shape (B_s, feat_dim)</span>
+<span class="sd">            target_features: Features from target domain of shape (B_t, feat_dim)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Scalar adversarial loss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Labels: 0=source, 1=target</span>
+        <span class="n">source_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="p">(</span><span class="n">source_features</span><span class="p">)</span>
+        <span class="n">target_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="p">(</span><span class="n">target_features</span><span class="p">)</span>
+
+        <span class="n">source_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy</span><span class="p">(</span>
+            <span class="n">source_pred</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">source_pred</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">target_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy</span><span class="p">(</span>
+            <span class="n">target_pred</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target_pred</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">source_loss</span> <span class="o">+</span> <span class="n">target_loss</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DomainAdaptationTrainer">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DomainAdaptationTrainer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Domain adaptation training pipeline.</span>
+
+<span class="sd">    Supports fine-tuning, CORAL, and adversarial domain adaptation methods.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: PyTorch model to adapt</span>
+<span class="sd">        method: Adaptation method (&#39;fine_tuning&#39;, &#39;coral&#39;, &#39;adversarial&#39;)</span>
+<span class="sd">        device: Device to run on (cuda or cpu)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fine_tuning&#39;</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;fine_tuning&#39;</span><span class="p">,</span> <span class="s1">&#39;coral&#39;</span><span class="p">,</span> <span class="s1">&#39;adversarial&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.model">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.model">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.method">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.method">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span></div>
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.device">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.device">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span></div>
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.discriminator">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.discriminator">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.prepare_for_adaptation">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.prepare_for_adaptation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_for_adaptation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">freeze_backbone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">num_layers_unfreeze</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare model for domain adaptation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            freeze_backbone: Whether to freeze earlier layers</span>
+<span class="sd">            num_layers_unfreeze: Number of final layers to unfreeze</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">freeze_backbone</span> <span class="ow">and</span> <span class="n">num_layers_unfreeze</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Freeze all but last layer</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;fc&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="s1">&#39;classifier&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">num_layers_unfreeze</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Unfreeze last N layers</span>
+            <span class="n">params_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params_list</span><span class="p">[:</span><span class="o">-</span><span class="n">num_layers_unfreeze</span><span class="p">]:</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params_list</span><span class="p">[</span><span class="o">-</span><span class="n">num_layers_unfreeze</span><span class="p">:]:</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="DomainAdaptationTrainer.adapt">
+<a class="viewcode-back" href="../../../api/src/training/domain_adaptation/index.html#src.training.domain_adaptation.DomainAdaptationTrainer.adapt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adapt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">target_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">target_labels_loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">lambda_domain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run domain adaptation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_loader: Source domain training data</span>
+<span class="sd">            target_loader: Target domain data (unlabeled or labeled)</span>
+<span class="sd">            target_labels_loader: Optional labeled target data for semi-supervised</span>
+<span class="sd">            criterion: Classification loss (required for coral/adversarial with labels)</span>
+<span class="sd">            optimizer: Optimizer for model</span>
+<span class="sd">            epochs: Number of adaptation epochs</span>
+<span class="sd">            lambda_domain: Weight for domain loss term</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with training history</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;fine_tuning&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_fine_tuning</span><span class="p">(</span>
+                <span class="n">target_loader</span><span class="p">,</span>
+                <span class="n">criterion</span><span class="p">,</span>
+                <span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">epochs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;coral&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_coral</span><span class="p">(</span>
+                <span class="n">source_loader</span><span class="p">,</span>
+                <span class="n">target_loader</span><span class="p">,</span>
+                <span class="n">criterion</span><span class="p">,</span>
+                <span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">epochs</span><span class="p">,</span>
+                <span class="n">lambda_domain</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;adversarial&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_adversarial</span><span class="p">(</span>
+                <span class="n">source_loader</span><span class="p">,</span>
+                <span class="n">target_loader</span><span class="p">,</span>
+                <span class="n">criterion</span><span class="p">,</span>
+                <span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">epochs</span><span class="p">,</span>
+                <span class="n">lambda_domain</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_adapt_fine_tuning</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">target_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fine-tuning on target domain.&quot;&quot;&quot;</span>
+        <span class="n">history</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+            <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">num_batches</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">target_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+
+                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">num_batches</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="n">num_batches</span>
+            <span class="n">history</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_loss</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">//</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fine-tuning Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">avg_loss</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_adapt_coral</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">target_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">lambda_domain</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CORAL domain adaptation.&quot;&quot;&quot;</span>
+        <span class="n">coral_loss_fn</span> <span class="o">=</span> <span class="n">CORLAlignmentLoss</span><span class="p">(</span><span class="n">lambda_coral</span><span class="o">=</span><span class="n">lambda_domain</span><span class="p">)</span>
+        <span class="n">history</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="c1"># Combine loaders (cycle target if shorter)</span>
+        <span class="n">max_batches</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source_loader</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_loader</span><span class="p">))</span>
+        <span class="n">source_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">source_loader</span><span class="p">)</span>
+        <span class="n">target_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">target_loader</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+            <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">total_coral_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">num_batches</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">source_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">source_loader</span><span class="p">)</span>
+            <span class="n">target_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">target_loader</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_batches</span><span class="p">):</span>
+                <span class="c1"># Get batches (cycle if needed)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">source_images</span><span class="p">,</span> <span class="n">source_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">source_cycle</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="n">source_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">source_loader</span><span class="p">)</span>
+                    <span class="n">source_images</span><span class="p">,</span> <span class="n">source_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">source_cycle</span><span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">target_images</span><span class="p">,</span> <span class="n">target_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">target_cycle</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="n">target_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">target_loader</span><span class="p">)</span>
+                    <span class="n">target_images</span><span class="p">,</span> <span class="n">target_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">target_cycle</span><span class="p">)</span>
+
+                <span class="n">source_images</span> <span class="o">=</span> <span class="n">source_images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">source_labels</span> <span class="o">=</span> <span class="n">source_labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">target_images</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="c1"># Forward pass</span>
+                <span class="n">source_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">source_images</span><span class="p">)</span>
+                <span class="n">target_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">target_images</span><span class="p">)</span>
+
+                <span class="c1"># Classification loss on source</span>
+                <span class="n">class_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">source_outputs</span><span class="p">,</span> <span class="n">source_labels</span><span class="p">)</span>
+
+                <span class="c1"># Extract features for CORAL (get intermediate features)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;features&#39;</span><span class="p">):</span>
+                    <span class="n">source_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">source_images</span><span class="p">)</span>
+                    <span class="n">target_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">target_images</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Fallback: use outputs as features</span>
+                    <span class="n">source_feats</span> <span class="o">=</span> <span class="n">source_outputs</span>
+                    <span class="n">target_feats</span> <span class="o">=</span> <span class="n">target_outputs</span>
+
+                <span class="n">coral_loss</span> <span class="o">=</span> <span class="n">coral_loss_fn</span><span class="p">(</span><span class="n">source_feats</span><span class="p">,</span> <span class="n">target_feats</span><span class="p">)</span>
+
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">class_loss</span> <span class="o">+</span> <span class="n">coral_loss</span>
+
+                <span class="n">batch_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">total_coral_loss</span> <span class="o">+=</span> <span class="n">coral_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">num_batches</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="n">num_batches</span>
+            <span class="n">avg_coral</span> <span class="o">=</span> <span class="n">total_coral_loss</span> <span class="o">/</span> <span class="n">num_batches</span>
+            <span class="n">history</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_loss</span><span class="p">)</span>
+            <span class="n">history</span><span class="p">[</span><span class="s1">&#39;coral_loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_coral</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">//</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;CORAL Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loss: </span><span class="si">{</span><span class="n">avg_loss</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, CORAL: </span><span class="si">{</span><span class="n">avg_coral</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_adapt_adversarial</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">target_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">lambda_domain</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Domain-adversarial training.&quot;&quot;&quot;</span>
+        <span class="c1"># Infer feature dimension from model&#39;s final layer</span>
+        <span class="n">feature_dim</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;fc&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;classifier&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="s1">&#39;in_features&#39;</span><span class="p">):</span>
+            <span class="n">feature_dim</span> <span class="o">=</span> <span class="n">feature_dim</span><span class="o">.</span><span class="n">in_features</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">feature_dim</span> <span class="o">=</span> <span class="n">feature_dim</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">in_features</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;in_features&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">512</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature_dim</span> <span class="o">=</span> <span class="mi">512</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span> <span class="o">=</span> <span class="n">DomainAdversarialLoss</span><span class="p">(</span>
+            <span class="n">feature_dim</span><span class="o">=</span><span class="n">feature_dim</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">disc_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">history</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+            <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">total_disc_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">num_batches</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">source_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">source_loader</span><span class="p">)</span>
+            <span class="n">target_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">target_loader</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source_loader</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_loader</span><span class="p">))):</span>
+                <span class="c1"># Get batches</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">source_images</span><span class="p">,</span> <span class="n">source_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">source_cycle</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="n">source_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">source_loader</span><span class="p">)</span>
+                    <span class="n">source_images</span><span class="p">,</span> <span class="n">source_labels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">source_cycle</span><span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">target_images</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">target_cycle</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="n">target_cycle</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">target_loader</span><span class="p">)</span>
+                    <span class="n">target_images</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">target_cycle</span><span class="p">)</span>
+
+                <span class="n">source_images</span> <span class="o">=</span> <span class="n">source_images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">source_labels</span> <span class="o">=</span> <span class="n">source_labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">target_images</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="c1"># Update feature extractor and classifier</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">source_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">source_images</span><span class="p">)</span>
+                <span class="n">class_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">source_outputs</span><span class="p">,</span> <span class="n">source_labels</span><span class="p">)</span>
+
+                <span class="c1"># Get features for discriminator</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;features&#39;</span><span class="p">):</span>
+                    <span class="n">source_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">source_images</span><span class="p">)</span>
+                    <span class="n">target_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">target_images</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">source_feats</span> <span class="o">=</span> <span class="n">source_outputs</span>
+                    <span class="n">target_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">target_images</span><span class="p">)</span>
+
+                <span class="c1"># Adversarial loss: fool discriminator</span>
+                <span class="n">adv_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">lambda_domain</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="p">(</span><span class="n">source_feats</span><span class="p">,</span> <span class="n">target_feats</span><span class="p">)</span>
+
+                <span class="n">total_model_loss</span> <span class="o">=</span> <span class="n">class_loss</span> <span class="o">+</span> <span class="n">adv_loss</span>
+                <span class="n">total_model_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="c1"># Update discriminator</span>
+                <span class="n">disc_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">disc_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discriminator</span><span class="p">(</span><span class="n">source_feats</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">target_feats</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+                <span class="n">disc_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">disc_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">total_model_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">total_disc_loss</span> <span class="o">+=</span> <span class="n">disc_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">num_batches</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="n">num_batches</span>
+            <span class="n">avg_disc</span> <span class="o">=</span> <span class="n">total_disc_loss</span> <span class="o">/</span> <span class="n">num_batches</span>
+            <span class="n">history</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_loss</span><span class="p">)</span>
+            <span class="n">history</span><span class="p">[</span><span class="s1">&#39;disc_loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_disc</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">//</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Adversarial Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loss: </span><span class="si">{</span><span class="n">avg_loss</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, Disc: </span><span class="si">{</span><span class="n">avg_disc</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">history</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

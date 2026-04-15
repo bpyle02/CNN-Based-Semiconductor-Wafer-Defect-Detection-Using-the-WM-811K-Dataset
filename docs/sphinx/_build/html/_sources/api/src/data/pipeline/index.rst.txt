@@ -1,0 +1,49 @@
+src.data.pipeline
+=================
+
+.. py:module:: src.data.pipeline
+
+.. autoapi-nested-parse::
+
+   Data pipeline: cache-aware load + stratified split for WM-811K.
+
+   This module owns the canonical ``load_and_preprocess_data`` implementation.
+   Scripts and CLIs should import from here rather than duplicating the logic.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.data.pipeline.SEED
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.data.pipeline.load_and_preprocess_data
+
+
+Module Contents
+---------------
+
+.. py:data:: SEED
+   :value: 42
+
+
+.. py:function:: load_and_preprocess_data(dataset_path, train_size: float = 0.7, test_size: float = 0.15, val_size: float = 0.15, seed: int = SEED, synthetic: bool = False, target_size=(96, 96)) -> Dict[str, Any]
+
+   Load, split, and optionally balance the WM-811K dataset.
+
+   Uses the pre-resized NPZ cache produced by ``scripts/precompute_tensors.py``
+   when present (memory-mapped to keep RSS bounded on Colab), otherwise falls
+   back to loading the raw pickle.
+
+   Returns a dict with keys: ``train_maps``, ``y_train``, ``val_maps``,
+   ``y_val``, ``test_maps``, ``y_test``, ``loss_weights``, ``class_names``.
+
+

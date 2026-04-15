@@ -35,9 +35,10 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import matplotlib
 import numpy as np
 import torch
-import matplotlib
+
 matplotlib.use("Agg")  # headless-safe before pyplot import
 import matplotlib.pyplot as plt
 from sklearn.metrics import average_precision_score, precision_recall_curve
@@ -94,14 +95,17 @@ def equal_mass_ece(
     for i in range(n_bins):
         lo, hi = edges[i], edges[i + 1]
         if hi <= lo:
-            per_bin.append({
-                "bin_index": i, "count": 0,
-                "confidence": float("nan"),
-                "accuracy": float("nan"),
-                "gap": float("nan"),
-                "conf_lo": float("nan"),
-                "conf_hi": float("nan"),
-            })
+            per_bin.append(
+                {
+                    "bin_index": i,
+                    "count": 0,
+                    "confidence": float("nan"),
+                    "accuracy": float("nan"),
+                    "gap": float("nan"),
+                    "conf_lo": float("nan"),
+                    "conf_hi": float("nan"),
+                }
+            )
             continue
         bin_conf = conf_sorted[lo:hi]
         bin_acc = correct_sorted[lo:hi]
@@ -109,15 +113,17 @@ def equal_mass_ece(
         mean_acc = float(bin_acc.mean())
         gap = abs(mean_conf - mean_acc)
         ece += (hi - lo) / n * gap
-        per_bin.append({
-            "bin_index": i,
-            "count": int(hi - lo),
-            "confidence": mean_conf,
-            "accuracy": mean_acc,
-            "gap": gap,
-            "conf_lo": float(bin_conf[0]),
-            "conf_hi": float(bin_conf[-1]),
-        })
+        per_bin.append(
+            {
+                "bin_index": i,
+                "count": int(hi - lo),
+                "confidence": mean_conf,
+                "accuracy": mean_acc,
+                "gap": gap,
+                "conf_lo": float(bin_conf[0]),
+                "conf_hi": float(bin_conf[-1]),
+            }
+        )
     return float(ece), per_bin
 
 
@@ -145,8 +151,7 @@ def plot_pr_curves(
         precision, recall, _ = precision_recall_curve(y_true, probs[:, c])
         ap = average_precision_score(y_true, probs[:, c])
         ap_per_class[class_names[c]] = float(ap)
-        ax.plot(recall, precision, lw=1.5,
-                label=f"{class_names[c]} (AP={ap:.3f})")
+        ax.plot(recall, precision, lw=1.5, label=f"{class_names[c]} (AP={ap:.3f})")
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_xlim(0.0, 1.0)
@@ -172,8 +177,9 @@ def plot_reliability(
     accs = [b["accuracy"] for b in per_bin if b["count"] > 0]
     counts = [b["count"] for b in per_bin if b["count"] > 0]
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7),
-                                   gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(7, 7), gridspec_kw={"height_ratios": [3, 1]}, sharex=True
+    )
     ax1.plot([0, 1], [0, 1], "k--", lw=1, alpha=0.6, label="Perfect calibration")
     if confs:
         ax1.plot(confs, accs, "o-", lw=1.5, ms=5, label=f"Observed (ECE={ece:.4f})")
@@ -202,9 +208,15 @@ def plot_reliability(
 
 
 def main(argv: List[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--checkpoint", type=Path, default=None,
-                        help="Single checkpoint to evaluate; omit to auto-discover all in --checkpoints-dir")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help="Single checkpoint to evaluate; omit to auto-discover all in --checkpoints-dir",
+    )
     parser.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
     parser.add_argument("--data-path", type=Path, default=REPO_ROOT / "data" / "LSWMD_new.pkl")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -216,8 +228,9 @@ def main(argv: List[str] | None = None) -> int:
     parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "results")
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S"
+    )
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -240,6 +253,7 @@ def main(argv: List[str] | None = None) -> int:
     config = load_config(args.config)
     # Reuse train.py's deterministic split + class names.
     from src.data.dataset import KNOWN_CLASSES
+
     class_names = list(KNOWN_CLASSES)
 
     _, test_loader, num_classes = _load_splits(
@@ -272,18 +286,24 @@ def main(argv: List[str] | None = None) -> int:
         logger.info("Wrote %s", cal_png)
 
         cal_json = args.results_dir / f"calibration_{model_name}.json"
-        cal_json.write_text(json.dumps({
-            "model": model_name,
-            "display_name": display,
-            "n_bins": args.n_bins,
-            "binning": "equal_mass",
-            "ece": ece,
-            "accuracy": float(correct.mean()),
-            "mean_confidence": float(confidences.mean()),
-            "per_bin": per_bin,
-            "average_precision": ap_per_class,
-            "n_samples": int(labels.shape[0]),
-        }, indent=2), encoding="utf-8")
+        cal_json.write_text(
+            json.dumps(
+                {
+                    "model": model_name,
+                    "display_name": display,
+                    "n_bins": args.n_bins,
+                    "binning": "equal_mass",
+                    "ece": ece,
+                    "accuracy": float(correct.mean()),
+                    "mean_confidence": float(confidences.mean()),
+                    "per_bin": per_bin,
+                    "average_precision": ap_per_class,
+                    "n_samples": int(labels.shape[0]),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         logger.info("Wrote %s (ECE=%.4f)", cal_json, ece)
 
     return 0

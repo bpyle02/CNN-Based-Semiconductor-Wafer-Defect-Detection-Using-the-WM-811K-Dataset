@@ -1,0 +1,313 @@
+src.analysis.anomaly
+====================
+
+.. py:module:: src.analysis.anomaly
+
+.. autoapi-nested-parse::
+
+   Anomaly Detection for wafer defect classification.
+
+   Implements one-class and novelty detection methods to identify defects as anomalies
+   relative to a "normal" class (e.g., 'none' class in wafer detection).
+
+   .. method:: - Isolation Forest
+
+      Tree-based anomaly scoring
+
+   .. method:: - One-Class SVM
+
+      Support vector method for single-class learning
+
+   .. method:: - Autoencoder-based
+
+      Reconstruction error for anomaly detection
+
+   .. method:: - Statistical
+
+      Mahalanobis distance from normal class distribution
+      
+
+   .. rubric:: References
+
+   [121] Ruff et al. (2018). "Deep One-Class Classification (Deep SVDD)". arXiv:1802.04365
+   [123] An & Cho (2015). "Variational Autoencoder Based Anomaly Detection". arXiv:1802.03903
+   [125] Chalapathy & Chawla (2019). "Deep Learning for Anomaly Detection Survey". arXiv:1901.03407
+   [129] Hendrycks & Gimpel (2017). "Baseline for OOD Detection". arXiv:1610.02136
+   [130] Liang et al. (2018). "ODIN: OOD Detection". arXiv:1706.02690
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.analysis.anomaly.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.analysis.anomaly.AnomalyDetectionAutoencoder
+   src.analysis.anomaly.AnomalyDetector
+   src.analysis.anomaly.OODDetector
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: AnomalyDetectionAutoencoder(input_channels: int = 3, latent_dim: int = 32)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Simple autoencoder for wafer map reconstruction.
+
+   Learns to reconstruct "normal" wafers and uses reconstruction error
+   as anomaly score.
+
+   :param input_channels: Number of input channels (3)
+   :param latent_dim: Dimension of latent space (default 32)
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: encoder
+
+
+   .. py:attribute:: fc_encode
+
+
+   .. py:attribute:: fc_decode
+
+
+   .. py:attribute:: decoder
+
+
+   .. py:method:: encode(x: torch.Tensor) -> torch.Tensor
+
+      Encode input to latent space.
+
+
+
+   .. py:method:: decode(z: torch.Tensor) -> torch.Tensor
+
+      Decode from latent space to image.
+
+
+
+   .. py:method:: forward(x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]
+
+      :param x: Input tensor of shape (B, C, H, W)
+
+      :returns: Tuple of (reconstruction, latent_code)
+
+
+
+.. py:class:: AnomalyDetector(method: str = 'isolation_forest', device: str = 'cuda')
+
+   High-level anomaly detection interface.
+
+   Supports multiple detection methods: Isolation Forest, One-Class SVM,
+   Autoencoder reconstruction error, Mahalanobis distance.
+
+   :param method: Detection method ('isolation_forest', 'one_class_svm', 'autoencoder', 'mahalanobis')
+   :param device: Device to run on (cuda or cpu)
+
+
+   .. py:attribute:: method
+      :value: 'isolation_forest'
+
+
+
+   .. py:attribute:: device
+      :value: 'cuda'
+
+
+
+   .. py:attribute:: model
+      :value: None
+
+
+
+   .. py:attribute:: scaler
+
+
+   .. py:attribute:: normal_mean
+      :value: None
+
+
+
+   .. py:attribute:: normal_cov
+      :value: None
+
+
+
+   .. py:attribute:: normal_cov_inv
+      :value: None
+
+
+
+   .. py:method:: extract_features(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader) -> numpy.ndarray
+
+      Extract features from model for anomaly detection.
+
+      :param model: PyTorch model (features extracted from final layer before classification)
+      :param data_loader: DataLoader for extracting features
+
+      :returns: Feature matrix of shape (N, feature_dim)
+
+
+
+   .. py:method:: fit_isolation_forest(features: numpy.ndarray, contamination: float = 0.05) -> None
+
+      Fit Isolation Forest on normal class features.
+
+      :param features: Feature matrix from normal class
+      :param contamination: Expected proportion of anomalies
+
+
+
+   .. py:method:: fit_one_class_svm(features: numpy.ndarray, nu: float = 0.05) -> None
+
+      Fit One-Class SVM on normal class features.
+
+      :param features: Feature matrix from normal class
+      :param nu: Expected proportion of outliers
+
+
+
+   .. py:method:: fit_mahalanobis(features: numpy.ndarray) -> None
+
+      Fit Mahalanobis distance detector.
+
+      :param features: Feature matrix from normal class
+
+
+
+   .. py:method:: fit_autoencoder(train_loader: torch.utils.data.DataLoader, epochs: int = 20, lr: float = 0.001) -> None
+
+      Train autoencoder on normal class data.
+
+      :param train_loader: DataLoader for normal class
+      :param epochs: Number of training epochs
+      :param lr: Learning rate
+
+
+
+   .. py:method:: predict_isolation_forest(features: numpy.ndarray) -> numpy.ndarray
+
+      Predict anomaly scores (0=normal, -1=anomaly).
+
+      Returns: Array of predictions
+
+
+
+   .. py:method:: predict_one_class_svm(features: numpy.ndarray) -> numpy.ndarray
+
+      Predict anomaly scores (1=normal, -1=anomaly).
+
+      Returns: Array of predictions
+
+
+
+   .. py:method:: predict_mahalanobis(features: numpy.ndarray) -> numpy.ndarray
+
+      Compute Mahalanobis distance as anomaly score.
+
+      Higher score = more anomalous.
+
+      Returns: Array of Mahalanobis distances
+
+
+
+   .. py:method:: predict_autoencoder(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader) -> numpy.ndarray
+
+      Compute reconstruction error as anomaly score.
+
+      :param model: Original model for feature extraction
+      :param data_loader: DataLoader for inference
+
+      :returns: Array of reconstruction errors
+
+
+
+   .. py:method:: fit(model: torch.nn.Module, normal_loader: torch.utils.data.DataLoader, **kwargs: Any) -> None
+
+      Fit anomaly detector on normal class data.
+
+      :param model: PyTorch model for feature extraction
+      :param normal_loader: DataLoader for normal class
+      :param \*\*kwargs: Method-specific arguments
+
+
+
+   .. py:method:: score(model: Optional[torch.nn.Module], data_loader: torch.utils.data.DataLoader) -> numpy.ndarray
+
+      Compute anomaly scores for data.
+
+      :param model: PyTorch model (None for autoencoder method)
+      :param data_loader: DataLoader for scoring
+
+      :returns: Array of anomaly scores
+
+
+
+   .. py:method:: evaluate(model: Optional[torch.nn.Module], normal_loader: torch.utils.data.DataLoader, anomaly_loader: torch.utils.data.DataLoader) -> Dict[str, float]
+
+      Evaluate anomaly detector on normal vs. anomalous data.
+
+      :param model: PyTorch model
+      :param normal_loader: DataLoader for normal samples
+      :param anomaly_loader: DataLoader for anomalous samples
+
+      :returns: Dictionary with metrics (AUROC, AUPR, etc.)
+
+
+
+.. py:class:: OODDetector(method: str = 'mahalanobis', threshold: float = 0.95)
+
+   Out-of-distribution detection.
+
+
+   .. py:attribute:: method
+      :value: 'mahalanobis'
+
+
+
+   .. py:attribute:: threshold
+      :value: 0.95
+
+
+
+   .. py:attribute:: feature_mean
+      :value: None
+
+
+
+   .. py:attribute:: feature_cov_inv
+      :value: None
+
+
+
+   .. py:attribute:: ood_threshold
+      :value: None
+
+
+
+   .. py:method:: fit(features: numpy.ndarray) -> None
+
+      Fit OOD detector on in-distribution features.
+
+
+
+   .. py:method:: detect_ood(features: numpy.ndarray) -> numpy.ndarray
+
+      Return True for OOD samples.
+
+
+

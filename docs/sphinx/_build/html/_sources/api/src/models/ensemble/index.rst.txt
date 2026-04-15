@@ -1,0 +1,315 @@
+src.models.ensemble
+===================
+
+.. py:module:: src.models.ensemble
+
+.. autoapi-nested-parse::
+
+   Model ensembling for improved predictions.
+
+   Supports multiple aggregation strategies:
+   - Voting: Majority vote from predictions
+   - Averaging: Average of softmax probabilities
+   - Weighted Averaging: Weighted combination of probabilities
+   - Learned Weights: Optimized per-model weights via validation macro F1
+   - Stacking: Meta-learner trained on base model softmax outputs
+
+   .. rubric:: References
+
+   [30] Lakshminarayanan et al. (2017). "Deep Ensembles". arXiv:1612.01474
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.models.ensemble.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.models.ensemble.EnsembleModel
+   src.models.ensemble.EnsembleEvaluator
+   src.models.ensemble.LearnedWeightEnsemble
+   src.models.ensemble.StackingEnsemble
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.models.ensemble.create_ensemble_from_checkpoints
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: EnsembleModel(models: List[torch.nn.Module], aggregation: str = 'averaging', weights: Optional[List[float]] = None)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Ensemble of multiple neural network models.
+
+   Combines predictions from multiple models using various aggregation strategies.
+
+   .. attribute:: models
+
+      List of trained PyTorch models
+
+   .. attribute:: aggregation
+
+      Strategy for combining predictions ("voting", "averaging", "weighted_averaging")
+
+   .. attribute:: weights
+
+      Weights for each model (used in weighted_averaging)
+
+   Initialize ensemble.
+
+   :param models: List of trained models
+   :param aggregation: How to combine predictions ("voting", "averaging", "weighted_averaging")
+   :param weights: Weights for each model (summed to 1.0)
+
+
+   .. py:attribute:: models
+
+
+   .. py:attribute:: aggregation
+      :value: 'averaging'
+
+
+
+   .. py:attribute:: num_models
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      Forward pass with ensemble aggregation.
+
+      :param x: Input tensor (batch_size, channels, height, width)
+
+      :returns: Aggregated logits (batch_size, num_classes)
+
+
+
+   .. py:method:: to(device: torch.device) -> EnsembleModel
+
+      Move all models to device.
+
+
+
+   .. py:method:: eval() -> EnsembleModel
+
+      Set all models to eval mode.
+
+
+
+   .. py:method:: train(mode: bool = True) -> EnsembleModel
+
+      Set all models to train mode.
+
+
+
+.. py:class:: EnsembleEvaluator(ensemble: EnsembleModel, device: str = 'cpu')
+
+   Evaluate ensemble model performance.
+
+   Provides metrics and analysis for ensemble predictions compared to individual models.
+
+   Initialize evaluator.
+
+   :param ensemble: EnsembleModel instance
+   :param device: Device to run evaluation on
+
+
+   .. py:attribute:: ensemble
+
+
+   .. py:attribute:: device
+
+
+   .. py:method:: evaluate(data_loader: torch.utils.data.DataLoader, num_classes: int) -> Dict[str, Dict[str, float]]
+
+      Evaluate ensemble on test data.
+
+      :param data_loader: Test data loader
+      :param num_classes: Number of classes
+
+      :returns: Dictionary with metrics for ensemble and individual models
+
+
+
+   .. py:method:: get_agreement_matrix(data_loader: torch.utils.data.DataLoader) -> numpy.ndarray
+
+      Compute agreement between models.
+
+      :returns: Agreement matrix showing how often each pair of models agrees
+
+
+
+.. py:function:: create_ensemble_from_checkpoints(checkpoint_paths: List[str], model_constructors: List[Callable[[], torch.nn.Module]], device: str = 'cpu', aggregation: str = 'averaging') -> EnsembleModel
+
+   Load models from checkpoints and create ensemble.
+
+   :param checkpoint_paths: List of paths to model checkpoints
+   :param model_constructors: List of functions that create models
+   :param device: Device to load models on
+   :param aggregation: Aggregation strategy
+
+   :returns: EnsembleModel instance
+
+
+.. py:class:: LearnedWeightEnsemble(models: List[torch.nn.Module], device: str = 'cpu')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Ensemble with weights learned to maximize macro F1 on validation data.
+
+   Optimizes per-model weights using the validation set's macro F1 score.
+   Uses scipy.optimize.minimize to find optimal weights under a simplex constraint.
+
+   Reference: [30] Lakshminarayanan et al. (2017). arXiv:1612.01474
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: models
+
+
+   .. py:attribute:: num_models
+
+
+   .. py:attribute:: device
+
+
+   .. py:method:: optimize_weights(val_loader: torch.utils.data.DataLoader, class_names: List[str]) -> numpy.ndarray
+
+      Find weights that maximize macro F1 on validation set.
+
+      Uses Nelder-Mead optimization over the probability simplex.
+      The objective function computes the negative macro F1 of the
+      weighted-average softmax predictions.
+
+      :param val_loader: Validation data loader.
+      :param class_names: List of class name strings (used for logging).
+
+      :returns: Optimal weight vector as a numpy array of shape (num_models,).
+
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      Weighted ensemble forward pass.
+
+      :param x: Input tensor (batch_size, channels, height, width).
+
+      :returns: Log-probabilities (batch_size, num_classes).
+
+
+
+   .. py:method:: predict(images: torch.Tensor) -> torch.Tensor
+
+      Weighted ensemble prediction (class indices).
+
+      :param images: Input tensor (batch_size, channels, height, width).
+
+      :returns: Predicted class indices (batch_size,).
+
+
+
+   .. py:method:: evaluate(test_loader: torch.utils.data.DataLoader, class_names: List[str]) -> Dict[str, float]
+
+      Evaluate ensemble on a test set.
+
+      :param test_loader: Test data loader.
+      :param class_names: List of class name strings.
+
+      :returns: Dictionary with accuracy, macro_f1, and weighted_f1.
+
+
+
+.. py:class:: StackingEnsemble(models: List[torch.nn.Module], num_classes: int = 9, device: str = 'cpu')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Stacking ensemble: train a meta-learner on base model predictions.
+
+   Each base model produces softmax outputs on validation data.
+   A small neural network (meta-learner) is trained to combine these predictions.
+
+   Architecture: Linear(num_models * num_classes, num_classes).
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: base_models
+
+
+   .. py:attribute:: num_models
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: meta_learner
+
+
+   .. py:method:: fit(val_loader: torch.utils.data.DataLoader, epochs: int = 50, lr: float = 0.01) -> List[float]
+
+      Train meta-learner on validation predictions.
+
+      :param val_loader: Validation data loader.
+      :param epochs: Training epochs for the meta-learner.
+      :param lr: Learning rate for the meta-learner optimizer.
+
+      :returns: List of per-epoch training losses.
+
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      Stacked ensemble forward pass.
+
+      :param x: Input tensor (batch_size, channels, height, width).
+
+      :returns: Logits from meta-learner (batch_size, num_classes).
+
+
+
+   .. py:method:: predict(images: torch.Tensor) -> torch.Tensor
+
+      Stacked ensemble prediction (class indices).
+
+      :param images: Input tensor (batch_size, channels, height, width).
+
+      :returns: Predicted class indices (batch_size,).
+
+
+
+   .. py:method:: evaluate(test_loader: torch.utils.data.DataLoader, class_names: List[str]) -> Dict[str, float]
+
+      Evaluate stacking ensemble on a test set.
+
+      :param test_loader: Test data loader.
+      :param class_names: List of class name strings.
+
+      :returns: Dictionary with accuracy, macro_f1, and weighted_f1.
+
+
+

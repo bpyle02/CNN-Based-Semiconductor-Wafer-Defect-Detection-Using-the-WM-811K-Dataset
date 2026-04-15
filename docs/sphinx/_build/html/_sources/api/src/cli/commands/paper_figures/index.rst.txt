@@ -1,0 +1,27 @@
+src.cli.commands.paper_figures
+==============================
+
+.. py:module:: src.cli.commands.paper_figures
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli paper-figures`` — forwards to ``scripts/paper_figures.py``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.paper_figures.paper_figures
+
+
+Module Contents
+---------------
+
+.. py:function:: paper_figures(ctx: typer.Context) -> None
+
+   Regenerate paper figures. Flags forwarded to scripts/paper_figures.py.
+
+

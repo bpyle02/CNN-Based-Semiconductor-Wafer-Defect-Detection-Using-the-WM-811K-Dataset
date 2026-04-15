@@ -1,0 +1,105 @@
+src.augmentation.synthetic
+==========================
+
+.. py:module:: src.augmentation.synthetic
+
+.. autoapi-nested-parse::
+
+   Synthetic wafer map generation for data augmentation.
+
+   .. rubric:: References
+
+   [18] Chawla et al. (2002). "SMOTE: Synthetic Minority Over-sampling". arXiv:1106.1813
+   [7] Wu et al. (2014). "WM-811K Failure Patterns". DOI:10.1109/TSM.2014.2364237
+   [54] (2019). "Data Augmentation Using Learned Transformations"
+   [65] (2020). "Generative Data Augmentation for Semiconductor Defect Detection"
+   [66] Zhang et al. (2018). "mixup". arXiv:1710.09412
+   [67] Yun et al. (2019). "CutMix". arXiv:1905.04899
+   [68] He et al. (2008). "ADASYN: Adaptive Synthetic Sampling"
+   [69] Han et al. (2005). "Borderline-SMOTE"
+   [72] Zhong et al. (2020). "Random Erasing Data Augmentation". arXiv:1708.04896
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.augmentation.synthetic.DefectSimulator
+   src.augmentation.synthetic.SyntheticDataGenerator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.augmentation.synthetic.balance_dataset_with_synthetic
+
+
+Module Contents
+---------------
+
+.. py:class:: DefectSimulator
+
+   Rule-based defect pattern simulator.
+
+
+   .. py:method:: generate_center_defect(size: int = 96, intensity: float = 0.5) -> numpy.ndarray
+      :staticmethod:
+
+
+      Generate synthetic center defect pattern.
+
+
+
+   .. py:method:: generate_edge_loc_defect(size: int = 96, intensity: float = 0.5) -> numpy.ndarray
+      :staticmethod:
+
+
+      Generate synthetic edge localization defect.
+
+
+
+   .. py:method:: generate_scratch_defect(size: int = 96, intensity: float = 0.5) -> numpy.ndarray
+      :staticmethod:
+
+
+      Generate synthetic scratch (linear) defect.
+
+
+
+.. py:function:: balance_dataset_with_synthetic(wafer_maps: numpy.ndarray, labels: numpy.ndarray, target_per_class: Optional[int] = None, size: int = 96, max_target_per_class: int = 10000) -> Tuple[numpy.ndarray, numpy.ndarray]
+
+   Balance a dataset by generating synthetic samples for underrepresented classes.
+
+   :param wafer_maps: Array of preprocessed (H, W) wafer maps
+   :param labels: 1D array of integer class labels
+   :param target_per_class: Target count per class (None = min(max_class, max_target_per_class))
+   :param size: Size of generated maps
+   :param max_target_per_class: Safety cap when target_per_class is None. Keeps memory
+                                bounded when the majority class dwarfs rare ones (WM-811K "none" has ~147k;
+                                matching it across 9 classes would allocate ~40 GB).
+
+   :returns: Tuple of (augmented_maps, augmented_labels)
+
+
+.. py:class:: SyntheticDataGenerator(method: str = 'rule_based')
+
+   High-level interface for synthetic data generation.
+
+   Initialize generator.
+
+
+   .. py:attribute:: method
+      :value: 'rule_based'
+
+
+
+   .. py:method:: generate(num_samples: int, class_label: int, size: int = 96) -> numpy.ndarray
+
+      Generate synthetic samples.
+
+
+

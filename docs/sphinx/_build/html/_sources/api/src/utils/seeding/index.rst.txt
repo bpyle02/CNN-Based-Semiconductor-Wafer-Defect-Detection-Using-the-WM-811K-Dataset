@@ -1,0 +1,50 @@
+src.utils.seeding
+=================
+
+.. py:module:: src.utils.seeding
+
+.. autoapi-nested-parse::
+
+   Centralized seed management.
+
+   A single entry point (:func:`seed_everything`) that sets seeds across every
+   RNG source the project touches: Python's ``random`` module, NumPy,
+   PyTorch (CPU and CUDA), and the ``PYTHONHASHSEED`` environment variable.
+
+   Idempotent: calling twice with the same seed produces the same state.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.utils.seeding.logger
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.utils.seeding.seed_everything
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:function:: seed_everything(seed: int = 42) -> None
+
+   Set seeds for python ``random``, numpy, torch (CPU + CUDA), and ``PYTHONHASHSEED``.
+
+   Logs the seed at INFO. Idempotent. Returns nothing.
+
+   :param seed: Seed value; must fit in an unsigned 32-bit integer
+                (``0 <= seed <= 2**32 - 1``). Defaults to 42.
+
+   :raises ValueError: If ``seed`` is outside the valid range.
+
+

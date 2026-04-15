@@ -4,17 +4,18 @@ Distributed training utilities for multi-GPU training.
 Supports DataParallel and DistributedDataParallel for scalable training.
 """
 
+import logging
 import os
 from typing import List, Optional
+
 import torch
 import torch.nn as nn
 from torch.nn.parallel import DataParallel, DistributedDataParallel
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-def setup_distributed(rank: int, world_size: int, backend: str = 'nccl') -> None:
+def setup_distributed(rank: int, world_size: int, backend: str = "nccl") -> None:
     """
     Initialize distributed training environment.
 
@@ -23,8 +24,8 @@ def setup_distributed(rank: int, world_size: int, backend: str = 'nccl') -> None
         world_size: Total number of processes
         backend: Communication backend ('nccl' for GPU, 'gloo' for CPU)
     """
-    os.environ['MASTER_ADDR'] = os.environ.get('MASTER_ADDR', 'localhost')
-    os.environ['MASTER_PORT'] = os.environ.get('MASTER_PORT', '29500')
+    os.environ["MASTER_ADDR"] = os.environ.get("MASTER_ADDR", "localhost")
+    os.environ["MASTER_PORT"] = os.environ.get("MASTER_PORT", "29500")
 
     torch.distributed.init_process_group(
         backend=backend,

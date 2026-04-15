@@ -1,13 +1,15 @@
 """Base trainer class for uniform configuration management."""
 
 import logging
+import random
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-import random
-from pathlib import Path
-from typing import Optional, Dict, Any, Union
+
 from src.config import load_config
 from src.exceptions import TrainingError
 from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
@@ -26,7 +28,7 @@ class BaseTrainer:
     - Checkpoint saving/loading with metadata
     """
 
-    def __init__(self, config_path: str = 'config.yaml') -> None:
+    def __init__(self, config_path: str = "config.yaml") -> None:
         """
         Initialize trainer with configuration.
 
@@ -64,7 +66,7 @@ class BaseTrainer:
         optimizer: optim.Optimizer,
         epoch: int,
         metrics: Dict[str, Any],
-        filename: str = 'checkpoint.pth',
+        filename: str = "checkpoint.pth",
     ) -> str:
         """
         Save training checkpoint with model, optimizer, and metrics.
@@ -82,18 +84,15 @@ class BaseTrainer:
         checkpoint_path = self.checkpoint_dir / filename
         try:
             checkpoint_data = {
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'metrics': metrics,
-                'seed': self.seed,
-                'device': str(self.device),
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "metrics": metrics,
+                "seed": self.seed,
+                "device": str(self.device),
             }
             file_hash = save_checkpoint_with_hash(checkpoint_data, checkpoint_path)
-            logger.info(
-                f"Checkpoint saved to {checkpoint_path} "
-                f"(SHA-256: {file_hash[:16]}...)"
-            )
+            logger.info(f"Checkpoint saved to {checkpoint_path} " f"(SHA-256: {file_hash[:16]}...)")
         except Exception as e:
             raise TrainingError(f"Failed to save checkpoint to {checkpoint_path}: {e}") from e
         return str(checkpoint_path)
@@ -119,7 +118,7 @@ class BaseTrainer:
             TrainingError: If checkpoint not found or cannot be loaded
         """
         if checkpoint_path is None:
-            checkpoints = list(self.checkpoint_dir.glob('*.pth'))
+            checkpoints = list(self.checkpoint_dir.glob("*.pth"))
             if not checkpoints:
                 raise TrainingError(f"No checkpoints in {self.checkpoint_dir}")
             checkpoint_path = sorted(checkpoints, key=lambda p: p.stat().st_mtime)[-1]
@@ -128,9 +127,7 @@ class BaseTrainer:
 
         # Verify checkpoint integrity before loading
         if not verify_checkpoint(checkpoint_path):
-            raise TrainingError(
-                f"Checkpoint integrity verification failed for {checkpoint_path}"
-            )
+            raise TrainingError(f"Checkpoint integrity verification failed for {checkpoint_path}")
 
         try:
             checkpoint = torch.load(
@@ -138,16 +135,16 @@ class BaseTrainer:
                 map_location=self.device,
                 weights_only=False,
             )
-            model.load_state_dict(checkpoint['model_state_dict'])
+            model.load_state_dict(checkpoint["model_state_dict"])
 
-            if optimizer is not None and 'optimizer_state_dict' in checkpoint:
-                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if optimizer is not None and "optimizer_state_dict" in checkpoint:
+                optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         except Exception as e:
             raise TrainingError(f"Failed to load checkpoint from {checkpoint_path}: {e}") from e
 
         return {
-            'epoch': checkpoint.get('epoch', 0),
-            'metrics': checkpoint.get('metrics', {}),
+            "epoch": checkpoint.get("epoch", 0),
+            "metrics": checkpoint.get("metrics", {}),
         }
 
     def get_training_params(self) -> Dict[str, Any]:
@@ -168,12 +165,12 @@ class BaseTrainer:
             )
 
         return {
-            'device': str(self.device),
-            'seed': self.seed,
-            'learning_rate': learning_rate,
-            'batch_size': training_cfg.batch_size,
-            'epochs': training_cfg.epochs,
-            'weight_decay': training_cfg.weight_decay,
-            'optimizer': training_cfg.optimizer,
-            'scheduler': training_cfg.scheduler.type,
+            "device": str(self.device),
+            "seed": self.seed,
+            "learning_rate": learning_rate,
+            "batch_size": training_cfg.batch_size,
+            "epochs": training_cfg.epochs,
+            "weight_decay": training_cfg.weight_decay,
+            "optimizer": training_cfg.optimizer,
+            "scheduler": training_cfg.scheduler.type,
         }

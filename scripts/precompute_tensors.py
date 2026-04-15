@@ -88,9 +88,7 @@ def _resize_inplace(wafer_maps: list, out: np.ndarray, size: int) -> None:
             elapsed = time.time() - t0
             rate = (i + 1) / max(elapsed, 1e-6)
             eta = (n - i - 1) / max(rate, 1e-6)
-            logger.info(
-                "  %d/%d (%.0f maps/s, ETA %.0fs)", i + 1, n, rate, eta
-            )
+            logger.info("  %d/%d (%.0f maps/s, ETA %.0fs)", i + 1, n, rate, eta)
 
 
 def build_cache(
@@ -169,14 +167,15 @@ def build_cache(
     maps_npy = output_path.with_suffix(".maps.npy")
     logger.info(
         "Opening memmap at %s ((%d, %d, %d) float16 = %.2f GB, disk-backed)",
-        maps_npy, n, size, size, n * size * size * 2 / 1e9
+        maps_npy,
+        n,
+        size,
+        size,
+        n * size * size * 2 / 1e9,
     )
     maps = open_memmap(maps_npy, mode="w+", dtype=np.float16, shape=(n, size, size))
 
-    logger.info(
-        "Resizing %d maps to %dx%d (single-process, disk-backed memmap) ...",
-        n, size, size
-    )
+    logger.info("Resizing %d maps to %dx%d (single-process, disk-backed memmap) ...", n, size, size)
     _resize_inplace(wafer_maps, maps, size)
 
     maps.flush()
@@ -207,7 +206,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("data/LSWMD_cache.npz"))
     parser.add_argument("--size", type=int, default=96, help="Target resolution (H=W)")
     parser.add_argument(
-        "--workers", type=int, default=1,
+        "--workers",
+        type=int,
+        default=1,
         help="Process count. Default 1 (memory-safe). Only use > 1 on >=16 GB RAM hosts.",
     )
     args = parser.parse_args()

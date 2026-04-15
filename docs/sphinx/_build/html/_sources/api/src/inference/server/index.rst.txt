@@ -1,0 +1,424 @@
+src.inference.server
+====================
+
+.. py:module:: src.inference.server
+
+.. autoapi-nested-parse::
+
+   FastAPI-based real-time inference server for wafer defect classification.
+
+   Provides REST endpoints for model serving with support for:
+   - Image-based predictions (base64 or file upload)
+   - Multi-model serving with dynamic loading and model registry
+   - Health checks and model introspection
+   - Comprehensive request validation and error handling
+   - CORS support for web clients
+   - Performance metrics tracking
+
+   .. rubric:: References
+
+   [141] (2021). "Deploying ML Models in Semiconductor Manufacturing"
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.server.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.inference.server.ModelType
+   src.inference.server.PredictionRequest
+   src.inference.server.BatchPredictionRequest
+   src.inference.server.PredictionResponse
+   src.inference.server.BatchPredictionResponse
+   src.inference.server.LoadModelRequest
+   src.inference.server.ModelInfo
+   src.inference.server.ServerMetrics
+   src.inference.server.ModelServer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.inference.server.create_app
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: ModelType
+
+   Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+   Available model architectures.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+   .. py:attribute:: CNN
+      :value: 'cnn'
+
+
+
+   .. py:attribute:: RESNET
+      :value: 'resnet'
+
+
+
+   .. py:attribute:: EFFICIENTNET
+      :value: 'efficientnet'
+
+
+
+.. py:class:: PredictionRequest(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Request schema for base64-encoded image prediction.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: image_base64
+      :type:  str
+      :value: None
+
+
+
+   .. py:attribute:: model_id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: model_name
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: return_gradcam
+      :type:  bool
+      :value: None
+
+
+
+   .. py:method:: validate_base64(v: str) -> str
+      :classmethod:
+
+
+      Validate base64 string format.
+
+
+
+.. py:class:: BatchPredictionRequest(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Request schema for batch base64-encoded image prediction.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: images
+      :type:  List[str]
+      :value: None
+
+
+
+   .. py:attribute:: model_id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: model_name
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:method:: validate_images(values: List[str]) -> List[str]
+      :classmethod:
+
+
+
+.. py:class:: PredictionResponse(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Response schema for predictions.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: class_name
+      :type:  str
+      :value: None
+
+
+
+   .. py:attribute:: class_id
+      :type:  int
+      :value: None
+
+
+
+   .. py:attribute:: confidence
+      :type:  float
+      :value: None
+
+
+
+   .. py:attribute:: probabilities
+      :type:  Dict[str, float]
+      :value: None
+
+
+
+   .. py:attribute:: model_id
+      :type:  str
+      :value: None
+
+
+
+   .. py:attribute:: model_name
+      :type:  str
+      :value: None
+
+
+
+   .. py:attribute:: input_shape
+      :type:  Tuple[int, int]
+      :value: None
+
+
+
+   .. py:attribute:: inference_ms
+      :type:  float
+      :value: None
+
+
+
+   .. py:attribute:: gradcam_base64
+      :type:  Optional[str]
+      :value: None
+
+
+
+.. py:class:: BatchPredictionResponse(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Response schema for batch predictions.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: predictions
+      :type:  List[PredictionResponse]
+
+
+   .. py:attribute:: total_time_ms
+      :type:  float
+
+
+.. py:class:: LoadModelRequest(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Request schema for loading a model.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: model_type
+      :type:  ModelType
+      :value: None
+
+
+
+   .. py:attribute:: checkpoint_path
+      :type:  str
+      :value: None
+
+
+
+   .. py:attribute:: model_id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:method:: validate_path(v: str) -> str
+      :classmethod:
+
+
+      Validate checkpoint path exists and is safe to load.
+
+
+
+.. py:class:: ModelInfo(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Model information schema.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: id
+      :type:  str
+
+
+   .. py:attribute:: architecture
+      :type:  str
+
+
+   .. py:attribute:: device
+      :type:  str
+
+
+   .. py:attribute:: num_parameters
+      :type:  int
+
+
+   .. py:attribute:: is_default
+      :type:  bool
+
+
+.. py:class:: ServerMetrics(/, **data: Any)
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+
+   Server performance metrics.
+
+   Create a new model by parsing and validating input data from keyword arguments.
+
+   Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+   validated to form a valid model.
+
+   `self` is explicitly positional-only to allow `self` as a field name.
+
+
+   .. py:attribute:: total_requests
+      :type:  int
+
+
+   .. py:attribute:: avg_latency_ms
+      :type:  float
+
+
+   .. py:attribute:: uptime_seconds
+      :type:  float
+
+
+   .. py:attribute:: loaded_models_count
+      :type:  int
+
+
+.. py:class:: ModelServer(device: str = 'cpu', allowed_checkpoint_dirs: Optional[List[Union[pathlib.Path, str]]] = None)
+
+   Model server managing multiple models and inference execution.
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: models
+      :type:  Dict[str, torch.nn.Module]
+
+
+   .. py:attribute:: model_metadata
+      :type:  Dict[str, Dict[str, Any]]
+
+
+   .. py:attribute:: default_model_id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: allowed_checkpoint_dirs
+      :value: ()
+
+
+
+   .. py:attribute:: start_time
+
+
+   .. py:attribute:: request_count
+      :value: 0
+
+
+
+   .. py:attribute:: latency_history
+
+
+   .. py:method:: load_model(model_type: ModelType, checkpoint_path: str, model_id: Optional[str] = None) -> Dict[str, Any]
+
+
+   .. py:method:: get_model(model_id: Optional[str] = None) -> Tuple[str, torch.nn.Module]
+
+
+   .. py:method:: predict(image_array: numpy.ndarray, model_id: Optional[str] = None) -> Tuple[int, numpy.ndarray, float]
+
+
+   .. py:method:: predict_batch(image_arrays: List[numpy.ndarray], model_id: Optional[str] = None) -> Tuple[List[int], List[numpy.ndarray], float, str]
+
+
+   .. py:method:: generate_gradcam(image_array: numpy.ndarray, model_id: Optional[str] = None, target_class: Optional[int] = None) -> Tuple[str, int]
+
+
+.. py:function:: create_app(device: str = 'cpu', allowed_checkpoint_dirs: Optional[List[Union[pathlib.Path, str]]] = None, model_checkpoint: Optional[str] = None, model_type: Optional[ModelType] = None) -> fastapi.FastAPI
+

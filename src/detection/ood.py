@@ -14,7 +14,8 @@ References:
     [150] Lu et al. (2018). "Concept Drift Adaptation". arXiv:1810.02822
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -23,7 +24,7 @@ from sklearn.covariance import ledoit_wolf
 
 class MahalanobisDetector:
     """Mahalanobis distance-based OOD detection.
-    
+
     Computes Mahalanobis distance from sample to training data distribution
     mean. High distance indicates OOD (anomalous) sample.
     """
@@ -87,7 +88,7 @@ class MahalanobisDetector:
 class OutOfDistributionDetector:
     """High-level OOD detection interface."""
 
-    def __init__(self, model: nn.Module, device: str = 'cpu') -> None:
+    def __init__(self, model: nn.Module, device: str = "cpu") -> None:
         """Initialize detector.
 
         Args:
@@ -104,35 +105,38 @@ class OutOfDistributionDetector:
         x: torch.Tensor,
     ) -> np.ndarray:
         """Extract features from model.
-        
+
         Args:
             x: Input tensor (batch_size, channels, height, width)
-        
+
         Returns:
             Feature matrix (batch_size, feature_dim)
         """
         self.model.eval()
         with torch.no_grad():
             # Extract features before final FC layer
-            if hasattr(self.model, 'avgpool'):
+            if hasattr(self.model, "avgpool"):
                 # ResNet-like
-                features = self.model.avgpool(self.model.layer4(self.model.layer3(
-                    self.model.layer2(self.model.layer1(self.model.conv1(x))))))
+                features = self.model.avgpool(
+                    self.model.layer4(
+                        self.model.layer3(self.model.layer2(self.model.layer1(self.model.conv1(x))))
+                    )
+                )
             else:
                 # Custom CNN or other
                 features = x
                 for module in self.model.modules():
                     if isinstance(module, nn.Linear):
                         break
-                    features = module(features) if hasattr(module, '__call__') else features
-        
+                    features = module(features) if hasattr(module, "__call__") else features
+
         # Flatten
         batch_size = features.shape[0]
         return features.view(batch_size, -1).cpu().numpy()
 
     def fit(self, x_train: torch.Tensor) -> None:
         """Fit OOD detector on training data.
-        
+
         Args:
             x_train: Training data tensor
         """
@@ -141,10 +145,10 @@ class OutOfDistributionDetector:
 
     def detect(self, x_test: torch.Tensor) -> Tuple[np.ndarray, np.ndarray]:
         """Detect OOD samples in test data.
-        
+
         Args:
             x_test: Test data tensor
-        
+
         Returns:
             Tuple of (distances, is_ood)
         """

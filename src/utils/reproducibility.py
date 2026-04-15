@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
-
 _CHUNK = 1024 * 1024  # 1 MiB — avoids materialising multi-GB cache files in RAM
 
 
@@ -78,6 +77,7 @@ def _git_sha(cwd: Optional[Path] = None) -> str:
 def _torch_version() -> str:
     try:
         import torch  # local import so the module is importable without torch
+
         return str(torch.__version__)
     except Exception:
         return "unknown"

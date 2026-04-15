@@ -15,77 +15,61 @@ Usage:
 """
 
 import argparse
+import logging
+from collections import Counter
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import torch
-from collections import Counter
 
-from src.data.dataset import load_dataset, KNOWN_CLASSES
-from src.data.preprocessing import preprocess_wafer_maps
 from src.augmentation.synthetic import (
     DefectSimulator,
     SyntheticDataGenerator,
     balance_dataset_with_synthetic,
 )
-import logging
+from src.data.dataset import KNOWN_CLASSES, load_dataset
+from src.data.preprocessing import preprocess_wafer_maps
 
 logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Synthetic wafer data augmentation"
+    parser = argparse.ArgumentParser(description="Synthetic wafer data augmentation")
+    parser.add_argument(
+        "--generator",
+        choices=["rule-based", "gan"],
+        default="rule-based",
+        help="Generator type (default: rule-based)",
     )
     parser.add_argument(
-        '--generator',
-        choices=['rule-based', 'gan'],
-        default='rule-based',
-        help='Generator type (default: rule-based)'
+        "--gan-epochs", type=int, default=5, help="Number of GAN training epochs (default: 5)"
     )
     parser.add_argument(
-        '--gan-epochs',
-        type=int,
-        default=5,
-        help='Number of GAN training epochs (default: 5)'
+        "--gan-batch-size", type=int, default=32, help="GAN training batch size (default: 32)"
     )
     parser.add_argument(
-        '--gan-batch-size',
-        type=int,
-        default=32,
-        help='GAN training batch size (default: 32)'
-    )
-    parser.add_argument(
-        '--target-samples-per-class',
+        "--target-samples-per-class",
         type=int,
         default=5000,
-        help='Target samples per class after augmentation (default: 5000)'
+        help="Target samples per class after augmentation (default: 5000)",
     )
     parser.add_argument(
-        '--visualize-only',
-        action='store_true',
-        help='Only visualize generated samples, skip augmentation'
+        "--visualize-only",
+        action="store_true",
+        help="Only visualize generated samples, skip augmentation",
     )
     parser.add_argument(
-        '--num-samples-per-class',
+        "--num-samples-per-class",
         type=int,
         default=3,
-        help='Number of samples to visualize per class (default: 3)'
+        help="Number of samples to visualize per class (default: 3)",
     )
     parser.add_argument(
-        '--device',
-        choices=['cpu', 'cuda'],
-        default='cpu',
-        help='Device to use (default: cpu)'
+        "--device", choices=["cpu", "cuda"], default="cpu", help="Device to use (default: cpu)"
     )
-    parser.add_argument(
-        '--seed',
-        type=int,
-        default=42,
-        help='Random seed (default: 42)'
-    )
+    parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
 
     return parser.parse_args()
 
@@ -116,13 +100,13 @@ def main() -> None:
         return
 
     # Filter to known classes
-    labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
+    labeled_mask = df["failureClass"].isin(KNOWN_CLASSES)
     df_filtered = df[labeled_mask].reset_index(drop=True)
     logger.info(f"Loaded {len(df_filtered)} labeled samples")
 
     # Extract wafer maps and labels
-    wafer_maps = np.array(df_filtered['waferMap'].tolist())
-    labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered['failureClass']])
+    wafer_maps = np.array(df_filtered["waferMap"].tolist())
+    labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered["failureClass"]])
 
     logger.info(f"Wafer maps shape: {wafer_maps.shape}")
     logger.info(f"Labels shape: {labels.shape}")
@@ -153,35 +137,25 @@ def main() -> None:
         # ---- Visualization Only ----
         logger.info("\n=== Generating and Visualizing Samples ===")
         augmenter = SyntheticDataGenerator(
-            generator_type=args.generator,
-            image_size=96,
-            device=device
+            generator_type=args.generator, image_size=96, device=device
         )
 
         augmenter.visualize_generated_samples(
-            class_names=KNOWN_CLASSES,
-            num_samples_per_class=args.num_samples_per_class
+            class_names=KNOWN_CLASSES, num_samples_per_class=args.num_samples_per_class
         )
         return
 
     # ---- Train GAN (if applicable) ----
-    if args.generator == 'gan':
+    if args.generator == "gan":
         logger.info("\n=== Training GAN ===")
-        augmenter = SyntheticDataGenerator(
-            generator_type='gan',
-            image_size=96,
-            device=device
-        )
+        augmenter = SyntheticDataGenerator(generator_type="gan", image_size=96, device=device)
 
         augmenter.train_generator(
-            preprocessed_maps,
-            epochs=args.gan_epochs,
-            batch_size=args.gan_batch_size,
-            verbose=True
+            preprocessed_maps, epochs=args.gan_epochs, batch_size=args.gan_batch_size, verbose=True
         )
 
         # Save trained GAN
-        gan_path = 'wafer_gan_checkpoint.pth'
+        gan_path = "wafer_gan_checkpoint.pth"
         augmenter.save_gan(gan_path)
         logger.info(f"GAN saved to {gan_path}")
 
@@ -192,7 +166,7 @@ def main() -> None:
         labels,
         class_names=KNOWN_CLASSES,
         generator_type=args.generator,
-        strategy='oversample_to_max'
+        strategy="oversample_to_max",
     )
 
     # Show augmented distribution
@@ -206,15 +180,10 @@ def main() -> None:
 
     # ---- Visualization ----
     logger.info("\n=== Visualizing Generated Samples ===")
-    augmenter = SyntheticDataGenerator(
-        generator_type=args.generator,
-        image_size=96,
-        device=device
-    )
+    augmenter = SyntheticDataGenerator(generator_type=args.generator, image_size=96, device=device)
 
     augmenter.visualize_generated_samples(
-        class_names=KNOWN_CLASSES,
-        num_samples_per_class=args.num_samples_per_class
+        class_names=KNOWN_CLASSES, num_samples_per_class=args.num_samples_per_class
     )
 
     logger.info("\n✓ Augmentation complete!")
@@ -223,10 +192,10 @@ def main() -> None:
     logger.info(f"  Synthetic samples generated: {len(augmented_maps) - len(preprocessed_maps)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     main()

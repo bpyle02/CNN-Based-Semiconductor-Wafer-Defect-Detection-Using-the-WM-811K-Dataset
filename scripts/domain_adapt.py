@@ -12,8 +12,8 @@ Usage:
 """
 
 import argparse
-import sys
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -21,8 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ METHOD_MAP = {"finetune": "fine_tuning", "coral": "coral", "adversarial": "adver
 
 def load_model(model_type: str, checkpoint_path: str, device: str) -> nn.Module:
     """Load a model from checkpoint."""
-    from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+    from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
 
     if model_type == "cnn":
         model = WaferCNN(num_classes=9)
@@ -43,15 +43,18 @@ def load_model(model_type: str, checkpoint_path: str, device: str) -> nn.Module:
         raise ValueError(f"Unknown model type: {model_type}")
 
     state = torch.load(checkpoint_path, map_location=device, weights_only=True)
-    model.load_state_dict(state if not isinstance(state, dict) or "model_state_dict" not in state
-                          else state["model_state_dict"])
+    model.load_state_dict(
+        state
+        if not isinstance(state, dict) or "model_state_dict" not in state
+        else state["model_state_dict"]
+    )
     model.to(device)
     return model
 
 
 def build_loader(data_path: str, batch_size: int = 64):
     """Build a DataLoader from a wafer map pickle file."""
-    from src.data.dataset import load_dataset, KNOWN_CLASSES
+    from src.data.dataset import KNOWN_CLASSES, load_dataset
     from src.data.preprocessing import WaferMapDataset, get_image_transforms
 
     df = load_dataset(Path(data_path))
@@ -76,13 +79,20 @@ def main() -> int:
     parser.add_argument("--model-type", required=True, choices=["cnn", "resnet", "efficientnet"])
     parser.add_argument("--source-data", required=True, help="Path to source domain pickle")
     parser.add_argument("--target-data", required=True, help="Path to target domain pickle")
-    parser.add_argument("--method", default="coral", choices=["finetune", "coral", "adversarial"],
-                        help="Adaptation method (default: coral)")
+    parser.add_argument(
+        "--method",
+        default="coral",
+        choices=["finetune", "coral", "adversarial"],
+        help="Adaptation method (default: coral)",
+    )
     parser.add_argument("--epochs", type=int, default=5, help="Adaptation epochs (default: 5)")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate (default: 1e-4)")
     parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--output-path", default="checkpoints/adapted_model.pth",
-                        help="Where to save the adapted model")
+    parser.add_argument(
+        "--output-path",
+        default="checkpoints/adapted_model.pth",
+        help="Where to save the adapted model",
+    )
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
     args = parser.parse_args()
 

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.federated.aggregation &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.federated.aggregation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.federated.aggregation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Byzantine-robust aggregation methods for federated learning.</span>
+
+<span class="sd">Implements robust aggregation strategies that can tolerate malicious or faulty</span>
+<span class="sd">clients in federated learning settings.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+
+
+<div class="viewcode-block" id="Krum">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.Krum">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Krum</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Krum aggregation: selects parameter vector closest to most others.</span>
+
+<span class="sd">    Filters out potential Byzantine updates by selecting the gradient vector</span>
+<span class="sd">    that is closest (in Euclidean distance) to the maximum number of other</span>
+<span class="sd">    gradient vectors. Robust to f malicious clients where n &gt;= 2f + 3</span>
+<span class="sd">    (per Blanchard et al., 2017).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Krum.aggregate">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.Krum.aggregate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span>
+        <span class="n">client_updates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+        <span class="n">byzantine_tolerance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aggregate using Krum algorithm.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            client_updates: List of client parameter dicts</span>
+<span class="sd">            byzantine_tolerance: Number of Byzantine clients to tolerate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Aggregated parameter dict (single selected update)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Flatten all updates to 1D vectors</span>
+        <span class="n">n_clients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">client_updates</span><span class="p">)</span>
+        <span class="n">flat_updates</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">update_dict</span> <span class="ow">in</span> <span class="n">client_updates</span><span class="p">:</span>
+            <span class="n">flat_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+                <span class="n">v</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">update_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">])</span>
+            <span class="n">flat_updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flat_vec</span><span class="p">)</span>
+        
+        <span class="n">flat_updates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">flat_updates</span><span class="p">)</span>  <span class="c1"># (n_clients, n_params)</span>
+        
+        <span class="c1"># Compute pairwise distances</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">flat_updates</span><span class="p">,</span> <span class="n">flat_updates</span><span class="p">)</span>  <span class="c1"># (n_clients, n_clients)</span>
+
+        <span class="c1"># Exclude self-distances by setting diagonal to infinity</span>
+        <span class="n">distances</span><span class="o">.</span><span class="n">fill_diagonal_</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+
+        <span class="c1"># For each client, find distance to k-closest others (where k = n - f - 2)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">n_clients</span> <span class="o">-</span> <span class="n">byzantine_tolerance</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">closest_distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">largest</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Sum of distances to k-closest neighbors (excluding self)</span>
+        <span class="n">neighbor_sums</span> <span class="o">=</span> <span class="n">closest_distances</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Select client with minimum sum of distances</span>
+        <span class="n">selected_idx</span> <span class="o">=</span> <span class="n">neighbor_sums</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+        
+        <span class="c1"># Return the selected client&#39;s update</span>
+        <span class="k">return</span> <span class="n">client_updates</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MultiKrum">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.MultiKrum">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiKrum</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-Krum: selects m parameter vectors via repeated Krum.</span>
+<span class="sd">    </span>
+<span class="sd">    Applies Krum m times, removing the selected vector each iteration.</span>
+<span class="sd">    More robust than single Krum as it combines multiple diverse updates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="MultiKrum.aggregate">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.MultiKrum.aggregate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span>
+        <span class="n">client_updates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+        <span class="n">num_selected</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">byzantine_tolerance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aggregate using Multi-Krum algorithm.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            client_updates: List of client parameter dicts</span>
+<span class="sd">            num_selected: Number of vectors to select</span>
+<span class="sd">            byzantine_tolerance: Number of Byzantine clients to tolerate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Averaged aggregation of top-m selected vectors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selected_updates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">remaining_updates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">client_updates</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">num_selected</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">client_updates</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">remaining_updates</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="c1"># Apply Krum to remaining updates</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">Krum</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">remaining_updates</span><span class="p">,</span> <span class="n">byzantine_tolerance</span><span class="p">)</span>
+            <span class="n">selected_updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+
+            <span class="c1"># Remove selected update by identity (safe: Krum returns original ref)</span>
+            <span class="n">remaining_updates</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">remaining_updates</span>
+                <span class="k">if</span> <span class="n">u</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">selected</span>
+            <span class="p">]</span>
+        
+        <span class="c1"># Average the selected updates</span>
+        <span class="k">return</span> <span class="n">ByzantineRobustAggregator</span><span class="o">.</span><span class="n">_average_dicts</span><span class="p">(</span><span class="n">selected_updates</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ByzantineRobustAggregator">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.ByzantineRobustAggregator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ByzantineRobustAggregator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Byzantine-robust aggregation with multiple strategies.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ByzantineRobustAggregator.STRATEGIES">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.ByzantineRobustAggregator.STRATEGIES">[docs]</a>
+    <span class="n">STRATEGIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;krum&#39;</span><span class="p">:</span> <span class="n">Krum</span><span class="o">.</span><span class="n">aggregate</span><span class="p">,</span>
+        <span class="s1">&#39;multi_krum&#39;</span><span class="p">:</span> <span class="n">MultiKrum</span><span class="o">.</span><span class="n">aggregate</span><span class="p">,</span>
+        <span class="s1">&#39;median&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Placeholder</span>
+        <span class="s1">&#39;trimmed_mean&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Placeholder</span>
+    <span class="p">}</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ByzantineRobustAggregator.aggregate">
+<a class="viewcode-back" href="../../../api/src/federated/aggregation/index.html#src.federated.aggregation.ByzantineRobustAggregator.aggregate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span>
+        <span class="n">client_updates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+        <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;multi_krum&#39;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aggregate client updates using specified strategy.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            client_updates: List of client parameter dicts</span>
+<span class="sd">            strategy: Aggregation strategy (&#39;krum&#39;, &#39;multi_krum&#39;, etc.)</span>
+<span class="sd">            **kwargs: Strategy-specific parameters</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Aggregated parameters</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If strategy not supported</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;krum&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Krum</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span>
+                <span class="n">client_updates</span><span class="p">,</span>
+                <span class="n">byzantine_tolerance</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;byzantine_tolerance&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;multi_krum&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MultiKrum</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span>
+                <span class="n">client_updates</span><span class="p">,</span>
+                <span class="n">num_selected</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_selected&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="n">byzantine_tolerance</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;byzantine_tolerance&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;fedavg&#39;</span><span class="p">:</span>
+            <span class="c1"># Standard FedAvg (no Byzantine robustness)</span>
+            <span class="k">return</span> <span class="n">ByzantineRobustAggregator</span><span class="o">.</span><span class="n">_average_dicts</span><span class="p">(</span><span class="n">client_updates</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown strategy: </span><span class="si">{</span><span class="n">strategy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_average_dicts</span><span class="p">(</span>
+        <span class="n">dicts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Average a list of parameter dicts element-wise.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            dicts: List of parameter dicts with same structure</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Averaged parameter dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dicts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No dicts to average&quot;</span><span class="p">)</span>
+        
+        <span class="n">averaged</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">dicts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">stacked</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">])</span>
+            <span class="n">averaged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">stacked</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">averaged</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+src.cli.commands.distill
+========================
+
+.. py:module:: src.cli.commands.distill
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli distill`` — forwards to ``scripts/distill.py``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.distill.distill
+
+
+Module Contents
+---------------
+
+.. py:function:: distill(ctx: typer.Context) -> None
+
+   Knowledge distillation. Flags forwarded to scripts/distill.py.
+
+

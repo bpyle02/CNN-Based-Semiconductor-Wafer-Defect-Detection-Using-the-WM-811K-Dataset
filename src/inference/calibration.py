@@ -75,8 +75,9 @@ class TemperatureScaling:
         )
         self.temperature = float(result.x)
         self.fitted = True
-        logger.info("TemperatureScaling fitted: T=%.4f (NLL=%.6f)",
-                    self.temperature, float(result.fun))
+        logger.info(
+            "TemperatureScaling fitted: T=%.4f (NLL=%.6f)", self.temperature, float(result.fun)
+        )
         return self.temperature
 
     def transform(self, logits: torch.Tensor) -> torch.Tensor:

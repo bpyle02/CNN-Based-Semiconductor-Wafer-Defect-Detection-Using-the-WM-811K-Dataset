@@ -24,7 +24,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class FocalLoss(nn.Module):  # Ref [15]: Lin et al. — focal modulation (1-pt)^gamma down-weights easy examples
+class FocalLoss(
+    nn.Module
+):  # Ref [15]: Lin et al. — focal modulation (1-pt)^gamma down-weights easy examples
     """
     Focal loss for addressing class imbalance.
 
@@ -47,7 +49,9 @@ class FocalLoss(nn.Module):  # Ref [15]: Lin et al. — focal modulation (1-pt)^
         # Applying sqrt to the weights reduces this overlap (Lin et al., 2017
         # recommend lowering alpha as gamma increases).
         if moderate_weights and weight is not None and gamma > 0:
-            weight = weight.sqrt()  # Ref [16]: Cui et al. — effective number balancing; sqrt moderates double-compensation
+            weight = (
+                weight.sqrt()
+            )  # Ref [16]: Cui et al. — effective number balancing; sqrt moderates double-compensation
         self.register_buffer("weight", weight.clone().detach() if weight is not None else None)
         self.gamma = gamma
         self.reduction = reduction
@@ -247,16 +251,14 @@ class CostSensitiveCE(nn.Module):
 
         self.register_buffer("cost_matrix", cost_matrix.float().clone().detach())
         if class_weights is not None:
-            self.register_buffer(
-                "class_weights", class_weights.float().clone().detach()
-            )
+            self.register_buffer("class_weights", class_weights.float().clone().detach())
         else:
             self.class_weights = None
         self.reduction = reduction
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        log_probs = F.log_softmax(logits, dim=1)          # (B, C)
-        row_costs = self.cost_matrix[targets]             # (B, C) cost[y_i, :]
+        log_probs = F.log_softmax(logits, dim=1)  # (B, C)
+        row_costs = self.cost_matrix[targets]  # (B, C) cost[y_i, :]
         # Per-sample cost-weighted cross-entropy: sum_k cost[y, k] * -log p_k
         per_sample = -(row_costs * log_probs).sum(dim=1)  # (B,)
 
@@ -355,9 +357,7 @@ def build_classification_loss(
 
     if loss_name == "LogitAdjustedLoss":
         if class_frequencies is None:
-            raise ValueError(
-                "LogitAdjustedLoss requires class_frequencies to be provided"
-            )
+            raise ValueError("LogitAdjustedLoss requires class_frequencies to be provided")
         return LogitAdjustedLoss(
             class_frequencies=class_frequencies,
             tau=logit_adjustment_tau,
@@ -366,9 +366,7 @@ def build_classification_loss(
 
     if loss_name == "CostSensitiveCE":
         if cost_matrix is None:
-            raise ValueError(
-                "CostSensitiveCE requires cost_matrix to be provided"
-            )
+            raise ValueError("CostSensitiveCE requires cost_matrix to be provided")
         return CostSensitiveCE(
             cost_matrix=cost_matrix,
             class_weights=class_weights,

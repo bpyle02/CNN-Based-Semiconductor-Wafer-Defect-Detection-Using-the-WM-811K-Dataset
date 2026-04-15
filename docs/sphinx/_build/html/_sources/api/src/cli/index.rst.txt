@@ -1,0 +1,30 @@
+src.cli
+=======
+
+.. py:module:: src.cli
+
+.. autoapi-nested-parse::
+
+   Unified Typer-based CLI for the wafer-defect-detection project.
+
+   Exposes every existing script under a single ``wafer-cli`` entry point
+   as a subcommand. Each subcommand is a thin Typer wrapper around the
+   existing script's ``main()`` / argparse implementation so that CLI flag
+   parity is preserved verbatim.
+
+   The Typer application lives in :mod:`src.cli.main` and is imported
+   lazily to keep ``python -m src.cli.main`` free of the ``found in
+   sys.modules after import of package`` runpy warning.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/cli/commands/index
+   /api/src/cli/main/index
+
+

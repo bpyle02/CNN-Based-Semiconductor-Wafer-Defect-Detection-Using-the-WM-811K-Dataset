@@ -19,13 +19,14 @@ References:
     [119] Tarvainen & Valpola (2017). "Mean Teacher". arXiv:1703.01780
 """
 
+import logging
+from typing import Callable, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from typing import Tuple, Optional, Callable
-import numpy as np
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ class SimCLREncoder(nn.Module):
         """
         # Remove final classification layer
         # Assumes backbone has .features or similar for feature extraction
-        if hasattr(self.backbone, 'features'):
+        if hasattr(self.backbone, "features"):
             features = self.backbone.features(x)
             features = F.adaptive_avg_pool2d(features, (1, 1))
             features = features.flatten(1)
@@ -167,7 +168,7 @@ class SimCLRLoss(nn.Module):
         mask = ~torch.eye(2 * batch_size, device=z_i.device, dtype=torch.bool)
 
         # Cross-entropy loss
-        loss = F.cross_entropy(sim_matrix, labels, reduction='mean')
+        loss = F.cross_entropy(sim_matrix, labels, reduction="mean")
 
         return loss
 
@@ -189,7 +190,7 @@ class SimCLRPretrainer:
         self,
         encoder: SimCLREncoder,
         optimizer: torch.optim.Optimizer,
-        device: str = 'cuda',
+        device: str = "cuda",
         temperature: float = 0.07,
     ) -> None:
         self.encoder = encoder.to(device)
@@ -241,9 +242,7 @@ class SimCLRPretrainer:
             num_batches += 1
 
             if (batch_idx + 1) % 100 == 0:
-                logger.info(
-                    f"  Batch {batch_idx + 1}/{len(train_loader)}, Loss: {loss.item():.6f}"
-                )
+                logger.info(f"  Batch {batch_idx + 1}/{len(train_loader)}, Loss: {loss.item():.6f}")
 
         avg_loss = total_loss / num_batches
         return avg_loss

@@ -12,15 +12,16 @@ References:
     [30] Lakshminarayanan et al. (2017). "Deep Ensembles". arXiv:1612.01474
 """
 
+import logging
 from typing import Callable, Dict, List, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 from scipy.optimize import minimize
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader, TensorDataset
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,11 @@ class EnsembleModel(nn.Module):
             logger.warning(f"Warning: weights ignored for aggregation={aggregation}")
 
         # Validate aggregation method
-        assert aggregation in ["voting", "averaging", "weighted_averaging"], \
-            f"Unknown aggregation method: {aggregation}"
+        assert aggregation in [
+            "voting",
+            "averaging",
+            "weighted_averaging",
+        ], f"Unknown aggregation method: {aggregation}"
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -99,7 +103,9 @@ class EnsembleModel(nn.Module):
     def _aggregate_voting(self, logits_list: List[torch.Tensor]) -> torch.Tensor:
         """Majority voting aggregation."""
         # Get predictions (argmax)
-        preds = torch.stack([logits.argmax(dim=1) for logits in logits_list])  # (num_models, batch_size)
+        preds = torch.stack(
+            [logits.argmax(dim=1) for logits in logits_list]
+        )  # (num_models, batch_size)
 
         # Mode (most common prediction per sample)
         ensemble_pred = torch.mode(preds, dim=0)[0]  # (batch_size,)
@@ -311,9 +317,7 @@ class LearnedWeightEnsemble(nn.Module):
         )
 
     @torch.no_grad()
-    def _collect_predictions(
-        self, loader: DataLoader
-    ) -> Tuple[List[np.ndarray], np.ndarray]:
+    def _collect_predictions(self, loader: DataLoader) -> Tuple[List[np.ndarray], np.ndarray]:
         """Collect softmax predictions from every base model on a data loader.
 
         Returns:
@@ -339,9 +343,7 @@ class LearnedWeightEnsemble(nn.Module):
         labels_arr = np.concatenate(all_labels, axis=0)
         return all_probs, labels_arr
 
-    def optimize_weights(
-        self, val_loader: DataLoader, class_names: List[str]
-    ) -> np.ndarray:
+    def optimize_weights(self, val_loader: DataLoader, class_names: List[str]) -> np.ndarray:
         """Find weights that maximize macro F1 on validation set.
 
         Uses Nelder-Mead optimization over the probability simplex.
@@ -373,7 +375,12 @@ class LearnedWeightEnsemble(nn.Module):
 
         # Start from uniform (raw zeros -> softmax -> uniform)
         x0 = np.zeros(self.num_models)
-        result = minimize(objective, x0, method="Nelder-Mead", options={"maxiter": 1000, "xatol": 1e-5, "fatol": 1e-6})
+        result = minimize(
+            objective,
+            x0,
+            method="Nelder-Mead",
+            options={"maxiter": 1000, "xatol": 1e-5, "fatol": 1e-6},
+        )
         optimal_weights = _softmax_weights(result.x)
 
         # Store optimized weights in the buffer
@@ -402,9 +409,7 @@ class LearnedWeightEnsemble(nn.Module):
                 logits = model(x)
                 probs_list.append(torch.softmax(logits, dim=1))
 
-        weighted_probs = sum(
-            self.weights[i] * probs_list[i] for i in range(self.num_models)
-        )
+        weighted_probs = sum(self.weights[i] * probs_list[i] for i in range(self.num_models))
         return torch.log(weighted_probs + 1e-10)
 
     def predict(self, images: torch.Tensor) -> torch.Tensor:
@@ -419,9 +424,7 @@ class LearnedWeightEnsemble(nn.Module):
         log_probs = self.forward(images)
         return log_probs.argmax(dim=1)
 
-    def evaluate(
-        self, test_loader: DataLoader, class_names: List[str]
-    ) -> Dict[str, float]:
+    def evaluate(self, test_loader: DataLoader, class_names: List[str]) -> Dict[str, float]:
         """Evaluate ensemble on a test set.
 
         Args:
@@ -491,9 +494,7 @@ class StackingEnsemble(nn.Module):
         self.meta_learner = nn.Linear(input_dim, num_classes)
 
     @torch.no_grad()
-    def _collect_base_features(
-        self, loader: DataLoader
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _collect_base_features(self, loader: DataLoader) -> Tuple[torch.Tensor, torch.Tensor]:
         """Run base models on a loader, concatenate softmax outputs.
 
         Returns:
@@ -604,9 +605,7 @@ class StackingEnsemble(nn.Module):
         logits = self.forward(images)
         return logits.argmax(dim=1)
 
-    def evaluate(
-        self, test_loader: DataLoader, class_names: List[str]
-    ) -> Dict[str, float]:
+    def evaluate(self, test_loader: DataLoader, class_names: List[str]) -> Dict[str, float]:
         """Evaluate stacking ensemble on a test set.
 
         Args:

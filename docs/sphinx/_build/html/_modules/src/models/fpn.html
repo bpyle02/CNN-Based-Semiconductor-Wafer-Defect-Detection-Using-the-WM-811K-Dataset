@@ -1,0 +1,417 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.fpn &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.fpn</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.models.fpn</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Feature Pyramid Network (FPN) variant for wafer defect classification.</span>
+
+<span class="sd">Fuses multi-scale features from a 4-stage CNN backbone via top-down</span>
+<span class="sd">lateral connections, improving detection of defects at varying spatial</span>
+<span class="sd">scales (e.g. large Edge-Ring vs. thin Scratch vs. small Loc).</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [91] Lin et al. (2017). &quot;Feature Pyramid Networks for Object Detection&quot;.</span>
+<span class="sd">         arXiv:1612.03144</span>
+<span class="sd">    [47] Ioffe &amp; Szegedy (2015). &quot;Batch Normalization&quot;. arXiv:1502.03167</span>
+<span class="sd">    [48] Srivastava et al. (2014). &quot;Dropout: Preventing Overfitting&quot;. JMLR</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FPNBlock">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.FPNBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FPNBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Feature Pyramid Network block.</span>
+
+<span class="sd">    Combines a top-down pathway (upsampled coarser features) with</span>
+<span class="sd">    lateral connections (same-level features) via 1x1 convolutions.</span>
+
+<span class="sd">    The lateral connections project each backbone stage to a common</span>
+<span class="sd">    channel dimension (``out_channels``). Starting from the coarsest</span>
+<span class="sd">    level, each feature map is upsampled by 2x and element-wise added</span>
+<span class="sd">    to the next finer lateral output, propagating high-level semantics</span>
+<span class="sd">    to lower levels while retaining spatial detail.</span>
+
+<span class="sd">    Reference: [91] Lin et al. (2017). arXiv:1612.03144</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        in_channels_list: Number of channels at each backbone stage,</span>
+<span class="sd">            ordered from finest (largest spatial) to coarsest (smallest</span>
+<span class="sd">            spatial).  E.g. ``[32, 64, 128, 256]``.</span>
+<span class="sd">        out_channels: Common channel dimension for all FPN output levels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<div class="viewcode-block" id="FPNBlock.out_channels">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.FPNBlock.out_channels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">out_channels</span></div>
+
+
+        <span class="c1"># Lateral 1x1 convolutions: project each stage to out_channels</span>
+<div class="viewcode-block" id="FPNBlock.lateral_convs">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.FPNBlock.lateral_convs">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lateral_convs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">in_ch</span> <span class="ow">in</span> <span class="n">in_channels_list</span>
+        <span class="p">])</span></div>
+
+
+        <span class="c1"># Optional 3x3 smoothing convolutions after merging (standard FPN)</span>
+<div class="viewcode-block" id="FPNBlock.smooth_convs">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.FPNBlock.smooth_convs">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_convs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">in_channels_list</span>
+        <span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="FPNBlock.forward">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.FPNBlock.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the feature pyramid from backbone feature maps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            features: List of feature maps from each stage, ordered</span>
+<span class="sd">                finest-to-coarsest.</span>
+<span class="sd">                E.g. ``[(B,32,48,48), (B,64,24,24), (B,128,12,12), (B,256,6,6)]``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of FPN feature maps (same ordering), all with</span>
+<span class="sd">            ``out_channels`` channels. Spatial sizes match the input</span>
+<span class="sd">            features at each level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_levels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+        <span class="c1"># Compute lateral projections</span>
+        <span class="n">laterals</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lateral_convs</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">features</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_levels</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Top-down pathway: upsample coarser level, add to finer lateral</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_levels</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">upsampled</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
+                <span class="n">laterals</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">laterals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">laterals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">laterals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">upsampled</span>
+
+        <span class="c1"># 3x3 smoothing to reduce aliasing from upsampling</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">smooth_convs</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">laterals</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_levels</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">outputs</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WaferCNNFPN">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WaferCNNFPN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom CNN with FPN for multi-scale defect detection.</span>
+
+<span class="sd">    Extends WaferCNN by extracting intermediate feature maps from each</span>
+<span class="sd">    of the 4 convolutional stages and fusing them via a Feature Pyramid</span>
+<span class="sd">    Network. The fused multi-scale features are globally average-pooled</span>
+<span class="sd">    and concatenated for classification, allowing the model to leverage</span>
+<span class="sd">    both fine spatial detail (important for small Loc defects and thin</span>
+<span class="sd">    Scratch patterns) and coarse semantic information (important for</span>
+<span class="sd">    large Edge-Ring defects).</span>
+
+<span class="sd">    Architecture:</span>
+<span class="sd">        - 4 conv blocks identical to WaferCNN:</span>
+<span class="sd">          Conv-BN-ReLU-Conv-BN-ReLU-MaxPool per stage</span>
+<span class="sd">        - Feature extraction at each stage:</span>
+<span class="sd">          F1(48x48), F2(24x24), F3(12x12), F4(6x6)</span>
+<span class="sd">        - FPN fuses into P1, P2, P3, P4 (all ``fpn_out_channels``)</span>
+<span class="sd">        - Global average pool each Pi, concatenate</span>
+<span class="sd">        - Classifier: Linear(4 * fpn_out_channels, num_classes)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [91] Lin et al. (2017). arXiv:1612.03144</span>
+<span class="sd">        [47] Ioffe &amp; Szegedy (2015). arXiv:1502.03167</span>
+<span class="sd">        [48] Srivastava et al. (2014). JMLR</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        num_classes: Number of output classes.</span>
+<span class="sd">        feature_channels: Output channels per conv stage.</span>
+<span class="sd">        fpn_out_channels: Common channel dimension for FPN levels.</span>
+<span class="sd">        dropout_rate: Dropout before the classifier head.</span>
+<span class="sd">        input_channels: Number of input image channels.</span>
+<span class="sd">        use_batch_norm: Apply BatchNorm after each convolution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="n">feature_channels</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="n">fpn_out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="n">dropout_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">input_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">feature_channels</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;feature_channels must contain at least one stage&quot;</span><span class="p">)</span>
+        <span class="n">feature_channels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">feature_channels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">ch</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">feature_channels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;feature_channels values must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_classes</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">input_channels</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;input_channels must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">dropout_rate</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dropout_rate must be in [0, 1)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fpn_out_channels</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;fpn_out_channels must be positive&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WaferCNNFPN.num_classes">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.num_classes">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span></div>
+
+<div class="viewcode-block" id="WaferCNNFPN.feature_channels">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.feature_channels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_channels</span> <span class="o">=</span> <span class="n">feature_channels</span></div>
+
+<div class="viewcode-block" id="WaferCNNFPN.fpn_out_channels">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.fpn_out_channels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fpn_out_channels</span> <span class="o">=</span> <span class="n">fpn_out_channels</span></div>
+
+<div class="viewcode-block" id="WaferCNNFPN.dropout_rate">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.dropout_rate">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout_rate</span> <span class="o">=</span> <span class="n">dropout_rate</span></div>
+
+<div class="viewcode-block" id="WaferCNNFPN.use_batch_norm">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.use_batch_norm">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_batch_norm</span> <span class="o">=</span> <span class="n">use_batch_norm</span></div>
+
+
+        <span class="c1"># Build each conv stage as a separate Sequential block so we can</span>
+        <span class="c1"># extract intermediate features.</span>
+<div class="viewcode-block" id="WaferCNNFPN.stages">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.stages">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stages</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span></div>
+
+        <span class="n">in_ch</span> <span class="o">=</span> <span class="n">input_channels</span>
+        <span class="k">for</span> <span class="n">out_ch</span> <span class="ow">in</span> <span class="n">feature_channels</span><span class="p">:</span>
+            <span class="n">block_layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">use_batch_norm</span><span class="p">:</span>
+                <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">))</span>
+            <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">use_batch_norm</span><span class="p">:</span>
+                <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">))</span>
+            <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">block_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">block_layers</span><span class="p">))</span>
+            <span class="n">in_ch</span> <span class="o">=</span> <span class="n">out_ch</span>
+
+        <span class="c1"># FPN module</span>
+<div class="viewcode-block" id="WaferCNNFPN.fpn">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.fpn">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fpn</span> <span class="o">=</span> <span class="n">FPNBlock</span><span class="p">(</span>
+            <span class="n">in_channels_list</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">feature_channels</span><span class="p">),</span>
+            <span class="n">out_channels</span><span class="o">=</span><span class="n">fpn_out_channels</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+        <span class="c1"># Global average pool per FPN level then concatenate</span>
+<div class="viewcode-block" id="WaferCNNFPN.gap">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.gap">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gap</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+        <span class="c1"># Classifier head</span>
+        <span class="n">num_levels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_channels</span><span class="p">)</span>
+        <span class="n">concat_dim</span> <span class="o">=</span> <span class="n">num_levels</span> <span class="o">*</span> <span class="n">fpn_out_channels</span>
+<div class="viewcode-block" id="WaferCNNFPN.classifier">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.classifier">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout_rate</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">concat_dim</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_weights</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize weights using He initialization for ReLU networks.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WaferCNNFPN.forward">
+<a class="viewcode-back" href="../../../api/src/models/fpn/index.html#src.models.fpn.WaferCNNFPN.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through backbone, FPN, and classifier.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor of shape ``(B, C, H, W)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Logits of shape ``(B, num_classes)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract features from each backbone stage</span>
+        <span class="n">stage_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stages</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">stage</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+            <span class="n">stage_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="c1"># FPN fusion</span>
+        <span class="n">fpn_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fpn</span><span class="p">(</span><span class="n">stage_features</span><span class="p">)</span>
+
+        <span class="c1"># Global average pool each level, flatten, concatenate</span>
+        <span class="n">pooled</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gap</span><span class="p">(</span><span class="n">feat</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">fpn_features</span>
+        <span class="p">]</span>
+        <span class="n">fused</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">pooled</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Classify</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">fused</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

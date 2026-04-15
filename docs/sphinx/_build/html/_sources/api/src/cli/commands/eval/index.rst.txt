@@ -1,0 +1,31 @@
+src.cli.commands.eval
+=====================
+
+.. py:module:: src.cli.commands.eval
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli eval`` — forwards to ``scripts/validate_model.py``.
+
+   The legacy script runs calibration + MC-Dropout uncertainty audit on a
+   trained checkpoint. The top-level module name is ``eval`` (an exported
+   Python builtin shadowed only inside this module's namespace).
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.eval.eval_cmd
+
+
+Module Contents
+---------------
+
+.. py:function:: eval_cmd(ctx: typer.Context) -> None
+
+   Evaluate a trained model. Flags forwarded to scripts/validate_model.py.
+
+

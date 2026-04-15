@@ -13,21 +13,21 @@ Usage:
     streamlit run dashboard.py
 """
 
+import logging
 import sys
-from pathlib import Path
-from typing import Dict, Any
 from collections import Counter
+from pathlib import Path
+from typing import Any, Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from sklearn.metrics import confusion_matrix, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import confusion_matrix, f1_score
-import matplotlib.pyplot as plt
-import seaborn as sns
-import logging
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 try:
@@ -39,13 +39,18 @@ except ImportError:
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.data import (
-    load_dataset, preprocess_wafer_maps, get_image_transforms,
-    get_imagenet_normalize, WaferMapDataset, seed_worker, KNOWN_CLASSES
-)
-from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
-from src.analysis import evaluate_model, count_params, count_trainable
+from src.analysis import count_params, count_trainable, evaluate_model
 from src.config import load_config
+from src.data import (
+    KNOWN_CLASSES,
+    WaferMapDataset,
+    get_image_transforms,
+    get_imagenet_normalize,
+    load_dataset,
+    preprocess_wafer_maps,
+    seed_worker,
+)
+from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
 
 
 @st.cache_resource
@@ -66,14 +71,14 @@ def load_data_cached(dataset_path: str) -> tuple:
         Tuple of (train_maps, test_maps, y_train, y_test, label_encoder)
     """
     df = load_dataset(Path(dataset_path))
-    labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
+    labeled_mask = df["failureClass"].isin(KNOWN_CLASSES)
     df_clean = df[labeled_mask].reset_index(drop=True)
 
     le = LabelEncoder()
-    df_clean['label_encoded'] = le.fit_transform(df_clean['failureClass'])
+    df_clean["label_encoded"] = le.fit_transform(df_clean["failureClass"])
 
-    wafer_maps = df_clean['waferMap'].values
-    labels = df_clean['label_encoded'].values
+    wafer_maps = df_clean["waferMap"].values
+    labels = df_clean["label_encoded"].values
 
     # Split
     X_train, X_temp, y_train, y_temp = train_test_split(
@@ -90,11 +95,11 @@ def load_data_cached(dataset_path: str) -> tuple:
     return (train_maps, test_maps, y_train, y_test, le)
 
 
-def create_model(model_type: str, num_classes: int, device: str = 'cpu') -> nn.Module:
+def create_model(model_type: str, num_classes: int, device: str = "cpu") -> nn.Module:
     """Create model based on type."""
-    if model_type == 'Custom CNN':
+    if model_type == "Custom CNN":
         return WaferCNN(num_classes=num_classes).to(device)
-    elif model_type == 'ResNet-18':
+    elif model_type == "ResNet-18":
         return get_resnet18(num_classes=num_classes).to(device)
     else:  # EfficientNet-B0
         return get_efficientnet_b0(num_classes=num_classes).to(device)
@@ -111,24 +116,20 @@ def main() -> None:
     config = load_config_cached()
 
     # Device selection
-    device_option = st.sidebar.selectbox("Device", ['cpu', 'cuda'], index=0)
+    device_option = st.sidebar.selectbox("Device", ["cpu", "cuda"], index=0)
     device = torch.device(device_option)
 
     # Model selection
-    model_options = ['Custom CNN', 'ResNet-18', 'EfficientNet-B0']
+    model_options = ["Custom CNN", "ResNet-18", "EfficientNet-B0"]
     selected_model = st.sidebar.selectbox("Model Architecture", model_options)
 
     # Checkpoint path
     checkpoint_path = st.sidebar.text_input(
-        "Model Checkpoint Path (optional)",
-        value="checkpoints/best_model.pth"
+        "Model Checkpoint Path (optional)", value="checkpoints/best_model.pth"
     )
 
     # Dataset path
-    dataset_path = st.sidebar.text_input(
-        "Dataset Path",
-        value=str(config.data.dataset_path)
-    )
+    dataset_path = st.sidebar.text_input("Dataset Path", value=str(config.data.dataset_path))
 
     # Load data
     try:
@@ -139,12 +140,14 @@ def main() -> None:
         return
 
     # Create main tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Model Analysis",
-        "📈 Performance Metrics",
-        "🎯 Per-Class Analysis",
-        "🖼️ Sample Predictions"
-    ])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "📊 Model Analysis",
+            "📈 Performance Metrics",
+            "🎯 Per-Class Analysis",
+            "🖼️ Sample Predictions",
+        ]
+    )
 
     with tab1:
         st.header("Model Architecture & Performance")
@@ -176,10 +179,18 @@ def main() -> None:
         if st.button("📈 Evaluate Model on Test Set"):
             with st.spinner("Evaluating..."):
                 # Create test dataset
-                test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
+                test_transform = (
+                    None if selected_model == "Custom CNN" else get_imagenet_normalize()
+                )
                 test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
                 g = torch.Generator().manual_seed(42)
-                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
+                test_loader = DataLoader(
+                    test_dataset,
+                    batch_size=64,
+                    shuffle=False,
+                    worker_init_fn=seed_worker,
+                    generator=g,
+                )
 
                 # Evaluate
                 preds, labels, metrics = evaluate_model(
@@ -199,11 +210,18 @@ def main() -> None:
                 # Confusion matrix
                 st.subheader("Confusion Matrix")
                 conf_mat = confusion_matrix(labels, preds)
-                conf_mat_norm = conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis]
+                conf_mat_norm = conf_mat.astype("float") / conf_mat.sum(axis=1)[:, np.newaxis]
 
                 fig, ax = plt.subplots(figsize=(10, 8))
-                sns.heatmap(conf_mat_norm, annot=True, fmt='.2%', cmap='Blues',
-                           xticklabels=class_names, yticklabels=class_names, ax=ax)
+                sns.heatmap(
+                    conf_mat_norm,
+                    annot=True,
+                    fmt=".2%",
+                    cmap="Blues",
+                    xticklabels=class_names,
+                    yticklabels=class_names,
+                    ax=ax,
+                )
                 ax.set_title(f"Confusion Matrix - {selected_model}")
                 ax.set_ylabel("True Label")
                 ax.set_xlabel("Predicted Label")
@@ -214,10 +232,18 @@ def main() -> None:
 
         if st.button("📊 Compute Performance Metrics"):
             with st.spinner("Computing metrics..."):
-                test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
+                test_transform = (
+                    None if selected_model == "Custom CNN" else get_imagenet_normalize()
+                )
                 test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
                 g = torch.Generator().manual_seed(42)
-                test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
+                test_loader = DataLoader(
+                    test_dataset,
+                    batch_size=64,
+                    shuffle=False,
+                    worker_init_fn=seed_worker,
+                    generator=g,
+                )
 
                 preds, labels, metrics = evaluate_model(
                     model, test_loader, class_names, selected_model, str(device)
@@ -225,17 +251,18 @@ def main() -> None:
 
                 # Compute per-class metrics
                 from sklearn.metrics import precision_recall_fscore_support
+
                 precision, recall, f1, support = precision_recall_fscore_support(
                     labels, preds, average=None, zero_division=0
                 )
 
                 # Display table
                 metrics_df = {
-                    'Class': class_names,
-                    'Precision': [f"{p:.4f}" for p in precision],
-                    'Recall': [f"{r:.4f}" for r in recall],
-                    'F1-Score': [f"{f:.4f}" for f in f1],
-                    'Support': support
+                    "Class": class_names,
+                    "Precision": [f"{p:.4f}" for p in precision],
+                    "Recall": [f"{r:.4f}" for r in recall],
+                    "F1-Score": [f"{f:.4f}" for f in f1],
+                    "Support": support,
                 }
 
                 st.dataframe(metrics_df, use_container_width=True)
@@ -246,17 +273,17 @@ def main() -> None:
                 axes[0].bar(class_names, precision)
                 axes[0].set_title("Precision by Class")
                 axes[0].set_ylabel("Precision")
-                axes[0].tick_params(axis='x', rotation=45)
+                axes[0].tick_params(axis="x", rotation=45)
 
                 axes[1].bar(class_names, recall)
                 axes[1].set_title("Recall by Class")
                 axes[1].set_ylabel("Recall")
-                axes[1].tick_params(axis='x', rotation=45)
+                axes[1].tick_params(axis="x", rotation=45)
 
                 axes[2].bar(class_names, f1)
                 axes[2].set_title("F1-Score by Class")
                 axes[2].set_ylabel("F1-Score")
-                axes[2].tick_params(axis='x', rotation=45)
+                axes[2].tick_params(axis="x", rotation=45)
 
                 plt.tight_layout()
                 st.pyplot(fig)
@@ -266,10 +293,12 @@ def main() -> None:
 
         st.info("Analyze performance across different defect classes")
 
-        test_transform = None if selected_model == 'Custom CNN' else get_imagenet_normalize()
+        test_transform = None if selected_model == "Custom CNN" else get_imagenet_normalize()
         test_dataset = WaferMapDataset(test_maps, y_test, transform=test_transform)
         g = torch.Generator().manual_seed(42)
-        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g)
+        test_loader = DataLoader(
+            test_dataset, batch_size=64, shuffle=False, worker_init_fn=seed_worker, generator=g
+        )
 
         preds, labels, _ = evaluate_model(
             model, test_loader, class_names, selected_model, str(device)
@@ -317,9 +346,7 @@ def main() -> None:
         # Forward pass
         model.eval()
         with torch.no_grad():
-            sample_transform = (
-                None if selected_model == 'Custom CNN' else get_imagenet_normalize()
-            )
+            sample_transform = None if selected_model == "Custom CNN" else get_imagenet_normalize()
             sample_dataset = WaferMapDataset(
                 [sample_map],
                 np.array([sample_label]),
@@ -343,7 +370,7 @@ def main() -> None:
                 display_map = sample_map[0]  # Use first channel
             else:
                 display_map = sample_map
-            ax.imshow(display_map, cmap='viridis')
+            ax.imshow(display_map, cmap="viridis")
             ax.set_title("Preprocessed Wafer Map")
             st.pyplot(fig)
 
@@ -352,7 +379,7 @@ def main() -> None:
             # Probability bar chart
             fig, ax = plt.subplots()
             probs_np = probs[0].cpu().numpy()
-            colors = ['green' if i == pred_idx else 'lightgray' for i in range(len(class_names))]
+            colors = ["green" if i == pred_idx else "lightgray" for i in range(len(class_names))]
             ax.barh(class_names, probs_np, color=colors)
             ax.set_xlabel("Probability")
             ax.set_title("Model Confidence by Class")
@@ -383,10 +410,10 @@ def main() -> None:
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     main()

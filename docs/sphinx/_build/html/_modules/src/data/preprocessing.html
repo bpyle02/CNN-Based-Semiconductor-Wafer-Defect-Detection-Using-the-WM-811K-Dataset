@@ -1,0 +1,792 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.data.preprocessing &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../data.html">src.data</a></li>
+      <li class="breadcrumb-item active">src.data.preprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.data.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Data preprocessing and augmentation for wafer map images.</span>
+
+<span class="sd">Handles resizing, normalization, and transformation of wafer maps to prepare</span>
+<span class="sd">them for training and inference with deep learning models.</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [7] Wu et al. (2014). &quot;WM-811K Dataset&quot;. DOI:10.1109/TSM.2014.2364237</span>
+<span class="sd">    [9] Yu et al. (2019). &quot;Wafer Defect Pattern Recognition Based on CNN&quot;. DOI:10.1109/TSM.2019.2963656</span>
+<span class="sd">    [49] Shorten &amp; Khoshgoftaar (2019). &quot;Image Data Augmentation Survey&quot;. DOI:10.1186/s40537-019-0197-0</span>
+<span class="sd">    [58] (2020). &quot;Wafer Map Defect Detection Using Joint Local-Global Features&quot;</span>
+<span class="sd">    [66] Zhang et al. (2018). &quot;mixup: Beyond Empirical Risk Minimization&quot;. arXiv:1710.09412</span>
+<span class="sd">    [67] Yun et al. (2019). &quot;CutMix&quot;. arXiv:1905.04899</span>
+<span class="sd">    [70] Cubuk et al. (2019). &quot;AutoAugment&quot;. arXiv:1805.09501</span>
+<span class="sd">    [71] Cubuk et al. (2020). &quot;RandAugment&quot;. arXiv:1909.13719</span>
+<span class="sd">    [75] DeVries &amp; Taylor (2017). &quot;Cutout&quot;. arXiv:1708.04552</span>
+<span class="sd">    [118] Zhai et al. (2019). &quot;S4L: Self-Supervised Semi-Supervised Learning&quot;. arXiv:1905.03670</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">skimage.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">resize</span> <span class="k">as</span> <span class="n">skimage_resize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LabelEncoder</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">transforms</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span><span class="p">,</span> <span class="n">KNOWN_CLASSES</span>
+
+
+<div class="viewcode-block" id="MixupCutmix">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MixupCutmix</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mixup and CutMix batch augmentation for improved generalization.</span>
+
+<span class="sd">    Operates on batches (not individual samples). One of mixup or cutmix is</span>
+<span class="sd">    randomly selected per batch based on their respective probabilities. If</span>
+<span class="sd">    neither fires, the original batch is returned with lam=1.0.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [51] Zhang et al. (2018). &quot;mixup: Beyond Empirical Risk Minimization&quot;. arXiv:1710.09412</span>
+<span class="sd">        [52] Yun et al. (2019). &quot;CutMix&quot;. arXiv:1905.04899</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">mixup_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">cutmix_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">mixup_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">cutmix_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="MixupCutmix.mixup_alpha">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix.mixup_alpha">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixup_alpha</span> <span class="o">=</span> <span class="n">mixup_alpha</span></div>
+
+<div class="viewcode-block" id="MixupCutmix.cutmix_alpha">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix.cutmix_alpha">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutmix_alpha</span> <span class="o">=</span> <span class="n">cutmix_alpha</span></div>
+
+<div class="viewcode-block" id="MixupCutmix.mixup_prob">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix.mixup_prob">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixup_prob</span> <span class="o">=</span> <span class="n">mixup_prob</span></div>
+
+<div class="viewcode-block" id="MixupCutmix.cutmix_prob">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix.cutmix_prob">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutmix_prob</span> <span class="o">=</span> <span class="n">cutmix_prob</span></div>
+
+<div class="viewcode-block" id="MixupCutmix.num_classes">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.MixupCutmix.num_classes">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rand_bbox</span><span class="p">(</span>
+        <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute a random bounding box whose area ratio equals (1 - lam).&quot;&quot;&quot;</span>
+        <span class="n">cut_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span>
+        <span class="n">cut_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">cut_ratio</span><span class="p">)</span>
+        <span class="n">cut_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">width</span> <span class="o">*</span> <span class="n">cut_ratio</span><span class="p">)</span>
+
+        <span class="n">cy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">cx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
+
+        <span class="n">y1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">cut_h</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">y2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">cut_h</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">cut_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">cut_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply mixup or cutmix to a batch.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            images: (B, C, H, W) batch tensor.</span>
+<span class="sd">            labels: (B,) integer label tensor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (mixed_images, labels_a, labels_b, lam) where the mixed loss is</span>
+<span class="sd">            ``lam * loss(pred, labels_a) + (1 - lam) * loss(pred, labels_b)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">images</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">roll</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">roll</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixup_prob</span><span class="p">:</span>
+            <span class="c1"># Mixup</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixup_alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixup_alpha</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixup_alpha</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="n">mixed</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">images</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">lam</span><span class="p">)</span> <span class="o">*</span> <span class="n">images</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">mixed</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">labels</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="n">lam</span>
+
+        <span class="k">if</span> <span class="n">roll</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixup_prob</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutmix_prob</span><span class="p">:</span>
+            <span class="c1"># CutMix</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutmix_alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutmix_alpha</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutmix_alpha</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rand_bbox</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">lam</span><span class="p">)</span>
+            <span class="n">mixed</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">mixed</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="p">:,</span> <span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span>
+            <span class="c1"># Adjust lambda to actual rectangle area ratio</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mixed</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">labels</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="n">lam</span>
+
+        <span class="c1"># Neither selected — identity pass-through</span>
+        <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="mf">1.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;mixup_alpha=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mixup_alpha</span><span class="si">}</span><span class="s2">, cutmix_alpha=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cutmix_alpha</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;mixup_prob=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mixup_prob</span><span class="si">}</span><span class="s2">, cutmix_prob=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cutmix_prob</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ClassBalancedSampler">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.ClassBalancedSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClassBalancedSampler</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Sampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sampler that oversamples minority classes so each epoch sees balanced data.</span>
+
+<span class="sd">    Unlike WeightedRandomSampler (which changes the per-sample probability),</span>
+<span class="sd">    this sampler replicates minority-class indices to match a target count per</span>
+<span class="sd">    class, then shuffles the result. The training distribution within each</span>
+<span class="sd">    epoch is roughly uniform across classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">num_samples_per_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            labels: 1-D integer array of class labels for every sample.</span>
+<span class="sd">            num_samples_per_class: Target sample count per class per epoch.</span>
+<span class="sd">                If ``None``, defaults to the count of the majority class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<div class="viewcode-block" id="ClassBalancedSampler.labels">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.ClassBalancedSampler.labels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span></div>
+
+        <span class="n">class_indices</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">):</span>
+            <span class="n">class_indices</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+<div class="viewcode-block" id="ClassBalancedSampler.class_indices">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.ClassBalancedSampler.class_indices">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">class_indices</span> <span class="o">=</span> <span class="n">class_indices</span></div>
+
+
+        <span class="k">if</span> <span class="n">num_samples_per_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_samples_per_class</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">class_indices</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<div class="viewcode-block" id="ClassBalancedSampler.num_samples_per_class">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.ClassBalancedSampler.num_samples_per_class">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples_per_class</span> <span class="o">=</span> <span class="n">num_samples_per_class</span></div>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length</span> <span class="o">=</span> <span class="n">num_samples_per_class</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">class_indices</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cls_indices</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_indices</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cls_indices</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># Repeat then truncate to get exactly num_samples_per_class</span>
+            <span class="n">repeats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples_per_class</span> <span class="o">//</span> <span class="n">n</span>
+            <span class="n">remainder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples_per_class</span> <span class="o">%</span> <span class="n">n</span>
+            <span class="n">expanded</span> <span class="o">=</span> <span class="n">cls_indices</span> <span class="o">*</span> <span class="n">repeats</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cls_indices</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">remainder</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">remainder</span> <span class="o">&lt;=</span> <span class="n">n</span>
+                <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cls_indices</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">remainder</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">indices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">expanded</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span></div>
+
+
+
+<div class="viewcode-block" id="GaussianNoise">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.GaussianNoise">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GaussianNoise</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add Gaussian noise to simulate sensor measurement variability.&quot;&quot;&quot;</span>
+    <span class="c1"># Domain-specific: simulates sensor measurement variability in wafer imaging</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">):</span>
+<div class="viewcode-block" id="GaussianNoise.mean">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.GaussianNoise.mean">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mean</span></div>
+
+<div class="viewcode-block" id="GaussianNoise.std">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.GaussianNoise.std">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">tensor</span> <span class="o">+</span> <span class="n">noise</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="RadialDistortion">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.RadialDistortion">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RadialDistortion</span><span class="p">:</span>
+    <span class="c1"># Domain-specific: barrel distortion simulates thermal wafer warping</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply radial distortion to simulate wafer warping effects.</span>
+
+<span class="sd">    Wafers are circular substrates that can warp during thermal processing.</span>
+<span class="sd">    Barrel distortion (radial displacement proportional to r^2) models this</span>
+<span class="sd">    physical effect, making it a domain-appropriate augmentation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">):</span>
+<div class="viewcode-block" id="RadialDistortion.strength">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.RadialDistortion.strength">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strength</span> <span class="o">=</span> <span class="n">strength</span></div>
+
+<div class="viewcode-block" id="RadialDistortion.p">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.RadialDistortion.p">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tensor</span>
+        <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Create coordinate grid centered at image center</span>
+        <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">H</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">W</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">y_coords</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">cy</span>
+        <span class="n">x_coords</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">cx</span>
+        <span class="n">yy</span><span class="p">,</span> <span class="n">xx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">y_coords</span><span class="p">,</span> <span class="n">x_coords</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">yy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">r_max</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">cx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">cy</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">r_norm</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">r_max</span>
+        <span class="c1"># Barrel distortion factor</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strength</span> <span class="o">*</span> <span class="n">r_norm</span><span class="o">**</span><span class="mi">2</span>
+        <span class="c1"># Distorted coordinates</span>
+        <span class="n">xx_dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">xx</span> <span class="o">*</span> <span class="n">factor</span> <span class="o">+</span> <span class="n">cx</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">W</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">yy_dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">yy</span> <span class="o">*</span> <span class="n">factor</span> <span class="o">+</span> <span class="n">cy</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">H</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Apply distortion per channel</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[:,</span> <span class="n">yy_dist</span><span class="p">,</span> <span class="n">xx_dist</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(strength=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strength</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="RadialJitter">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.RadialJitter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RadialJitter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply small radial distortion centered on the wafer.</span>
+
+<span class="sd">    Wafers are circular, so radial scaling (zoom in/out from center)</span>
+<span class="sd">    is more physically meaningful than arbitrary translation. Uses</span>
+<span class="sd">    affine_grid + grid_sample for smooth, differentiable distortion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">)):</span>
+<div class="viewcode-block" id="RadialJitter.scale_range">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.RadialJitter.scale_range">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_range</span> <span class="o">=</span> <span class="n">scale_range</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_range</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="c1"># tensor is (C, H, W); affine_grid expects (N, C, H, W)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Build 2x3 affine matrix: uniform scaling centered at origin</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="p">[[</span><span class="n">scale</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">affine_grid</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">grid_sample</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(scale_range=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_range</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="TARGET_SIZE">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.TARGET_SIZE">[docs]</a>
+<span class="n">TARGET_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>  <span class="c1"># 96x96 preserves defect patterns while keeping computation tractable [7]</span></div>
+
+
+
+<div class="viewcode-block" id="seed_worker">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.seed_worker">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seed_worker</span><span class="p">(</span><span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Seed DataLoader workers for reproducibility.</span>
+
+<span class="sd">    When num_workers &gt; 0, each worker gets its own copy of the dataset</span>
+<span class="sd">    and random state. This function ensures deterministic behavior by</span>
+<span class="sd">    seeding each worker based on the global torch seed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">worker_seed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span> <span class="o">%</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">worker_seed</span><span class="p">)</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">worker_seed</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="WaferMapDataset">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.WaferMapDataset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WaferMapDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    PyTorch Dataset for WM-811K semiconductor wafer maps.</span>
+
+<span class="sd">    Expects raw wafer maps. Resizes, normalizes, and stacks grayscale maps into</span>
+<span class="sd">    3-channel format during __getitem__ for lazy loading.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        maps: List of raw numpy arrays</span>
+<span class="sd">        labels: List of integer class labels</span>
+<span class="sd">        transform: Optional torchvision transforms to apply</span>
+<span class="sd">        target_size: Target (height, width) after resizing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">raw_maps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">TARGET_SIZE</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raw_maps: List of raw numpy arrays</span>
+<span class="sd">            labels: 1D array of integer class labels</span>
+<span class="sd">            transform: Optional torchvision transform pipeline</span>
+<span class="sd">            target_size: Target (height, width) for resizing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="WaferMapDataset.maps">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.WaferMapDataset.maps">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maps</span> <span class="o">=</span> <span class="n">raw_maps</span></div>
+
+<div class="viewcode-block" id="WaferMapDataset.labels">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.WaferMapDataset.labels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span></div>
+
+<div class="viewcode-block" id="WaferMapDataset.transform">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.WaferMapDataset.transform">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span></div>
+
+<div class="viewcode-block" id="WaferMapDataset.target_size">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.WaferMapDataset.target_size">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_size</span> <span class="o">=</span> <span class="n">target_size</span></div>
+
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Maps (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span><span class="si">}</span><span class="s2">) and labels (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span><span class="si">}</span><span class="s2">) &quot;</span>
+                <span class="s2">&quot;must have same length&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a single sample.</span>
+
+<span class="sd">        Fast path: if ``wm`` is already the target size AND its values are</span>
+<span class="sd">        already normalized to ``[0, 1]`` (dtype float16/float32), skip the</span>
+<span class="sd">        expensive skimage resize + divide. This is the on-disk format</span>
+<span class="sd">        produced by ``scripts/precompute_tensors.py`` and turns the</span>
+<span class="sd">        per-batch CPU cost from ~150 ms to ~2 ms on Colab, so the GPU</span>
+<span class="sd">        can actually be fed at its service rate.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idx: Sample index</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (image tensor [C, H, W], label tensor)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># Fast path: pre-resized + pre-normalized (see precompute_tensors.py).</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">wm</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_size</span>
+            <span class="ow">and</span> <span class="n">wm</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Original slow path for raw variable-shape wafer maps.</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">skimage_resize</span><span class="p">(</span>
+                <span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_size</span><span class="p">,</span> <span class="n">anti_aliasing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+        <span class="c1"># Stack to 3 channels: (H, W) -&gt; (3, H, W)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">arr</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">label</span></div>
+
+
+
+<div class="viewcode-block" id="PatchWaferDataset">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PatchWaferDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dataset for high-resolution wafers that yields patches instead of resizing.</span>
+<span class="sd">    Useful for preserving resolution-dependent defect signatures.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">raw_maps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">patch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="n">patches_per_wafer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PatchWaferDataset.maps">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset.maps">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maps</span> <span class="o">=</span> <span class="n">raw_maps</span></div>
+
+<div class="viewcode-block" id="PatchWaferDataset.labels">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset.labels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span></div>
+
+<div class="viewcode-block" id="PatchWaferDataset.patch_size">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset.patch_size">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span> <span class="o">=</span> <span class="n">patch_size</span></div>
+
+<div class="viewcode-block" id="PatchWaferDataset.patches_per_wafer">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset.patches_per_wafer">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patches_per_wafer</span> <span class="o">=</span> <span class="n">patches_per_wafer</span></div>
+
+<div class="viewcode-block" id="PatchWaferDataset.transform">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.PatchWaferDataset.transform">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">patches_per_wafer</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="n">wafer_idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">patches_per_wafer</span>
+        <span class="n">wm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="p">[</span><span class="n">wafer_idx</span><span class="p">]</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">shape</span>
+        
+        <span class="c1"># Randomly sample a patch if wafer is larger than patch_size</span>
+        <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span> <span class="ow">and</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">:</span>
+            <span class="n">top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">)</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">)</span>
+            <span class="n">patch</span> <span class="o">=</span> <span class="n">wm</span><span class="p">[</span><span class="n">top</span><span class="p">:</span><span class="n">top</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span><span class="n">left</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Pad or resize if smaller</span>
+            <span class="n">patch</span> <span class="o">=</span> <span class="n">skimage_resize</span><span class="p">(</span><span class="n">wm</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">),</span> <span class="n">anti_aliasing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">arr</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">wafer_idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">label</span></div>
+
+
+
+<div class="viewcode-block" id="preprocess_wafer_maps">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.preprocess_wafer_maps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">preprocess_wafer_maps</span><span class="p">(</span>
+    <span class="n">wafer_maps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">target_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">TARGET_SIZE</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resize all wafer maps to uniform size and normalize to [0, 1].</span>
+<span class="sd">    </span>
+<span class="sd">    DEPRECATED: Preprocessing is now done lazily in WaferMapDataset.</span>
+<span class="sd">    This function is kept for backward compatibility or one-off conversions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wafer_maps: List of (H, W) numpy arrays</span>
+<span class="sd">        target_size: Target (height, width) after resizing</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of (H, W) float32 arrays normalized to [0, 1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">preprocessed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">wm</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wafer_maps</span><span class="p">):</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">skimage_resize</span><span class="p">(</span>
+            <span class="n">arr</span><span class="p">,</span> <span class="n">target_size</span><span class="p">,</span> <span class="n">anti_aliasing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># WM-811K wafer maps use pixel values {0, 1, 2} representing</span>
+        <span class="c1"># background, normal die, and defective die respectively.</span>
+        <span class="c1"># Dividing by 2.0 normalizes to [0.0, 1.0] range.</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">preprocessed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">25000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Preprocessed </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wafer_maps</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> maps...&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">preprocessed</span></div>
+
+
+
+<div class="viewcode-block" id="preprocess_data">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.preprocess_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">preprocess_data</span><span class="p">(</span>
+    <span class="n">dataset_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">,</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load raw dataset and filter to known classes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_path: Optional path to dataset pickle</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (filtered DataFrame, train augmentation transform, ImageNet norm)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">)</span>
+
+    <span class="n">labeled_mask</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;failureClass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">KNOWN_CLASSES</span><span class="p">)</span>
+    <span class="n">data_subset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">labeled_mask</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Labeled wafers: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data_subset</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">  (out of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> total)&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropped: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">data_subset</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> unlabeled / unknown wafers&quot;</span><span class="p">)</span>
+
+    <span class="n">class_dist</span> <span class="o">=</span> <span class="n">data_subset</span><span class="p">[</span><span class="s1">&#39;failureClass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Failure Class Distribution (After Filtering) ---&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">class_dist</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+
+    <span class="n">majority</span> <span class="o">=</span> <span class="n">class_dist</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">minority</span> <span class="o">=</span> <span class="n">class_dist</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Class Imbalance Analysis ---&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Imbalance ratio (majority / minority): </span><span class="si">{</span><span class="n">majority</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">minority</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">x&quot;</span><span class="p">)</span>
+
+    <span class="n">train_aug</span> <span class="o">=</span> <span class="n">get_image_transforms</span><span class="p">()</span>
+    <span class="n">imagenet_norm</span> <span class="o">=</span> <span class="n">get_imagenet_normalize</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">data_subset</span><span class="p">,</span> <span class="n">train_aug</span><span class="p">,</span> <span class="n">imagenet_norm</span></div>
+
+
+
+<div class="viewcode-block" id="get_image_transforms">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.get_image_transforms">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_image_transforms</span><span class="p">(</span><span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">domain_augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get data augmentation transforms for training.</span>
+
+<span class="sd">    Applies generic geometric augmentations (H/V flips, rotation, translation)</span>
+<span class="sd">    plus optional domain-specific augmentations for semiconductor wafer maps:</span>
+<span class="sd">    - RadialDistortion: barrel distortion simulating wafer warping</span>
+<span class="sd">    - GaussianBlur: simulates sensor blur in wafer imaging equipment</span>
+<span class="sd">    - GaussianNoise: simulates sensor measurement variability</span>
+<span class="sd">    - RandomErasing: simulates partial defect occlusion or missing data</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        augment: Enable augmentation pipeline (False = identity transform)</span>
+<span class="sd">        domain_augment: Include domain-specific augmentations. Only applies</span>
+<span class="sd">            when augment=True.</span>
+
+<span class="sd">    Intensity normalization (x / 2.0) is done during preprocessing.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Torchvision Compose object with augmentation pipeline</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">augment</span><span class="p">:</span>
+        <span class="c1"># Base geometric augmentations</span>
+        <span class="n">augmentation_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">transforms</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">transforms</span><span class="o">.</span><span class="n">RandomVerticalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">transforms</span><span class="o">.</span><span class="n">RandomRotation</span><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
+            <span class="n">transforms</span><span class="o">.</span><span class="n">RandomAffine</span><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">translate</span><span class="o">=</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">domain_augment</span><span class="p">:</span>
+            <span class="c1"># Domain-specific augmentations for semiconductor wafer maps</span>
+            <span class="n">augmentation_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">RadialDistortion</span><span class="p">(</span><span class="n">strength</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+                <span class="n">transforms</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)),</span>
+                <span class="n">GaussianNoise</span><span class="p">(</span><span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">),</span>
+                <span class="n">transforms</span><span class="o">.</span><span class="n">RandomErasing</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">ratio</span><span class="o">=</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">3.3</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="p">])</span>
+        <span class="n">train_transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><span class="n">augmentation_list</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">train_transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([])</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Image Transform Pipeline ---&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target image size: </span><span class="si">{</span><span class="n">TARGET_SIZE</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Channels: 3 (replicated grayscale)&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Base normalization: pixel / 2.0 -&gt; [0, 1]&quot;</span><span class="p">)</span>
+    <span class="n">aug_desc</span> <span class="o">=</span> <span class="s2">&quot;disabled&quot;</span>
+    <span class="k">if</span> <span class="n">augment</span><span class="p">:</span>
+        <span class="n">aug_desc</span> <span class="o">=</span> <span class="s2">&quot;HFlip, VFlip, Rotation(+/-15), Translate(5%)&quot;</span>
+        <span class="k">if</span> <span class="n">domain_augment</span><span class="p">:</span>
+            <span class="n">aug_desc</span> <span class="o">+=</span> <span class="s2">&quot;, RadialDistortion(s=0.1), GaussianBlur(k=3), GaussianNoise(std=0.02), RandomErasing(p=0.3)&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Augmentations: </span><span class="si">{</span><span class="n">aug_desc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Preprocessing: Maps resized dynamically per-batch (lazy loading)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">train_transform</span></div>
+
+
+
+<div class="viewcode-block" id="get_imagenet_normalize">
+<a class="viewcode-back" href="../../../api/src/data/preprocessing/index.html#src.data.preprocessing.get_imagenet_normalize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_imagenet_normalize</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get ImageNet normalization transform for pretrained models.</span>
+
+<span class="sd">    ResNet-18 and EfficientNet-B0 were pretrained on ImageNet with these</span>
+<span class="sd">    specific mean and std values. Must be applied to inputs for these models.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Normalize transform with ImageNet mean/std</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span>
+        <span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">],</span>
+        <span class="n">std</span><span class="o">=</span><span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">aug_transform</span><span class="p">,</span> <span class="n">imagenet_norm</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Dataset ready: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Augmentation: </span><span class="si">{</span><span class="n">aug_transform</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ImageNet norm: </span><span class="si">{</span><span class="n">imagenet_norm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

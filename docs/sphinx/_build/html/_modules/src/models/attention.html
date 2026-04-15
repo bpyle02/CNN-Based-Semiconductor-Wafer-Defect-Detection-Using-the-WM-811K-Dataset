@@ -1,0 +1,703 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.attention &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.attention</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.models.attention</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Attention mechanisms for neural networks: SE and CBAM modules.</span>
+
+<span class="sd">Implements channel and spatial attention mechanisms that enhance feature</span>
+<span class="sd">representation by enabling the network to focus on important channels and</span>
+<span class="sd">spatial regions adaptively.</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [21] Hu et al. (2018). &quot;Squeeze-and-Excitation Networks&quot;. arXiv:1709.01507</span>
+<span class="sd">    [22] Woo et al. (2018). &quot;CBAM: Convolutional Block Attention Module&quot;. arXiv:1807.06521</span>
+<span class="sd">    [24] Wang et al. (2018). &quot;Non-local Neural Networks&quot;. arXiv:1711.07971</span>
+<span class="sd">    [87] Velickovic et al. (2018). &quot;Graph Attention Networks&quot;. arXiv:1710.10903</span>
+<span class="sd">    [116] (2021). &quot;Stand-Alone Self-Attention in Vision Models&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Ref [21]: Hu et al. (arXiv:1709.01507)</span>
+<div class="viewcode-block" id="SEBlock">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SEBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Squeeze-and-Excitation Block for channel attention.</span>
+
+<span class="sd">    Explicitly models channel interdependencies by:</span>
+<span class="sd">    1. **Squeeze**: Global average pooling to capture channel-wise statistics</span>
+<span class="sd">    2. **Excitation**: Two FC layers (reduction then expansion) to model interactions</span>
+<span class="sd">    3. **Recalibration**: Scales channel outputs by learned attention weights</span>
+
+<span class="sd">    This allows the network to recalibrate channel responses based on global</span>
+<span class="sd">    context, suppressing less informative channels and amplifying important ones.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        channels: Number of input channels</span>
+<span class="sd">        reduction: Reduction ratio for FC bottleneck (default 16)</span>
+<span class="sd">            - Reduces channels by factor of 16 to save computation</span>
+<span class="sd">            - Lower values (8, 4) increase capacity; higher (32) reduce parameters</span>
+
+<span class="sd">    Shape:</span>
+<span class="sd">        - Input: (B, C, H, W)</span>
+<span class="sd">        - Output: (B, C, H, W) [same shape, channel-weighted]</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; se = SEBlock(channels=64, reduction=16)</span>
+<span class="sd">        &gt;&gt;&gt; x = torch.randn(4, 64, 32, 32)</span>
+<span class="sd">        &gt;&gt;&gt; out = se(x)  # Shape: (4, 64, 32, 32)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="n">in_channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">channels</span> <span class="o">=</span> <span class="n">in_channels</span>
+        <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SEBlock requires &#39;channels&#39; or &#39;in_channels&#39;&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="SEBlock.channels">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock.channels">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span></div>
+
+<div class="viewcode-block" id="SEBlock.reduction">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock.reduction">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span> <span class="o">=</span> <span class="n">reduction</span></div>
+
+
+        <span class="c1"># Squeeze: adaptive global average pooling</span>
+<div class="viewcode-block" id="SEBlock.squeeze">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock.squeeze">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">squeeze</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Excitation: FC -&gt; ReLU -&gt; FC -&gt; Sigmoid</span>
+        <span class="n">reduced_channels</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">channels</span> <span class="o">//</span> <span class="n">reduction</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="SEBlock.excitation">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock.excitation">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">excitation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">reduced_channels</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">reduced_channels</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">(),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SEBlock.forward">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SEBlock.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass with channel attention.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor (B, C, H, W)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Channel-weighted output tensor (B, C, H, W)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Squeeze: (B, C, H, W) -&gt; (B, C, 1, 1)</span>
+        <span class="n">squeeze</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># Global average pool</span>
+
+        <span class="c1"># Reshape for FC layers: (B, C, 1, 1) -&gt; (B, C)</span>
+        <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">squeeze</span> <span class="o">=</span> <span class="n">squeeze</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="c1"># Excitation: (B, C) -&gt; (B, C) attention weights</span>
+        <span class="n">excitation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">excitation</span><span class="p">(</span><span class="n">squeeze</span><span class="p">)</span>  <span class="c1"># (B, C)</span>
+
+        <span class="c1"># Reshape back for broadcasting: (B, C) -&gt; (B, C, 1, 1)</span>
+        <span class="n">excitation</span> <span class="o">=</span> <span class="n">excitation</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Recalibration: element-wise multiplication</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">excitation</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SpatialAttention">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SpatialAttention">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpatialAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Spatial attention module for CBAM.</span>
+
+<span class="sd">    Generates attention weights along the spatial dimension by applying</span>
+<span class="sd">    convolutions to channel-wise statistics (max and average pooling).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        kernel_size: Kernel size for spatial attention convolution (default 7)</span>
+<span class="sd">        use_batchnorm: Whether to use BatchNorm (default False for stability)</span>
+
+<span class="sd">    Shape:</span>
+<span class="sd">        - Input: (B, C, H, W)</span>
+<span class="sd">        - Output: (B, 1, H, W) [spatial attention map]</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; spatial = SpatialAttention(kernel_size=7)</span>
+<span class="sd">        &gt;&gt;&gt; x = torch.randn(4, 64, 32, 32)</span>
+<span class="sd">        &gt;&gt;&gt; attn = spatial(x)  # Shape: (4, 1, 32, 32)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="n">use_batchnorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="p">(</span><span class="n">kernel_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>  <span class="c1"># Ensure output same size as input</span>
+
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">use_batchnorm</span><span class="p">:</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">())</span>
+
+<div class="viewcode-block" id="SpatialAttention.conv">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SpatialAttention.conv">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpatialAttention.forward">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.SpatialAttention.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate spatial attention map.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor (B, C, H, W)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Spatial attention map (B, 1, H, W)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Channel-wise statistics: (B, C, H, W) -&gt; (B, 1, H, W) each</span>
+        <span class="n">avg_pool</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Channel average</span>
+        <span class="n">max_pool</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Channel max</span>
+
+        <span class="c1"># Concatenate: (B, 1, H, W) + (B, 1, H, W) -&gt; (B, 2, H, W)</span>
+        <span class="n">x_concat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">avg_pool</span><span class="p">,</span> <span class="n">max_pool</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Apply convolution + sigmoid: (B, 2, H, W) -&gt; (B, 1, H, W)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x_concat</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># Ref [22]: Woo et al. (arXiv:1807.06521)</span>
+<div class="viewcode-block" id="CBAMBlock">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.CBAMBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CBAMBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convolutional Block Attention Module (CBAM).</span>
+
+<span class="sd">    Sequentially applies channel and spatial attention mechanisms to enable</span>
+<span class="sd">    the network to focus on informative channels and spatial regions.</span>
+
+<span class="sd">    CBAM = Channel Attention → Spatial Attention</span>
+
+<span class="sd">    The sequential composition allows channels to be recalibrated first (removing</span>
+<span class="sd">    redundancy), then spatial regions to be weighted (focusing on local patterns).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        channels: Number of input channels</span>
+<span class="sd">        reduction: Reduction ratio for channel attention (default 16)</span>
+<span class="sd">        kernel_size: Kernel size for spatial attention (default 7)</span>
+<span class="sd">        use_batchnorm: Whether to use BatchNorm in spatial attention (default False)</span>
+
+<span class="sd">    Shape:</span>
+<span class="sd">        - Input: (B, C, H, W)</span>
+<span class="sd">        - Output: (B, C, H, W) [same shape, channel and spatial weighted]</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; cbam = CBAMBlock(channels=64, reduction=16, kernel_size=7)</span>
+<span class="sd">        &gt;&gt;&gt; x = torch.randn(4, 64, 32, 32)</span>
+<span class="sd">        &gt;&gt;&gt; out = cbam(x)  # Shape: (4, 64, 32, 32)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        Woo et al., &quot;CBAM: Convolutional Block Attention Module&quot; (ECCV 2018)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+        <span class="n">use_batchnorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<div class="viewcode-block" id="CBAMBlock.channel_attention">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.CBAMBlock.channel_attention">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_attention</span> <span class="o">=</span> <span class="n">SEBlock</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CBAMBlock.spatial_attention">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.CBAMBlock.spatial_attention">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spatial_attention</span> <span class="o">=</span> <span class="n">SpatialAttention</span><span class="p">(</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">use_batchnorm</span><span class="o">=</span><span class="n">use_batchnorm</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CBAMBlock.forward">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.CBAMBlock.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass with channel and spatial attention.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor (B, C, H, W)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Channel and spatial-weighted output tensor (B, C, H, W)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Channel attention: (B, C, H, W) -&gt; (B, C, H, W)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_attention</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Spatial attention: (B, C, H, W) -&gt; (B, C, H, W)</span>
+        <span class="n">spatial_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_attention</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># (B, 1, H, W)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">spatial_attn</span>
+
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="add_se_to_model">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.add_se_to_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_se_to_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">target_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inject SE (Squeeze-and-Excitation) blocks into a model.</span>
+
+<span class="sd">    Inserts SE blocks after specified convolutional layers or all Conv2d layers</span>
+<span class="sd">    to add channel attention. This is a post-hoc enhancement that can improve</span>
+<span class="sd">    model performance without major architectural changes.</span>
+
+<span class="sd">    Strategy:</span>
+<span class="sd">        - Identify target modules (Conv2d layers by default or custom names)</span>
+<span class="sd">        - Wrap each target in a sequential block: Conv -&gt; SE</span>
+<span class="sd">        - Preserve original model architecture and functionality</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: PyTorch model (nn.Module)</span>
+<span class="sd">        target_modules: List of module attribute names to inject SE into</span>
+<span class="sd">            (e.g., [&#39;features.7&#39;, &#39;features.8&#39;]; None=all Conv2d layers)</span>
+<span class="sd">        reduction: Reduction ratio for SE block (default 16)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Modified model with SE blocks injected</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; from src.models import get_resnet18</span>
+<span class="sd">        &gt;&gt;&gt; model = get_resnet18(num_classes=9)</span>
+<span class="sd">        &gt;&gt;&gt; model = add_se_to_model(model, target_modules=[&#39;layer4&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; # Now layer4 has SE blocks after Conv2d layers</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Modifies model in-place and returns it</span>
+<span class="sd">        - Only adds SE after Conv2d layers (those with output channels)</span>
+<span class="sd">        - Preserves model.state_dict() keys (wrap, don&#39;t replace)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">inject_se_recursive</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively inject SE blocks into Conv2d layers.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">named_children</span><span class="p">()):</span>
+            <span class="n">full_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">name</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="c1"># Check if this Conv2d should be targeted</span>
+                <span class="n">should_inject</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">target_modules</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+                    <span class="nb">any</span><span class="p">(</span><span class="n">full_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">target_modules</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">should_inject</span><span class="p">:</span>
+                    <span class="c1"># Get output channels from Conv2d</span>
+                    <span class="n">channels</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">out_channels</span>
+                    <span class="n">se_block</span> <span class="o">=</span> <span class="n">SEBlock</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+
+                    <span class="c1"># Replace Conv2d with Sequential([Conv2d, SE])</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">se_block</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Traverse into child modules</span>
+                <span class="n">inject_se_recursive</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">full_name</span><span class="p">)</span>
+
+    <span class="n">inject_se_recursive</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="add_cbam_to_model">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.add_cbam_to_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_cbam_to_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">target_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+    <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="n">use_batchnorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inject CBAM (Convolutional Block Attention Module) blocks into a model.</span>
+
+<span class="sd">    Inserts CBAM blocks after specified layers to add both channel and spatial</span>
+<span class="sd">    attention. More expressive than SE alone, at the cost of slightly more computation.</span>
+
+<span class="sd">    Strategy:</span>
+<span class="sd">        - Identify target modules (Conv2d layers or custom names)</span>
+<span class="sd">        - Wrap each target in a sequential block: Conv -&gt; CBAM</span>
+<span class="sd">        - Preserve original model structure</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: PyTorch model (nn.Module)</span>
+<span class="sd">        target_modules: List of module attribute names to inject CBAM into</span>
+<span class="sd">            (e.g., [&#39;features.7&#39;, &#39;features.8&#39;]; None=all Conv2d layers)</span>
+<span class="sd">        reduction: Reduction ratio for channel attention (default 16)</span>
+<span class="sd">        kernel_size: Kernel size for spatial attention (default 7)</span>
+<span class="sd">        use_batchnorm: Whether to use BatchNorm in spatial attention (default False)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Modified model with CBAM blocks injected</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; from src.models import get_resnet18</span>
+<span class="sd">        &gt;&gt;&gt; model = get_resnet18(num_classes=9)</span>
+<span class="sd">        &gt;&gt;&gt; model = add_cbam_to_model(model, target_modules=[&#39;layer4&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; # Now layer4 has CBAM blocks after Conv2d layers</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Modifies model in-place and returns it</span>
+<span class="sd">        - Only adds CBAM after Conv2d layers</span>
+<span class="sd">        - Slightly higher compute cost than SE, but more expressive</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">inject_cbam_recursive</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively inject CBAM blocks into Conv2d layers.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">named_children</span><span class="p">()):</span>
+            <span class="n">full_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">name</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="c1"># Check if this Conv2d should be targeted</span>
+                <span class="n">should_inject</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">target_modules</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+                    <span class="nb">any</span><span class="p">(</span><span class="n">full_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">target_modules</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">should_inject</span><span class="p">:</span>
+                    <span class="c1"># Get output channels from Conv2d</span>
+                    <span class="n">channels</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">out_channels</span>
+                    <span class="n">cbam_block</span> <span class="o">=</span> <span class="n">CBAMBlock</span><span class="p">(</span>
+                        <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span>
+                        <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">,</span>
+                        <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+                        <span class="n">use_batchnorm</span><span class="o">=</span><span class="n">use_batchnorm</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Replace Conv2d with Sequential([Conv2d, CBAM])</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">cbam_block</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Traverse into child modules</span>
+                <span class="n">inject_cbam_recursive</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">full_name</span><span class="p">)</span>
+
+    <span class="n">inject_cbam_recursive</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="attention_summary">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.attention_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">attention_summary</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Summarize attention modules in a model.</span>
+
+<span class="sd">    Counts and lists all SE and CBAM blocks, useful for verification</span>
+<span class="sd">    after injection.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: PyTorch model to analyze</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with counts and module lists:</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;se_blocks&#39;: count,</span>
+<span class="sd">                &#39;cbam_blocks&#39;: count,</span>
+<span class="sd">                &#39;spatial_attentions&#39;: count,</span>
+<span class="sd">                &#39;se_modules&#39;: [list of SEBlock instances],</span>
+<span class="sd">                &#39;cbam_modules&#39;: [list of CBAMBlock instances],</span>
+<span class="sd">            }</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; model = add_cbam_to_model(get_resnet18(), reduction=16)</span>
+<span class="sd">        &gt;&gt;&gt; summary = attention_summary(model)</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Model has {summary[&#39;cbam_blocks&#39;]} CBAM blocks&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">se_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cbam_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">spatial_attentions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SEBlock</span><span class="p">):</span>
+            <span class="n">se_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CBAMBlock</span><span class="p">):</span>
+            <span class="n">cbam_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SpatialAttention</span><span class="p">):</span>
+            <span class="n">spatial_attentions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;se_blocks&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">se_blocks</span><span class="p">),</span>
+        <span class="s1">&#39;cbam_blocks&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">cbam_blocks</span><span class="p">),</span>
+        <span class="s1">&#39;spatial_attentions&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">spatial_attentions</span><span class="p">),</span>
+        <span class="s1">&#39;se_modules&#39;</span><span class="p">:</span> <span class="n">se_blocks</span><span class="p">,</span>
+        <span class="s1">&#39;cbam_modules&#39;</span><span class="p">:</span> <span class="n">cbam_blocks</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ATTENTION MECHANISMS TEST&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Test SEBlock</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">1. SEBlock (Squeeze-and-Excitation)&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+<div class="viewcode-block" id="se">
+<a class="viewcode-back" href="../../../api/src/models/attention/index.html#src.models.attention.se">[docs]</a>
+    <span class="n">se</span> <span class="o">=</span> <span class="n">SEBlock</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span></div>
+
+    <span class="n">x_se</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="n">out_se</span> <span class="o">=</span> <span class="n">se</span><span class="p">(</span><span class="n">x_se</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input shape: </span><span class="si">{</span><span class="n">x_se</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output shape: </span><span class="si">{</span><span class="n">out_se</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameters: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">se</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] SEBlock forward pass successful&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test SpatialAttention</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">2. SpatialAttention (CBAM spatial component)&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="n">spatial</span> <span class="o">=</span> <span class="n">SpatialAttention</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">x_spatial</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="n">attn_spatial</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">(</span><span class="n">x_spatial</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input shape: </span><span class="si">{</span><span class="n">x_spatial</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attention map shape: </span><span class="si">{</span><span class="n">attn_spatial</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attention map range: [</span><span class="si">{</span><span class="n">attn_spatial</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">attn_spatial</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameters: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">spatial</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] SpatialAttention forward pass successful&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test CBAMBlock</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">3. CBAMBlock (Channel + Spatial Attention)&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="n">cbam</span> <span class="o">=</span> <span class="n">CBAMBlock</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">x_cbam</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="n">out_cbam</span> <span class="o">=</span> <span class="n">cbam</span><span class="p">(</span><span class="n">x_cbam</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input shape: </span><span class="si">{</span><span class="n">x_cbam</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output shape: </span><span class="si">{</span><span class="n">out_cbam</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameters: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">cbam</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] CBAMBlock forward pass successful&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test SE injection on custom CNN</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">4. SE injection on WaferCNN&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Add parent dir to path for imports</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))))</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">cnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferCNN</span>
+
+    <span class="n">cnn</span> <span class="o">=</span> <span class="n">WaferCNN</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">total_before</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cnn</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">cnn_se</span> <span class="o">=</span> <span class="n">add_se_to_model</span><span class="p">(</span><span class="n">cnn</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">total_after</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cnn_se</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">attention_summary</span><span class="p">(</span><span class="n">cnn_se</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters before: </span><span class="si">{</span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters after: </span><span class="si">{</span><span class="n">total_after</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added parameters: </span><span class="si">{</span><span class="n">total_after</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SE blocks added: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;se_blocks&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">x_cnn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>
+    <span class="n">out_cnn</span> <span class="o">=</span> <span class="n">cnn_se</span><span class="p">(</span><span class="n">x_cnn</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WaferCNN with SE output shape: </span><span class="si">{</span><span class="n">out_cnn</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] SE injection on WaferCNN successful&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test CBAM injection on ResNet-18</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">5. CBAM injection on ResNet-18&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pretrained</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_resnet18</span>
+
+    <span class="n">resnet</span> <span class="o">=</span> <span class="n">get_resnet18</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">total_before</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">resnet</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">resnet_cbam</span> <span class="o">=</span> <span class="n">add_cbam_to_model</span><span class="p">(</span>
+        <span class="n">resnet</span><span class="p">,</span>
+        <span class="n">target_modules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;layer4&#39;</span><span class="p">],</span>
+        <span class="n">reduction</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">total_after</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">resnet_cbam</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">attention_summary</span><span class="p">(</span><span class="n">resnet_cbam</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters before: </span><span class="si">{</span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters after: </span><span class="si">{</span><span class="n">total_after</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added parameters: </span><span class="si">{</span><span class="n">total_after</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CBAM blocks added: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;cbam_blocks&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spatial attention modules: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;spatial_attentions&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">x_resnet</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>
+    <span class="n">out_resnet</span> <span class="o">=</span> <span class="n">resnet_cbam</span><span class="p">(</span><span class="n">x_resnet</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ResNet-18 with CBAM output shape: </span><span class="si">{</span><span class="n">out_resnet</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] CBAM injection on ResNet-18 successful&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test CBAM injection on EfficientNet-B0</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">6. CBAM injection on EfficientNet-B0&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pretrained</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_efficientnet_b0</span>
+
+    <span class="n">effnet</span> <span class="o">=</span> <span class="n">get_efficientnet_b0</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">total_before</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">effnet</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">effnet_cbam</span> <span class="o">=</span> <span class="n">add_cbam_to_model</span><span class="p">(</span>
+        <span class="n">effnet</span><span class="p">,</span>
+        <span class="n">target_modules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;features.7&#39;</span><span class="p">,</span> <span class="s1">&#39;features.8&#39;</span><span class="p">],</span>
+        <span class="n">reduction</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">total_after</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">effnet_cbam</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">attention_summary</span><span class="p">(</span><span class="n">effnet_cbam</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters before: </span><span class="si">{</span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total parameters after: </span><span class="si">{</span><span class="n">total_after</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added parameters: </span><span class="si">{</span><span class="n">total_after</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">total_before</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CBAM blocks added: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;cbam_blocks&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">x_effnet</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>
+    <span class="n">out_effnet</span> <span class="o">=</span> <span class="n">effnet_cbam</span><span class="p">(</span><span class="n">x_effnet</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EfficientNet-B0 with CBAM output shape: </span><span class="si">{</span><span class="n">out_effnet</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] CBAM injection on EfficientNet-B0 successful&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ALL TESTS PASSED&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

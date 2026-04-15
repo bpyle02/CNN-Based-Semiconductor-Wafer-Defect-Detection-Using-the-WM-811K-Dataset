@@ -65,7 +65,7 @@ def discover_checkpoints(ckpt_dir: Path, requested: Sequence[str] | None) -> Lis
     for ckpt in sorted(ckpt_dir.glob("*.pth")):
         stem = ckpt.stem
         if stem.startswith("best_"):
-            name = stem[len("best_"):]
+            name = stem[len("best_") :]
         elif stem.endswith("_best"):
             name = stem[: -len("_best")]
         else:
@@ -80,7 +80,9 @@ def discover_checkpoints(ckpt_dir: Path, requested: Sequence[str] | None) -> Lis
             if name in found:
                 result.append((name, found[name]))
             else:
-                logger.warning("Requested teacher '%s' has no checkpoint in %s; skipping", name, ckpt_dir)
+                logger.warning(
+                    "Requested teacher '%s' has no checkpoint in %s; skipping", name, ckpt_dir
+                )
         return result
 
     return [(n, p) for n, p in found.items()]
@@ -91,6 +93,7 @@ def discover_checkpoints(ckpt_dir: Path, requested: Sequence[str] | None) -> Lis
 # ---------------------------------------------------------------------------
 def build_and_load(model_name: str, ckpt: Path, config, num_classes: int, device: str) -> nn.Module:
     import train as _train
+
     model_cfg = getattr(config.model, model_name, None) or config.model
     model, _ = _train.build_model(model_name, model_cfg, num_classes, device)
     state = torch.load(ckpt, map_location=device, weights_only=False)
@@ -145,7 +148,7 @@ def distill_loss(
     """Return (total_loss, kd_loss, ce_loss)."""
     log_student = F.log_softmax(student_logits / temperature, dim=1)
     # batchmean KL matches Hinton's formulation (averaged over batch).
-    kd = F.kl_div(log_student, teacher_probs, reduction="batchmean") * (temperature ** 2)
+    kd = F.kl_div(log_student, teacher_probs, reduction="batchmean") * (temperature**2)
     ce = F.cross_entropy(student_logits, labels)
     total = alpha * kd + (1.0 - alpha) * ce
     return total, kd, ce
@@ -191,8 +194,11 @@ def train_student(
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
     history: Dict[str, List[float]] = {
-        "train_loss": [], "train_kd": [], "train_ce": [],
-        "val_acc": [], "val_macro_f1": [],
+        "train_loss": [],
+        "train_kd": [],
+        "train_ce": [],
+        "val_acc": [],
+        "val_macro_f1": [],
     }
     best_f1 = -1.0
     for epoch in range(1, epochs + 1):
@@ -233,7 +239,14 @@ def train_student(
         dur = time.time() - start
         logger.info(
             "epoch %02d/%d  loss=%.4f (kd=%.4f ce=%.4f)  val_acc=%.4f  val_macroF1=%.4f  [%.1fs]",
-            epoch, epochs, tr_loss, tr_kd, tr_ce, val_acc, val_f1, dur,
+            epoch,
+            epochs,
+            tr_loss,
+            tr_kd,
+            tr_ce,
+            val_acc,
+            val_f1,
+            dur,
         )
 
         if val_f1 > best_f1:
@@ -263,12 +276,22 @@ def _parse_teacher_list(raw: str) -> List[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--teacher-models", type=str, default=",".join(DEFAULT_TEACHERS),
-                        help=f"Comma-separated teacher names (default: {','.join(DEFAULT_TEACHERS)}). "
-                             "Use 'auto' to discover all *_best.pth / best_*.pth in checkpoints/.")
-    parser.add_argument("--student-arch", type=str, default="cnn",
-                        help="Student architecture name understood by train.build_model (default: cnn).")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--teacher-models",
+        type=str,
+        default=",".join(DEFAULT_TEACHERS),
+        help=f"Comma-separated teacher names (default: {','.join(DEFAULT_TEACHERS)}). "
+        "Use 'auto' to discover all *_best.pth / best_*.pth in checkpoints/.",
+    )
+    parser.add_argument(
+        "--student-arch",
+        type=str,
+        default="cnn",
+        help="Student architecture name understood by train.build_model (default: cnn).",
+    )
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--temperature", type=float, default=4.0)
@@ -300,7 +323,11 @@ def main() -> int:
     config = load_config(args.config)
 
     # -- Teachers --
-    requested = None if args.teacher_models.strip().lower() == "auto" else _parse_teacher_list(args.teacher_models)
+    requested = (
+        None
+        if args.teacher_models.strip().lower() == "auto"
+        else _parse_teacher_list(args.teacher_models)
+    )
     teacher_pairs = discover_checkpoints(args.checkpoints_dir, requested)
     if not teacher_pairs:
         logger.error("No teacher checkpoints found in %s", args.checkpoints_dir)
@@ -309,6 +336,7 @@ def main() -> int:
 
     # -- Data (reuse train.py pipeline) --
     import train as _train
+
     data = _train.load_and_preprocess_data(
         args.data_path,
         train_size=config.data.train_size,
@@ -325,7 +353,9 @@ def main() -> int:
     val_ds = WaferMapDataset(data["val_maps"], data["y_val"])
     test_ds = WaferMapDataset(data["test_maps"], data["y_test"])
 
-    dl_kwargs = dict(batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=(args.device == "cuda"))
+    dl_kwargs = dict(
+        batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=(args.device == "cuda")
+    )
     if args.num_workers > 0:
         dl_kwargs["persistent_workers"] = True
     train_loader = DataLoader(train_ds, shuffle=True, **dl_kwargs)
@@ -340,7 +370,9 @@ def main() -> int:
 
     # -- Build student --
     student_cfg = getattr(config.model, args.student_arch, None) or config.model
-    student, student_display = _train.build_model(args.student_arch, student_cfg, num_classes, args.device)
+    student, student_display = _train.build_model(
+        args.student_arch, student_cfg, num_classes, args.device
+    )
     student.train()
     n_params = count_params(student)
     logger.info("Student: %s  params=%s", student_display, f"{n_params:,}")

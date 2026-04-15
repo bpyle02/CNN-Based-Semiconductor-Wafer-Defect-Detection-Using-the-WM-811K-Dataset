@@ -13,11 +13,12 @@ References:
     [116] (2021). "Stand-Alone Self-Attention in Vision Models"
 """
 
-import torch
-import torch.nn as nn
-from typing import Any, Callable, Dict, List, Optional, Type, Union
 import copy
 import logging
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+
+import torch
+import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
@@ -271,9 +272,8 @@ def add_se_to_model(
 
             if isinstance(child, nn.Conv2d):
                 # Check if this Conv2d should be targeted
-                should_inject = (
-                    target_modules is None or
-                    any(full_name.startswith(target) for target in target_modules)
+                should_inject = target_modules is None or any(
+                    full_name.startswith(target) for target in target_modules
                 )
 
                 if should_inject:
@@ -340,9 +340,8 @@ def add_cbam_to_model(
 
             if isinstance(child, nn.Conv2d):
                 # Check if this Conv2d should be targeted
-                should_inject = (
-                    target_modules is None or
-                    any(full_name.startswith(target) for target in target_modules)
+                should_inject = target_modules is None or any(
+                    full_name.startswith(target) for target in target_modules
                 )
 
                 if should_inject:
@@ -403,17 +402,17 @@ def attention_summary(model: nn.Module) -> Dict[str, Any]:
             spatial_attentions.append(module)
 
     return {
-        'se_blocks': len(se_blocks),
-        'cbam_blocks': len(cbam_blocks),
-        'spatial_attentions': len(spatial_attentions),
-        'se_modules': se_blocks,
-        'cbam_modules': cbam_blocks,
+        "se_blocks": len(se_blocks),
+        "cbam_blocks": len(cbam_blocks),
+        "spatial_attentions": len(spatial_attentions),
+        "se_modules": se_blocks,
+        "cbam_modules": cbam_blocks,
     }
 
 
 if __name__ == "__main__":
-    import sys
     import os
+    import sys
 
     logger.info("=" * 70)
     logger.info("ATTENTION MECHANISMS TEST")
@@ -484,7 +483,7 @@ if __name__ == "__main__":
     total_before = sum(p.numel() for p in resnet.parameters())
     resnet_cbam = add_cbam_to_model(
         resnet,
-        target_modules=['layer4'],
+        target_modules=["layer4"],
         reduction=16,
         kernel_size=7,
     )
@@ -509,7 +508,7 @@ if __name__ == "__main__":
     total_before = sum(p.numel() for p in effnet.parameters())
     effnet_cbam = add_cbam_to_model(
         effnet,
-        target_modules=['features.7', 'features.8'],
+        target_modules=["features.7", "features.8"],
         reduction=16,
         kernel_size=7,
     )

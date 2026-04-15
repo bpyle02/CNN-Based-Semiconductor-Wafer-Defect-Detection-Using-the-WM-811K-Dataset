@@ -1,0 +1,51 @@
+src.data.loaders
+================
+
+.. py:module:: src.data.loaders
+
+.. autoapi-nested-parse::
+
+   Canonical DataLoader factories.
+
+   Consolidates the ~34 duplicated DataLoader construction sites across
+   ``train.py``/``scripts/`` behind three helpers:
+
+       create_train_loader(maps, labels, *, config, sampler=None, generator=None)
+       create_val_loader(maps, labels, *, config)
+       create_test_loader(maps, labels, *, config)
+
+   Defaults (``num_workers``, ``pin_memory``, ``persistent_workers``,
+   ``prefetch_factor``, ``worker_init_fn=seed_worker``) come from ``config.data``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.data.loaders.create_train_loader
+   src.data.loaders.create_val_loader
+   src.data.loaders.create_test_loader
+
+
+Module Contents
+---------------
+
+.. py:function:: create_train_loader(maps, labels, *, config: Any, batch_size: Optional[int] = None, transform: Any = None, sampler=None, generator: Optional[torch.Generator] = None, device: str = 'cpu') -> torch.utils.data.DataLoader
+
+   Construct the training DataLoader with canonical defaults.
+
+   If ``sampler`` is provided, it is used (no shuffle). Otherwise shuffle=True.
+
+
+.. py:function:: create_val_loader(maps, labels, *, config: Any, batch_size: Optional[int] = None, transform: Any = None, generator: Optional[torch.Generator] = None, device: str = 'cpu') -> torch.utils.data.DataLoader
+
+   Construct the validation DataLoader (no shuffle).
+
+
+.. py:function:: create_test_loader(maps, labels, *, config: Any, batch_size: Optional[int] = None, transform: Any = None, generator: Optional[torch.Generator] = None, device: str = 'cpu') -> torch.utils.data.DataLoader
+
+   Construct the test DataLoader (no shuffle).
+
+

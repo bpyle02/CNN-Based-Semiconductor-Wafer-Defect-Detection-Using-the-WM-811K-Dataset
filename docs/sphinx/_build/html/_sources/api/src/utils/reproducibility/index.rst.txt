@@ -1,0 +1,44 @@
+src.utils.reproducibility
+=========================
+
+.. py:module:: src.utils.reproducibility
+
+.. autoapi-nested-parse::
+
+   Reproducibility manifest: SHA-256 hashes of data/config/code + env metadata.
+
+   Used by ``train.py`` to embed a per-run provenance record under
+   ``results/metrics.json["reproducibility"]`` so experiments can be traced
+   back to an exact (code, data, config, environment) tuple.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.utils.reproducibility.compute_manifest
+
+
+Module Contents
+---------------
+
+.. py:function:: compute_manifest(data_path, config_path, extra_files: Optional[Iterable] = None, repo_root: Optional[pathlib.Path] = None) -> dict
+
+   Return a reproducibility manifest for the current run.
+
+   :param data_path: Path to the dataset file (e.g. ``data/LSWMD_new.pkl``). If a sibling
+                     ``*_cache.npz`` file exists it is hashed instead — that's the bytes
+                     the training loop actually reads.
+   :param config_path: Path to the merged / effective YAML config. Hashed verbatim.
+   :param extra_files: Optional iterable of extra file paths whose contents should be folded
+                       into ``code_sha256``.
+   :param repo_root: Repo root used to discover ``train.py`` + ``src/**/*.py``. Defaults
+                     to two levels above this file (``src/utils/reproducibility.py``).
+
+   :returns: * **dict with keys** (``data_sha256``, ``config_sha256``, ``code_sha256``,)
+             * ``torch_version``, ``python_version``, ``platform``, ``git_sha``,
+             * ``timestamp``.
+
+

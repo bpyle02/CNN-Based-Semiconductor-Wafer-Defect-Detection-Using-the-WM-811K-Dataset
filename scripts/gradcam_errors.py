@@ -45,9 +45,9 @@ from torch.utils.data import DataLoader
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.evaluate_ensemble import _build_and_load, _load_splits  # noqa: E402
 from src.config import load_config  # noqa: E402
 from src.inference.gradcam import GradCAM  # noqa: E402
-from scripts.evaluate_ensemble import _load_splits, _build_and_load  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +83,7 @@ def _pick_best_checkpoint(ckpt_dir: Path, metrics_path: Path) -> Tuple[Path, str
         if scored:
             scored.sort(reverse=True)
             _, name, ckpt = scored[0]
-            logger.info("Auto-picked %s (val macro_f1=%.4f) from %s",
-                        name, scored[0][0], ckpt)
+            logger.info("Auto-picked %s (val macro_f1=%.4f) from %s", name, scored[0][0], ckpt)
             return ckpt, name
 
     # Fallback: first checkpoint alphabetically.
@@ -129,8 +128,9 @@ def _find_target_layer(model: nn.Module) -> nn.Module:
 
 
 @torch.no_grad()
-def _collect_preds(model: nn.Module, loader: DataLoader, device: str
-                   ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _collect_preds(
+    model: nn.Module, loader: DataLoader, device: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return (preds, confidences-of-predicted-class, true labels)."""
     preds_all, confs_all, y_all = [], [], []
     for imgs, labels in loader:
@@ -149,8 +149,9 @@ def _collect_preds(model: nn.Module, loader: DataLoader, device: str
     )
 
 
-def _select_errors(y_true: np.ndarray, y_pred: np.ndarray, confs: np.ndarray,
-                   per_class: int, num_classes: int) -> List[List[int]]:
+def _select_errors(
+    y_true: np.ndarray, y_pred: np.ndarray, confs: np.ndarray, per_class: int, num_classes: int
+) -> List[List[int]]:
     """Per class, return indices of the top-``per_class`` highest-confidence
     mispredictions. Missing classes yield an empty list."""
     selected: List[List[int]] = []
@@ -195,12 +196,14 @@ def _render_grid(
 ) -> None:
     """Render the (num_classes x per_class) overlay grid to ``out_png``."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     num_classes = len(class_names)
     fig, axes = plt.subplots(
-        num_classes, per_class,
+        num_classes,
+        per_class,
         figsize=(2.2 * per_class, 2.4 * num_classes),
         squeeze=False,
     )
@@ -210,21 +213,30 @@ def _render_grid(
             ax.set_xticks([])
             ax.set_yticks([])
             if col == 0:
-                ax.set_ylabel(class_names[row], fontsize=9, rotation=0,
-                              labelpad=36, ha="right", va="center")
-            if row < len(grey_images) and col < len(grey_images[row]) \
-                    and grey_images[row][col] is not None:
-                ax.imshow(grey_images[row][col], cmap="gray",
-                          vmin=0.0, vmax=1.0)
-                ax.imshow(cams[row][col], cmap="jet", alpha=0.5,
-                          vmin=0.0, vmax=1.0)
+                ax.set_ylabel(
+                    class_names[row], fontsize=9, rotation=0, labelpad=36, ha="right", va="center"
+                )
+            if (
+                row < len(grey_images)
+                and col < len(grey_images[row])
+                and grey_images[row][col] is not None
+            ):
+                ax.imshow(grey_images[row][col], cmap="gray", vmin=0.0, vmax=1.0)
+                ax.imshow(cams[row][col], cmap="jet", alpha=0.5, vmin=0.0, vmax=1.0)
                 ax.set_title(captions[row][col], fontsize=7)
             else:
-                ax.text(0.5, 0.5, "(no errors)", ha="center", va="center",
-                        fontsize=8, transform=ax.transAxes, color="gray")
+                ax.text(
+                    0.5,
+                    0.5,
+                    "(no errors)",
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                    transform=ax.transAxes,
+                    color="gray",
+                )
                 ax.set_facecolor("#f3f3f3")
-    fig.suptitle("High-confidence misclassifications  (Grad-CAM, alpha=0.5)",
-                 fontsize=11)
+    fig.suptitle("High-confidence misclassifications  (Grad-CAM, alpha=0.5)", fontsize=11)
     fig.tight_layout(rect=(0.04, 0.0, 1.0, 0.97))
     fig.savefig(out_png, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -232,30 +244,35 @@ def _render_grid(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint", type=Path, default=None,
-                        help="Path to a best_<model>.pth checkpoint. "
-                             "Defaults to best-by-val-macro_f1 from results/metrics.json.")
-    parser.add_argument("--model", default=None,
-                        help="Architecture name (cnn, cnn_fpn, resnet, efficientnet, "
-                             "vit, swin, ride). Inferred from checkpoint filename if omitted.")
-    parser.add_argument("--per-class", type=int, default=5,
-                        help="Top-N highest-confidence errors per true class.")
-    parser.add_argument("--device",
-                        default="cuda" if torch.cuda.is_available() else "cpu",
-                        choices=("cuda", "cpu"))
-    parser.add_argument("--data-path", type=Path,
-                        default=REPO_ROOT / "data" / "LSWMD_new.pkl")
-    parser.add_argument("--checkpoints-dir", type=Path,
-                        default=REPO_ROOT / "checkpoints")
-    parser.add_argument("--metrics-path", type=Path,
-                        default=REPO_ROOT / "results" / "metrics.json")
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help="Path to a best_<model>.pth checkpoint. "
+        "Defaults to best-by-val-macro_f1 from results/metrics.json.",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Architecture name (cnn, cnn_fpn, resnet, efficientnet, "
+        "vit, swin, ride). Inferred from checkpoint filename if omitted.",
+    )
+    parser.add_argument(
+        "--per-class", type=int, default=5, help="Top-N highest-confidence errors per true class."
+    )
+    parser.add_argument(
+        "--device", default="cuda" if torch.cuda.is_available() else "cpu", choices=("cuda", "cpu")
+    )
+    parser.add_argument("--data-path", type=Path, default=REPO_ROOT / "data" / "LSWMD_new.pkl")
+    parser.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
+    parser.add_argument("--metrics-path", type=Path, default=REPO_ROOT / "results" / "metrics.json")
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "config.yaml")
-    parser.add_argument("--batch-size", type=int, default=64,
-                        help="Inference batch size (keep small to fit a T4).")
+    parser.add_argument(
+        "--batch-size", type=int, default=64, help="Inference batch size (keep small to fit a T4)."
+    )
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--output-dir", type=Path,
-                        default=REPO_ROOT / "results")
+    parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "results")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -269,9 +286,7 @@ def main() -> int:
 
     # Resolve checkpoint + model name.
     if args.checkpoint is None:
-        ckpt_path, inferred_name = _pick_best_checkpoint(
-            args.checkpoints_dir, args.metrics_path
-        )
+        ckpt_path, inferred_name = _pick_best_checkpoint(args.checkpoints_dir, args.metrics_path)
     else:
         ckpt_path = args.checkpoint
         if not ckpt_path.exists():
@@ -292,9 +307,11 @@ def main() -> int:
     )
     try:
         from src.data.preprocessing import KNOWN_CLASSES as _KC
+
         class_names = list(_KC)
     except Exception:
         from src.data.dataset import KNOWN_CLASSES as _KC
+
         class_names = list(_KC)
     if len(class_names) != num_classes:
         class_names = [str(i) for i in range(num_classes)]
@@ -306,9 +323,12 @@ def main() -> int:
     logger.info("Collecting predictions over %d test batches...", len(test_loader))
     preds, confs, y_true = _collect_preds(model, test_loader, args.device)
     err_mask = preds != y_true
-    logger.info("Test size=%d, errors=%d (%.2f%%)",
-                len(y_true), int(err_mask.sum()),
-                100.0 * float(err_mask.mean()))
+    logger.info(
+        "Test size=%d, errors=%d (%.2f%%)",
+        len(y_true),
+        int(err_mask.sum()),
+        100.0 * float(err_mask.mean()),
+    )
 
     selected = _select_errors(y_true, preds, confs, args.per_class, num_classes)
 
@@ -342,41 +362,44 @@ def main() -> int:
                 conf = float(confs[idx])
                 # Zero grads per sample -- backward() accumulates.
                 model.zero_grad(set_to_none=True)
-                cam, _ = gradcam.generate(
-                    img_tensor, target_class=pred, device=args.device
-                )
+                cam, _ = gradcam.generate(img_tensor, target_class=pred, device=args.device)
                 grey = _get_raw_image(test_ds, idx)
                 cam = np.asarray(cam, dtype=np.float32)
                 if cam.shape != grey.shape:
                     # Defensive: GradCAM.generate resizes to input, but guard
                     # against off-by-one if the wafer map dims differ.
                     from skimage.transform import resize as _resize
-                    cam = _resize(cam, grey.shape, anti_aliasing=True,
-                                  preserve_range=True).astype(np.float32)
+
+                    cam = _resize(cam, grey.shape, anti_aliasing=True, preserve_range=True).astype(
+                        np.float32
+                    )
                 grey_grid[cls].append(grey)
                 cam_grid[cls].append(cam)
                 caption_grid[cls].append(
-                    f"True: {class_names[cls]}  "
-                    f"Pred: {class_names[pred]}  (conf: {conf:.2f})"
+                    f"True: {class_names[cls]}  " f"Pred: {class_names[pred]}  (conf: {conf:.2f})"
                 )
-                per_class_entries.append({
-                    "test_index": int(idx),
-                    "true_label": class_names[cls],
-                    "true_label_id": int(cls),
-                    "pred_label": class_names[pred],
-                    "pred_label_id": int(pred),
-                    "confidence": conf,
-                })
+                per_class_entries.append(
+                    {
+                        "test_index": int(idx),
+                        "true_label": class_names[cls],
+                        "true_label_id": int(cls),
+                        "pred_label": class_names[pred],
+                        "pred_label_id": int(pred),
+                        "confidence": conf,
+                    }
+                )
             # Pad the grid row up to per_class width.
             while len(grey_grid[cls]) < args.per_class:
                 grey_grid[cls].append(None)  # type: ignore[arg-type]
-                cam_grid[cls].append(None)   # type: ignore[arg-type]
+                cam_grid[cls].append(None)  # type: ignore[arg-type]
                 caption_grid[cls].append("")
-            metadata["per_class_errors"].append({
-                "class_id": cls,
-                "class_name": class_names[cls],
-                "selected": per_class_entries,
-            })
+            metadata["per_class_errors"].append(
+                {
+                    "class_id": cls,
+                    "class_name": class_names[cls],
+                    "selected": per_class_entries,
+                }
+            )
     finally:
         gradcam.remove_hooks()
 
@@ -384,8 +407,7 @@ def main() -> int:
     out_png = args.output_dir / f"gradcam_errors_{model_name}.png"
     out_json = args.output_dir / f"gradcam_errors_{model_name}.json"
 
-    _render_grid(out_png, grey_grid, cam_grid, caption_grid,
-                 class_names, args.per_class)
+    _render_grid(out_png, grey_grid, cam_grid, caption_grid, class_names, args.per_class)
     out_json.write_text(json.dumps(metadata, indent=2))
 
     logger.info("Wrote %s", out_png)

@@ -28,8 +28,8 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import (
     accuracy_score,
-    f1_score,
     classification_report,
+    f1_score,
 )
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -43,6 +43,7 @@ def _default_tta_ops() -> List:
     Views: identity, hflip, vflip, rot90, rot180, rot270,
     hflip+rot90, vflip+rot90.  All are zero-copy views over torch tensors.
     """
+
     def identity(x: torch.Tensor) -> torch.Tensor:
         return x
 
@@ -67,8 +68,7 @@ def _default_tta_ops() -> List:
     def vflip_rot90(x: torch.Tensor) -> torch.Tensor:
         return torch.rot90(torch.flip(x, dims=[-2]), k=1, dims=[-2, -1])
 
-    return [identity, hflip, vflip, rot90_op, rot180_op, rot270_op,
-            hflip_rot90, vflip_rot90]
+    return [identity, hflip, vflip, rot90_op, rot180_op, rot270_op, hflip_rot90, vflip_rot90]
 
 
 def predict_with_tta(
@@ -153,10 +153,12 @@ class TestTimeAugmentation:
             transforms.Compose([]),  # identity
             transforms.Compose([transforms.RandomHorizontalFlip(p=1.0)]),
             transforms.Compose([transforms.RandomVerticalFlip(p=1.0)]),
-            transforms.Compose([
-                transforms.RandomHorizontalFlip(p=1.0),
-                transforms.RandomVerticalFlip(p=1.0),
-            ]),
+            transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(p=1.0),
+                    transforms.RandomVerticalFlip(p=1.0),
+                ]
+            ),
             transforms.Compose([transforms.RandomRotation(degrees=(90, 90))]),
         ]
 

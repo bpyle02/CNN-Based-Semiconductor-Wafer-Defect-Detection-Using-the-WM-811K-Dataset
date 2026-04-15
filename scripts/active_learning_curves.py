@@ -66,8 +66,11 @@ QUICK_BUDGETS = [100, 500, 1500]
 def _make_loader(ds: WaferMapDataset, batch_size: int, shuffle: bool) -> DataLoader:
     g = torch.Generator().manual_seed(42)
     return DataLoader(
-        ds, batch_size=batch_size, shuffle=shuffle,
-        worker_init_fn=seed_worker, generator=g,
+        ds,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        worker_init_fn=seed_worker,
+        generator=g,
     )
 
 
@@ -83,7 +86,9 @@ def train_and_evaluate(
 ) -> Tuple[nn.Module, float]:
     """Train a fresh CNN on maps[idx_train], return (model, test macro F1)."""
     tr_ds = WaferMapDataset(
-        maps[idx_train], labels[idx_train], transform=get_image_transforms(),
+        maps[idx_train],
+        labels[idx_train],
+        transform=get_image_transforms(),
     )
     loader = _make_loader(tr_ds, batch_size, shuffle=True)
     model = WaferCNN(num_classes=num_classes).to(device)
@@ -104,7 +109,10 @@ def train_and_evaluate(
 
 @torch.no_grad()
 def evaluate_f1(
-    model: nn.Module, test_ds: WaferMapDataset, device: str, batch_size: int = 128,
+    model: nn.Module,
+    test_ds: WaferMapDataset,
+    device: str,
+    batch_size: int = 128,
 ) -> float:
     loader = _make_loader(test_ds, batch_size, shuffle=False)
     model.eval()
@@ -159,7 +167,13 @@ def run_random_curve(
         b_eff = min(b, n)
         idx = rng.choice(n, b_eff, replace=False)
         _, f1 = train_and_evaluate(
-            maps, labels, idx, test_ds, num_classes, epochs, device,
+            maps,
+            labels,
+            idx,
+            test_ds,
+            num_classes,
+            epochs,
+            device,
         )
         logger.info("  [random seed=%d] budget=%d f1=%.4f", seed, b_eff, f1)
         curve.append((b_eff, f1))
@@ -184,10 +198,15 @@ def run_active_curve(
 
     labeled = rng.choice(n, budgets[0], replace=False)
     model, f1 = train_and_evaluate(
-        maps, labels, labeled, test_ds, num_classes, epochs, device,
+        maps,
+        labels,
+        labeled,
+        test_ds,
+        num_classes,
+        epochs,
+        device,
     )
-    logger.info("  [AL seed=%d] budget=%d (bootstrap) f1=%.4f",
-                seed, len(labeled), f1)
+    logger.info("  [AL seed=%d] budget=%d (bootstrap) f1=%.4f", seed, len(labeled), f1)
     curve: List[Tuple[int, float]] = [(len(labeled), f1)]
 
     for b in budgets[1:]:
@@ -203,10 +222,17 @@ def run_active_curve(
         top = unlabeled[np.argsort(-ent)[:want]]
         labeled = np.concatenate([labeled, top])
         model, f1 = train_and_evaluate(
-            maps, labels, labeled, test_ds, num_classes, epochs, device,
+            maps,
+            labels,
+            labeled,
+            test_ds,
+            num_classes,
+            epochs,
+            device,
         )
-        logger.info("  [AL seed=%d] budget=%d (+%d by entropy) f1=%.4f",
-                    seed, len(labeled), want, f1)
+        logger.info(
+            "  [AL seed=%d] budget=%d (+%d by entropy) f1=%.4f", seed, len(labeled), want, f1
+        )
         curve.append((len(labeled), f1))
     return curve
 
@@ -232,20 +258,25 @@ def plot_curves(
     out_pdf: Path,
 ) -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
-    ax.plot(random_budgets, random_mean, marker="o", label="Random sampling",
-            color="tab:blue")
+    ax.plot(random_budgets, random_mean, marker="o", label="Random sampling", color="tab:blue")
     if random_std.any():
-        ax.fill_between(random_budgets, random_mean - random_std,
-                        random_mean + random_std, color="tab:blue", alpha=0.15)
-    ax.plot(al_budgets, al_mean, marker="s",
-            label="Active learning (entropy)", color="tab:orange")
+        ax.fill_between(
+            random_budgets,
+            random_mean - random_std,
+            random_mean + random_std,
+            color="tab:blue",
+            alpha=0.15,
+        )
+    ax.plot(al_budgets, al_mean, marker="s", label="Active learning (entropy)", color="tab:orange")
     if al_std.any():
-        ax.fill_between(al_budgets, al_mean - al_std, al_mean + al_std,
-                        color="tab:orange", alpha=0.15)
+        ax.fill_between(
+            al_budgets, al_mean - al_std, al_mean + al_std, color="tab:orange", alpha=0.15
+        )
     ax.set_xscale("log")
     ax.set_xlabel("Labeled training samples")
     ax.set_ylabel("Test Macro F1")
@@ -261,26 +292,31 @@ def plot_curves(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Active learning curves")
-    parser.add_argument("--seeds", type=int, default=1,
-                        help="Number of seeds for std band")
-    parser.add_argument("--epochs", type=int, default=2,
-                        help="Training epochs per budget")
-    parser.add_argument("--budgets", type=int, nargs="+", default=None,
-                        help="Override budget list")
-    parser.add_argument("--include-full", action="store_true",
-                        help="Append full train-set budget to the random curve")
-    parser.add_argument("--quick", action="store_true",
-                        help="3 budgets x 1 seed, 4k pool subsample")
-    parser.add_argument("--pool-subsample", type=int, default=0,
-                        help="Subsample train pool to N (0 = full)")
+    parser.add_argument("--seeds", type=int, default=1, help="Number of seeds for std band")
+    parser.add_argument("--epochs", type=int, default=2, help="Training epochs per budget")
+    parser.add_argument("--budgets", type=int, nargs="+", default=None, help="Override budget list")
+    parser.add_argument(
+        "--include-full",
+        action="store_true",
+        help="Append full train-set budget to the random curve",
+    )
+    parser.add_argument(
+        "--quick", action="store_true", help="3 budgets x 1 seed, 4k pool subsample"
+    )
+    parser.add_argument(
+        "--pool-subsample", type=int, default=0, help="Subsample train pool to N (0 = full)"
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--data-path", type=Path, default=None)
-    parser.add_argument("--out-json", type=Path,
-                        default=REPO_ROOT / "results" / "active_learning.json")
-    parser.add_argument("--out-png", type=Path,
-                        default=REPO_ROOT / "results" / "fig_active_learning.png")
-    parser.add_argument("--out-pdf", type=Path,
-                        default=REPO_ROOT / "results" / "fig_active_learning.pdf")
+    parser.add_argument(
+        "--out-json", type=Path, default=REPO_ROOT / "results" / "active_learning.json"
+    )
+    parser.add_argument(
+        "--out-png", type=Path, default=REPO_ROOT / "results" / "fig_active_learning.png"
+    )
+    parser.add_argument(
+        "--out-pdf", type=Path, default=REPO_ROOT / "results" / "fig_active_learning.pdf"
+    )
     args = parser.parse_args()
 
     if args.quick:
@@ -306,8 +342,10 @@ def main() -> int:
     maps_all = df["waferMap"].values
 
     tr_idx, te_idx = train_test_split(
-        np.arange(len(labels_all)), test_size=0.20,
-        stratify=labels_all, random_state=42,
+        np.arange(len(labels_all)),
+        test_size=0.20,
+        stratify=labels_all,
+        random_state=42,
     )
     train_labels = labels_all[tr_idx]
     test_labels = labels_all[te_idx]
@@ -315,16 +353,16 @@ def main() -> int:
     test_maps_raw = [maps_all[i] for i in te_idx]
 
     if args.pool_subsample > 0 and args.pool_subsample < len(train_labels):
-        logger.info("Subsampling train pool: %d -> %d",
-                    len(train_labels), args.pool_subsample)
+        logger.info("Subsampling train pool: %d -> %d", len(train_labels), args.pool_subsample)
         sub = np.random.RandomState(0).choice(
-            len(train_labels), args.pool_subsample, replace=False,
+            len(train_labels),
+            args.pool_subsample,
+            replace=False,
         )
         train_labels = train_labels[sub]
         train_maps_raw = [train_maps_raw[i] for i in sub]
 
-    logger.info("Preprocessing train=%d test=%d ...",
-                len(train_labels), len(test_labels))
+    logger.info("Preprocessing train=%d test=%d ...", len(train_labels), len(test_labels))
     train_maps = np.array(preprocess_wafer_maps(train_maps_raw))
     test_maps = np.array(preprocess_wafer_maps(test_maps_raw))
     test_ds = WaferMapDataset(test_maps, test_labels, transform=None)
@@ -343,15 +381,31 @@ def main() -> int:
         seed = 42 + s
         logger.info("=== Seed %d/%d ===", s + 1, args.seeds)
         logger.info("--- Random baseline ---")
-        random_curves.append(run_random_curve(
-            train_maps, train_labels, test_ds, budgets_eff,
-            num_classes, args.epochs, args.device, seed,
-        ))
+        random_curves.append(
+            run_random_curve(
+                train_maps,
+                train_labels,
+                test_ds,
+                budgets_eff,
+                num_classes,
+                args.epochs,
+                args.device,
+                seed,
+            )
+        )
         logger.info("--- Active learning ---")
-        al_curves.append(run_active_curve(
-            train_maps, train_labels, test_ds, al_budgets,
-            num_classes, args.epochs, args.device, seed,
-        ))
+        al_curves.append(
+            run_active_curve(
+                train_maps,
+                train_labels,
+                test_ds,
+                al_budgets,
+                num_classes,
+                args.epochs,
+                args.device,
+                seed,
+            )
+        )
 
     rb, rm, rs = aggregate_curves(random_curves)
     ab, am, asd = aggregate_curves(al_curves)
@@ -371,15 +425,13 @@ def main() -> int:
             "budgets": rb.tolist(),
             "macro_f1_mean": rm.tolist(),
             "macro_f1_std": rs.tolist(),
-            "per_seed": [[(int(b), float(f)) for b, f in curve]
-                         for curve in random_curves],
+            "per_seed": [[(int(b), float(f)) for b, f in curve] for curve in random_curves],
         },
         "active": {
             "budgets": ab.tolist(),
             "macro_f1_mean": am.tolist(),
             "macro_f1_std": asd.tolist(),
-            "per_seed": [[(int(b), float(f)) for b, f in curve]
-                         for curve in al_curves],
+            "per_seed": [[(int(b), float(f)) for b, f in curve] for curve in al_curves],
         },
     }
     args.out_json.parent.mkdir(parents=True, exist_ok=True)

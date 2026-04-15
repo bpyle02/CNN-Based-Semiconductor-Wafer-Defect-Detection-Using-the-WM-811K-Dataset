@@ -1,0 +1,73 @@
+src.data.dataset
+================
+
+.. py:module:: src.data.dataset
+
+.. autoapi-nested-parse::
+
+   Dataset loading and management for WM-811K semiconductor wafer defect detection.
+
+   Handles loading, parsing, and basic quality checks for the WM-811K dataset,
+   including extraction of failure class labels from nested structures.
+
+   .. rubric:: References
+
+   [7] Wu et al. (2014). "Wafer Map Failure Pattern Recognition". DOI:10.1109/TSM.2014.2364237
+   [61] (2020). "Yield Prediction Using ML in Semiconductor Manufacturing"
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.data.dataset.logger
+   src.data.dataset.KNOWN_CLASSES
+   src.data.dataset.df
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.data.dataset.load_dataset
+   src.data.dataset.extract_failure_label
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: KNOWN_CLASSES
+   :value: ['Center', 'Donut', 'Edge-Loc', 'Edge-Ring', 'Loc', 'Near-full', 'Random', 'Scratch', 'none']
+
+
+.. py:function:: load_dataset(path: Optional[pathlib.Path] = None) -> pandas.DataFrame
+
+   Load the WM-811K dataset from a pickle file and extract failure classes.
+
+   :param path: Optional path to dataset pickle file. Defaults to data/LSWMD_new.pkl.
+
+   :returns: waferMap, failureType, failureClass, etc.
+   :rtype: DataFrame with columns
+
+   :raises DataLoadError: If dataset file cannot be found or loaded.
+
+
+.. py:function:: extract_failure_label(failure_label: Any) -> str
+
+   Extract a clean failure class label from the raw 'failureType' field.
+
+   The failureType field contains nested structures (arrays/lists) with various
+   encoding formats. This function unwraps and decodes them robustly.
+
+   :param failure_label: Raw value from failureType column (may be array, list, bytes, str).
+
+   :returns: Clean string label (one of KNOWN_CLASSES or 'unknown').
+
+
+.. py:data:: df
+

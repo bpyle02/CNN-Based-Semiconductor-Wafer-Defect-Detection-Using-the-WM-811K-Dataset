@@ -93,39 +93,41 @@ def build_model(model_name: str, num_classes: int = DEFAULT_NUM_CLASSES) -> nn.M
 
     if name == "cnn":
         from src.models import WaferCNN
+
         return WaferCNN(num_classes=num_classes)
 
     if name == "cnn_fpn":
         from src.models import WaferCNNFPN
+
         return WaferCNNFPN(num_classes=num_classes)
 
     if name == "resnet":
         from src.models import get_resnet18
+
         return get_resnet18(num_classes=num_classes, pretrained=False, freeze_until=None)
 
     if name in {"efficientnet", "effnet"}:
         from src.models import get_efficientnet_b0
-        return get_efficientnet_b0(
-            num_classes=num_classes, pretrained=False, freeze_until=None
-        )
+
+        return get_efficientnet_b0(num_classes=num_classes, pretrained=False, freeze_until=None)
 
     if name == "vit":
         from src.models import get_vit_small
+
         return get_vit_small(num_classes=num_classes)
 
     if name == "swin":
         from src.models import get_swin_tiny
+
         return get_swin_tiny(num_classes=num_classes)
 
     if name == "ride":
         from src.models import build_ride_model
-        return build_ride_model(
-            backbone_name="cnn", num_classes=num_classes, device="cpu"
-        )
+
+        return build_ride_model(backbone_name="cnn", num_classes=num_classes, device="cpu")
 
     raise ValueError(
-        f"Unknown model name '{model_name}'. Expected one of: "
-        f"{sorted(KNOWN_MODEL_NAMES)}"
+        f"Unknown model name '{model_name}'. Expected one of: " f"{sorted(KNOWN_MODEL_NAMES)}"
     )
 
 
@@ -146,7 +148,9 @@ def load_checkpoint_weights(model: nn.Module, checkpoint_path: Path, device: str
     if missing or unexpected:
         logger.warning(
             "Checkpoint %s loaded with missing=%d unexpected=%d keys",
-            checkpoint_path.name, len(missing), len(unexpected),
+            checkpoint_path.name,
+            len(missing),
+            len(unexpected),
         )
 
 
@@ -295,9 +299,7 @@ def benchmark_on_device(
         }
 
         if device.type == "cuda":
-            result.peak_cuda_memory_mb = (
-                torch.cuda.max_memory_allocated(device) / (1024 * 1024)
-            )
+            result.peak_cuda_memory_mb = torch.cuda.max_memory_allocated(device) / (1024 * 1024)
     except Exception as exc:  # pragma: no cover - reported through JSON
         logger.exception("Benchmark failed on %s: %s", device, exc)
         result.error = f"{type(exc).__name__}: {exc}"
@@ -431,9 +433,7 @@ def results_to_json(results: List[ModelResult]) -> Dict[str, Any]:
     return {
         "torch_version": torch.__version__,
         "cuda_available": torch.cuda.is_available(),
-        "cuda_device": (
-            torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
-        ),
+        "cuda_device": (torch.cuda.get_device_name(0) if torch.cuda.is_available() else None),
         "models": [asdict(r) for r in results],
     }
 
@@ -510,22 +510,37 @@ def run(
 
 
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--checkpoint", type=Path, default=None,
-                   help="Single checkpoint to benchmark (default: all *_best.pth).")
-    p.add_argument("--model", type=str, default=None,
-                   help="Architecture name when it cannot be inferred from filename.")
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    p.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help="Single checkpoint to benchmark (default: all *_best.pth).",
+    )
+    p.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Architecture name when it cannot be inferred from filename.",
+    )
     p.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
     p.add_argument("--results-dir", type=Path, default=REPO_ROOT / "results")
-    p.add_argument("--devices", nargs="+", default=None,
-                   choices=["cpu", "cuda"],
-                   help="Devices to benchmark on. Default: cpu and cuda when available.")
+    p.add_argument(
+        "--devices",
+        nargs="+",
+        default=None,
+        choices=["cpu", "cuda"],
+        help="Devices to benchmark on. Default: cpu and cuda when available.",
+    )
     p.add_argument("--warmup", type=int, default=10)
     p.add_argument("--iters", type=int, default=100)
     p.add_argument("--throughput-batch-size", type=int, default=32)
     p.add_argument("--throughput-batches", type=int, default=10)
-    p.add_argument("--no-write", action="store_true",
-                   help="Skip writing results/benchmark.{json,md}.")
+    p.add_argument(
+        "--no-write", action="store_true", help="Skip writing results/benchmark.{json,md}."
+    )
     p.add_argument("-v", "--verbose", action="store_true")
     return p.parse_args(argv)
 

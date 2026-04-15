@@ -1,0 +1,1049 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.federated.fed_avg &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.federated.fed_avg</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.federated.fed_avg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Federated Averaging (FedAvg) algorithm implementation.</span>
+
+<span class="sd">Reference: McMahan et al., &quot;Communication-Efficient Learning of Deep Networks</span>
+<span class="sd">from Decentralized Data&quot; (ICML 2017)</span>
+
+<span class="sd">FedAvg protocol:</span>
+<span class="sd">    1. Server initializes global model</span>
+<span class="sd">    2. Each round: Sample subset of clients</span>
+<span class="sd">    3. Each client trains on local data (E epochs, B batch size)</span>
+<span class="sd">    4. Clients send model updates to server</span>
+<span class="sd">    5. Server computes weighted average of client models</span>
+<span class="sd">    6. Server sends updated model back to all clients</span>
+
+<span class="sd">This implementation supports:</span>
+<span class="sd">    - Configurable number of rounds and client sampling</span>
+<span class="sd">    - Local SGD on each client</span>
+<span class="sd">    - Weighted averaging by client data size</span>
+<span class="sd">    - Learning rate scheduling</span>
+<span class="sd">    - Model checkpointing</span>
+<span class="sd">    - Evaluation on validation/test sets</span>
+
+<span class="sd">References:</span>
+<span class="sd">    [33] McMahan et al. (2017). &quot;FedAvg&quot;. arXiv:1602.05629</span>
+<span class="sd">    [34] Blanchard et al. (2017). &quot;Krum: Byzantine Tolerant Gradient Descent&quot;. arXiv:1703.02757</span>
+<span class="sd">    [35] Yin et al. (2018). &quot;Byzantine-Robust Distributed Learning&quot;. arXiv:1803.10032</span>
+<span class="sd">    [36] Kairouz et al. (2021). &quot;Advances in Federated Learning&quot;. arXiv:1912.04977</span>
+<span class="sd">    [143] (2021). &quot;Federated Learning for Semiconductor Manufacturing&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.model_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_checkpoint_with_hash</span><span class="p">,</span> <span class="n">verify_checkpoint</span>
+
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="FedAvgConfig">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FedAvgConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for Federated Averaging training.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        num_rounds: Number of federation rounds (default: 10)</span>
+<span class="sd">        clients_per_round: Number of clients sampled per round (default: 10)</span>
+<span class="sd">        local_epochs: Local SGD epochs on each client (default: 1)</span>
+<span class="sd">        learning_rate: Global learning rate (default: 0.01)</span>
+<span class="sd">        learning_rate_schedule: &#39;constant&#39; or &#39;exponential&#39; (default: &#39;constant&#39;)</span>
+<span class="sd">        lr_decay_rate: Decay factor for exponential schedule (default: 0.99)</span>
+<span class="sd">        device: Compute device (&#39;cuda&#39; or &#39;cpu&#39;)</span>
+<span class="sd">        seed: Random seed for reproducibility (default: 42)</span>
+<span class="sd">        verbose: Enable logging (default: True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FedAvgConfig.num_rounds">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.num_rounds">[docs]</a>
+    <span class="n">num_rounds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.clients_per_round">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.clients_per_round">[docs]</a>
+    <span class="n">clients_per_round</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.local_epochs">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.local_epochs">[docs]</a>
+    <span class="n">local_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.learning_rate">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.learning_rate">[docs]</a>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.learning_rate_schedule">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.learning_rate_schedule">[docs]</a>
+    <span class="n">learning_rate_schedule</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.lr_decay_rate">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.lr_decay_rate">[docs]</a>
+    <span class="n">lr_decay_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.99</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.device">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.device">[docs]</a>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.seed">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.seed">[docs]</a>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.verbose">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.verbose">[docs]</a>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.aggregation_method">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.aggregation_method">[docs]</a>
+    <span class="n">aggregation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;weighted_avg&quot;</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.trim_ratio">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.trim_ratio">[docs]</a>
+    <span class="n">trim_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span></div>
+
+<div class="viewcode-block" id="FedAvgConfig.byzantine_tolerance">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAvgConfig.byzantine_tolerance">[docs]</a>
+    <span class="n">byzantine_tolerance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate configuration.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rounds</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_rounds must be &gt;= 1, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_rounds</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients_per_round</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;clients_per_round must be &gt;= 1, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">clients_per_round</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_epochs</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;local_epochs must be &gt;= 1, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_epochs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;learning_rate must be &gt; 0, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate_schedule</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;exponential&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;learning_rate_schedule must be &#39;constant&#39; or &#39;exponential&#39;, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate_schedule</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;device must be &#39;cuda&#39; or &#39;cpu&#39;, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;weighted_avg&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;trimmed_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;krum&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aggregation_method must be one of &quot;</span>
+                <span class="s2">&quot;&#39;weighted_avg&#39;, &#39;median&#39;, &#39;trimmed_mean&#39;, or &#39;krum&#39;&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trim_ratio</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trim_ratio must be in [0, 0.5), got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_ratio</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byzantine_tolerance</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;byzantine_tolerance must be &gt;= 0, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">byzantine_tolerance</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FedAveragingClient">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FedAveragingClient</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Federated learning client performing local SGD.</span>
+
+<span class="sd">    Each client maintains a copy of the global model and trains on its local data</span>
+<span class="sd">    for E epochs. After training, the client sends its model parameters to the server.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        client_id: Unique identifier for this client</span>
+<span class="sd">        train_loader: DataLoader for local training data</span>
+<span class="sd">        val_loader: Optional DataLoader for local validation</span>
+<span class="sd">        model: PyTorch model (will be synced with global model each round)</span>
+<span class="sd">        criterion: Loss function</span>
+<span class="sd">        local_epochs: Number of local SGD epochs per round</span>
+<span class="sd">        learning_rate: Initial learning rate</span>
+<span class="sd">        device: Compute device</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">client_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">train_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">local_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+        <span class="n">val_loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a federated client.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client_id: Unique client identifier</span>
+<span class="sd">            train_loader: DataLoader for local training data</span>
+<span class="sd">            model: PyTorch model (will be updated in place)</span>
+<span class="sd">            criterion: Loss function</span>
+<span class="sd">            local_epochs: Number of local SGD epochs</span>
+<span class="sd">            learning_rate: Learning rate for local optimizer</span>
+<span class="sd">            device: Compute device</span>
+<span class="sd">            val_loader: Optional validation loader for local evaluation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FedAveragingClient.client_id">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.client_id">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">client_id</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.train_loader">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.train_loader">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_loader</span> <span class="o">=</span> <span class="n">train_loader</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.val_loader">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.val_loader">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_loader</span> <span class="o">=</span> <span class="n">val_loader</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.model">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.model">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.criterion">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.criterion">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">criterion</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.local_epochs">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.local_epochs">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_epochs</span> <span class="o">=</span> <span class="n">local_epochs</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.learning_rate">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.learning_rate">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">learning_rate</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.device">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.device">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span></div>
+
+
+        <span class="c1"># Track metrics</span>
+<div class="viewcode-block" id="FedAveragingClient.local_loss_history">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.local_loss_history">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_loss_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.local_acc_history">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.local_acc_history">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_acc_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="FedAveragingClient.num_samples">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.num_samples">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingClient.train_local">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.train_local">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_lr</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform local SGD training for E epochs.</span>
+
+<span class="sd">        Training procedure (per McMahan et al.):</span>
+<span class="sd">            1. Load current global model from server (weights synced)</span>
+<span class="sd">            2. For each local epoch:</span>
+<span class="sd">               a. For each batch in local dataset:</span>
+<span class="sd">                  - Forward pass</span>
+<span class="sd">                  - Compute loss</span>
+<span class="sd">                  - Backward pass</span>
+<span class="sd">                  - SGD step</span>
+<span class="sd">            3. Return updated model weights and training loss/accuracy</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            current_lr: Current learning rate (may be scheduled by server)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (avg_loss, accuracy) over local training</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">current_lr</span><span class="p">)</span>
+
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">total_correct</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_samples</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_epochs</span><span class="p">):</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">epoch_correct</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">epoch_samples</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="c1"># Forward pass</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+
+                <span class="c1"># Backward pass</span>
+                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="c1"># Accumulate metrics</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">epoch_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">epoch_samples</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">epoch_loss</span> <span class="o">/=</span> <span class="n">epoch_samples</span>
+            <span class="n">epoch_acc</span> <span class="o">=</span> <span class="n">epoch_correct</span> <span class="o">/</span> <span class="n">epoch_samples</span>
+            <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">epoch_loss</span>
+            <span class="n">total_correct</span> <span class="o">+=</span> <span class="n">epoch_correct</span>
+            <span class="n">total_samples</span> <span class="o">+=</span> <span class="n">epoch_samples</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">local_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">local_acc_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_acc</span><span class="p">)</span>
+
+        <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_epochs</span>
+        <span class="n">avg_acc</span> <span class="o">=</span> <span class="n">total_correct</span> <span class="o">/</span> <span class="n">total_samples</span>
+
+        <span class="k">return</span> <span class="n">avg_loss</span><span class="p">,</span> <span class="n">avg_acc</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingClient.get_weights">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.get_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return copy of model weights (for uploading to server).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping parameter names to tensors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingClient.set_weights">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.set_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update model with weights from server (global model).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            weights: Dictionary mapping parameter names to tensors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingClient.validate_local">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingClient.validate_local">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate model on local validation set (optional).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Validation accuracy if val_loader provided, else None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_loader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">val_correct</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">val_total</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">val_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">val_total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">val_acc</span> <span class="o">=</span> <span class="n">val_correct</span> <span class="o">/</span> <span class="n">val_total</span>
+        <span class="k">return</span> <span class="n">val_acc</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ByzantineRobustAggregator">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.ByzantineRobustAggregator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ByzantineRobustAggregator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Robust aggregation resistant to model poisoning attacks.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;median&#39;</span><span class="p">,</span>
+        <span class="n">trim_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">byzantine_tolerance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        method: &#39;median&#39; (robust to 50% malicious),</span>
+<span class="sd">                &#39;trimmed_mean&#39; (robust to 30% malicious),</span>
+<span class="sd">                &#39;krum&#39; (robust to n-f clients, where f &lt; n/3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ByzantineRobustAggregator.method">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.ByzantineRobustAggregator.method">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span></div>
+
+<div class="viewcode-block" id="ByzantineRobustAggregator.trim_ratio">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.ByzantineRobustAggregator.trim_ratio">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trim_ratio</span> <span class="o">=</span> <span class="n">trim_ratio</span></div>
+
+<div class="viewcode-block" id="ByzantineRobustAggregator.byzantine_tolerance">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.ByzantineRobustAggregator.byzantine_tolerance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">byzantine_tolerance</span> <span class="o">=</span> <span class="n">byzantine_tolerance</span></div>
+
+
+<div class="viewcode-block" id="ByzantineRobustAggregator.aggregate">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.ByzantineRobustAggregator.aggregate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_weights</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aggregate client weights robustly.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">client_weights</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;client_weights cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_median_aggregation</span><span class="p">(</span><span class="n">client_weights</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;trimmed_mean&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trimmed_mean_aggregation</span><span class="p">(</span>
+                <span class="n">client_weights</span><span class="p">,</span>
+                <span class="n">trim_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_ratio</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;krum&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_krum_aggregation</span><span class="p">(</span>
+                <span class="n">client_weights</span><span class="p">,</span>
+                <span class="n">byzantine_tolerance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">byzantine_tolerance</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown aggregation method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_median_aggregation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Median aggregation - robust to 50% poisoned clients.&quot;&quot;&quot;</span>  <span class="c1"># Ref [35]: Yin et al. — coordinate-wise median</span>
+        <span class="n">aggregated</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">weights_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights_list</span><span class="p">])</span>
+            <span class="n">aggregated</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">aggregated</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_trimmed_mean_aggregation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">trim_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trimmed mean aggregation - removes outlier updates.&quot;&quot;&quot;</span>  <span class="c1"># Ref [35]: Yin et al. — coordinate-wise trimmed mean</span>
+        <span class="n">aggregated</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">trim_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">weights_list</span><span class="p">)</span> <span class="o">*</span> <span class="n">trim_ratio</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">trim_count</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights_list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;trim_ratio removes all client updates; reduce trim_ratio or &quot;</span>
+                <span class="s2">&quot;increase clients_per_round&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">weights_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights_list</span><span class="p">])</span>
+            <span class="n">sorted_vals</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">trim_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">trimmed</span> <span class="o">=</span> <span class="n">sorted_vals</span><span class="p">[</span><span class="n">trim_count</span><span class="p">:</span><span class="o">-</span><span class="n">trim_count</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">trimmed</span> <span class="o">=</span> <span class="n">sorted_vals</span>
+            <span class="n">aggregated</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">trimmed</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">aggregated</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_flatten_weights</span><span class="p">(</span><span class="n">weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flatten a state dict into a single vector for distance-based scoring.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">tensor</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_krum_aggregation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">weights_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+        <span class="n">byzantine_tolerance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Krum aggregation using nearest-neighbor distance scoring.&quot;&quot;&quot;</span>  <span class="c1"># Ref [34]: Blanchard et al. — Krum selects model closest to neighbors</span>
+        <span class="n">num_clients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights_list</span><span class="p">)</span>
+        <span class="n">min_required_clients</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">byzantine_tolerance</span> <span class="o">+</span> <span class="mi">3</span>
+        <span class="k">if</span> <span class="n">num_clients</span> <span class="o">&lt;</span> <span class="n">min_required_clients</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Krum requires at least </span><span class="si">{</span><span class="n">min_required_clients</span><span class="si">}</span><span class="s2"> clients for &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;byzantine_tolerance=</span><span class="si">{</span><span class="n">byzantine_tolerance</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">num_clients</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">flattened_weights</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_flatten_weights</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="k">for</span> <span class="n">weights</span> <span class="ow">in</span> <span class="n">weights_list</span><span class="p">]</span>
+        <span class="n">neighbor_count</span> <span class="o">=</span> <span class="n">num_clients</span> <span class="o">-</span> <span class="n">byzantine_tolerance</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">num_clients</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_clients</span><span class="p">):</span>
+            <span class="n">pairwise_distances</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_clients</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">flattened_weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">flattened_weights</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">pairwise_distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+
+            <span class="n">nearest_distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">pairwise_distances</span><span class="p">))[</span><span class="mi">0</span><span class="p">][:</span><span class="n">neighbor_count</span><span class="p">]</span>
+            <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nearest_distances</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="n">best_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">weights_list</span><span class="p">[</span><span class="n">best_idx</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="FedAveragingServer">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FedAveragingServer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Federated learning server coordinating global model aggregation.</span>
+
+<span class="sd">    Server responsibilities:</span>
+<span class="sd">        1. Initialize and maintain global model</span>
+<span class="sd">        2. Sample subset of clients each round</span>
+<span class="sd">        3. Send global model to clients</span>
+<span class="sd">        4. Receive model updates from clients</span>
+<span class="sd">        5. Aggregate updates via weighted averaging</span>
+<span class="sd">        6. Update global model</span>
+<span class="sd">        7. Optional: evaluate on test set</span>
+
+<span class="sd">    FedAvg Aggregation (weighted by client sample size):</span>
+<span class="sd">        w_t+1 = Sum(n_k / n_total * w_k_t)</span>
+<span class="sd">        where n_k = number of samples on client k</span>
+<span class="sd">              n_total = total samples across all clients</span>
+<span class="sd">              w_k_t = weights trained on client k at round t</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        model: Global PyTorch model</span>
+<span class="sd">        clients: List of FedAveragingClient objects</span>
+<span class="sd">        config: FedAvgConfig</span>
+<span class="sd">        test_loader: Optional test set for server-side evaluation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">clients</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FedAveragingClient</span><span class="p">],</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">FedAvgConfig</span><span class="p">,</span>
+        <span class="n">test_loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize federated server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: Global PyTorch model (will be copied to clients)</span>
+<span class="sd">            clients: List of FedAveragingClient objects</span>
+<span class="sd">            config: FedAvgConfig with hyperparameters</span>
+<span class="sd">            test_loader: Optional test loader for global evaluation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">clients_per_round</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">clients</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;clients_per_round (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">clients_per_round</span><span class="si">}</span><span class="s2">) cannot exceed &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;number of clients (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clients</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="FedAveragingServer.global_model">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.global_model">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span> <span class="o">=</span> <span class="n">model</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.clients">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.clients">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clients</span> <span class="o">=</span> <span class="n">clients</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.config">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.config">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.test_loader">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.test_loader">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_loader</span> <span class="o">=</span> <span class="n">test_loader</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.device">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.device">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">device</span></div>
+
+
+        <span class="c1"># Ensure all clients have same initial weights</span>
+        <span class="n">global_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">:</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">global_weights</span><span class="p">))</span>
+
+        <span class="c1"># Set random seed</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="c1"># Track metrics</span>
+<div class="viewcode-block" id="FedAveragingServer.round_loss_history">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.round_loss_history">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_loss_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.round_acc_history">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.round_acc_history">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.test_acc_history">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.test_acc_history">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="FedAveragingServer.communication_rounds">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.communication_rounds">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">communication_rounds</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+            <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(name)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FedAveragingServer.select_clients">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.select_clients">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_clients</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample subset of clients for current round.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            num_clients: Number of clients to sample</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of client indices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">),</span> <span class="n">num_clients</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.get_learning_rate">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.get_learning_rate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">round_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute learning rate for current round (with optional scheduling).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            round_num: Current federation round (0-indexed)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Learning rate for this round</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate_schedule</span> <span class="o">==</span> <span class="s2">&quot;constant&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate_schedule</span> <span class="o">==</span> <span class="s2">&quot;exponential&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">lr_decay_rate</span> <span class="o">**</span> <span class="n">round_num</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.aggregate_weights">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.aggregate_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_weights</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">client_indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">client_weights</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute average of client model weights.&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;aggregation_method&#39;</span><span class="p">,</span> <span class="s1">&#39;weighted_avg&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;weighted_avg&#39;</span><span class="p">:</span>
+            <span class="c1"># Use Byzantine Robust Aggregator</span>
+            <span class="n">aggregator</span> <span class="o">=</span> <span class="n">ByzantineRobustAggregator</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">aggregation_method</span><span class="p">,</span>
+                <span class="n">trim_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trim_ratio</span><span class="p">,</span>
+                <span class="n">byzantine_tolerance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">byzantine_tolerance</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">aggregator</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">client_weights</span><span class="p">)</span>
+
+        <span class="c1"># Default weighted average</span>
+        <span class="n">selected_clients</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">client_indices</span><span class="p">]</span>
+        <span class="n">total_samples</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">num_samples</span> <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">selected_clients</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">total_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Selected clients have zero total samples&quot;</span><span class="p">)</span>
+
+        <span class="n">avg_weights</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">client_weights</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">weight_scale</span> <span class="o">=</span> <span class="n">selected_clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">/</span> <span class="n">total_samples</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">avg_weights</span><span class="p">:</span>
+            <span class="n">avg_weights</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg_weights</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">*</span> <span class="n">weight_scale</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">client_indices</span><span class="p">)):</span>
+            <span class="n">weight_scale</span> <span class="o">=</span> <span class="n">selected_clients</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">/</span> <span class="n">total_samples</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">avg_weights</span><span class="p">:</span>
+                <span class="n">avg_weights</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">client_weights</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">*</span> <span class="n">weight_scale</span>
+
+        <span class="k">return</span> <span class="n">avg_weights</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.evaluate_global">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.evaluate_global">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate global model on test set (optional).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Test accuracy if test_loader provided, else None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_loader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">test_correct</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">test_total</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_loader</span><span class="p">:</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">test_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">test_total</span> <span class="o">+=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">test_acc</span> <span class="o">=</span> <span class="n">test_correct</span> <span class="o">/</span> <span class="n">test_total</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_acc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">test_acc</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.train_round">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.train_round">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_round</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">round_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute one federation round.</span>
+
+<span class="sd">        Protocol:</span>
+<span class="sd">            1. Sample clients_per_round clients</span>
+<span class="sd">            2. Send global model to sampled clients</span>
+<span class="sd">            3. Each client trains locally for local_epochs</span>
+<span class="sd">            4. Server receives model updates</span>
+<span class="sd">            5. Server aggregates via weighted averaging</span>
+<span class="sd">            6. Optional: evaluate on test set</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            round_num: Current round number (0-indexed)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (avg_loss, avg_acc, test_acc) for this round</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Sample clients</span>
+        <span class="n">client_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_clients</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">clients_per_round</span><span class="p">)</span>
+        <span class="n">sampled_clients</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">client_indices</span><span class="p">]</span>
+
+        <span class="c1"># Send global model to sampled clients</span>
+        <span class="n">global_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">sampled_clients</span><span class="p">:</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">global_weights</span><span class="p">))</span>
+
+        <span class="c1"># Clients train locally</span>
+        <span class="n">current_lr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_learning_rate</span><span class="p">(</span><span class="n">round_num</span><span class="p">)</span>
+        <span class="n">local_losses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">local_accs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">client_weights_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">sampled_clients</span><span class="p">:</span>
+            <span class="n">loss</span><span class="p">,</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">train_local</span><span class="p">(</span><span class="n">current_lr</span><span class="p">)</span>
+            <span class="n">local_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+            <span class="n">local_accs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+            <span class="n">client_weights_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">get_weights</span><span class="p">())</span>
+
+        <span class="c1"># Server aggregates</span>
+        <span class="n">avg_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_weights</span><span class="p">(</span><span class="n">client_indices</span><span class="p">,</span> <span class="n">client_weights_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">avg_weights</span><span class="p">)</span>
+
+        <span class="c1"># Metrics</span>
+        <span class="n">round_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">local_losses</span><span class="p">)</span>
+        <span class="n">round_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">local_accs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">round_loss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">round_acc</span><span class="p">)</span>
+
+        <span class="c1"># Optional: evaluate on test set</span>
+        <span class="n">test_acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_global</span><span class="p">()</span>
+
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">communication_rounds</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Logging</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Round </span><span class="si">{</span><span class="n">round_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_rounds</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Loss: </span><span class="si">{</span><span class="n">round_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Acc: </span><span class="si">{</span><span class="n">round_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">test_acc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, Test Acc: </span><span class="si">{</span><span class="n">test_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; | Time: </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">round_loss</span><span class="p">,</span> <span class="n">round_acc</span><span class="p">,</span> <span class="n">test_acc</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.train">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.train">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute full federated training for all rounds.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary containing:</span>
+<span class="sd">                - &#39;global_model&#39;: Final trained global model</span>
+<span class="sd">                - &#39;round_loss&#39;: List of average losses per round</span>
+<span class="sd">                - &#39;round_acc&#39;: List of average accuracies per round</span>
+<span class="sd">                - &#39;test_acc&#39;: List of test accuracies per round (if test_loader provided)</span>
+<span class="sd">                - &#39;total_time&#39;: Total training time in seconds</span>
+<span class="sd">                - &#39;communication_rounds&#39;: Total federation rounds executed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Starting FedAvg training: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_rounds</span><span class="si">}</span><span class="s2"> rounds, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">clients_per_round</span><span class="si">}</span><span class="s2"> clients/round, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">local_epochs</span><span class="si">}</span><span class="s2"> local epochs&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">round_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_rounds</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_round</span><span class="p">(</span><span class="n">round_num</span><span class="p">)</span>
+
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">final_test_acc</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;FedAvg training complete in </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Final avg acc: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">final_test_acc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, Test acc: </span><span class="si">{</span><span class="n">final_test_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;global_model&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="p">,</span>
+            <span class="s1">&#39;round_loss&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_loss_history</span><span class="p">,</span>
+            <span class="s1">&#39;round_acc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span><span class="p">,</span>
+            <span class="s1">&#39;test_acc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span><span class="p">,</span>
+            <span class="s1">&#39;total_time&#39;</span><span class="p">:</span> <span class="n">elapsed</span><span class="p">,</span>
+            <span class="s1">&#39;communication_rounds&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">communication_rounds</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.get_global_model">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.get_global_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_global_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the trained global model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PyTorch model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.save_checkpoint">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.save_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save global model checkpoint with integrity hash.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: Path to save checkpoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;global_model&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;round_loss&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_loss_history</span><span class="p">,</span>
+            <span class="s1">&#39;round_acc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span><span class="p">,</span>
+            <span class="s1">&#39;test_acc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span><span class="p">,</span>
+            <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">file_hash</span> <span class="o">=</span> <span class="n">save_checkpoint_with_hash</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checkpoint saved to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> (SHA-256: </span><span class="si">{</span><span class="n">file_hash</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FedAveragingServer.load_checkpoint">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.FedAveragingServer.load_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load global model from checkpoint with integrity verification.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: Path to checkpoint file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">verify_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Checkpoint integrity verification FAILED for </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;File may be corrupted or tampered with.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;global_model&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_loss_history</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;round_loss&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">round_acc_history</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;round_acc&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_acc_history</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;test_acc&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checkpoint loaded from </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="create_federated_setup">
+<a class="viewcode-back" href="../../../api/src/federated/fed_avg/index.html#src.federated.fed_avg.create_federated_setup">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_federated_setup</span><span class="p">(</span>
+    <span class="n">model_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">client_loaders</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">],</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">criterion</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FedAvgConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">FedAveragingServer</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">FedAveragingClient</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function to create federated learning setup.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_class: Model class to instantiate (must accept num_classes kwarg)</span>
+<span class="sd">        client_loaders: List of DataLoaders for each client</span>
+<span class="sd">        test_loader: Optional test loader for server evaluation</span>
+<span class="sd">        criterion: Loss function (default: CrossEntropyLoss)</span>
+<span class="sd">        config: FedAvgConfig (default: FedAvgConfig())</span>
+<span class="sd">        device: Compute device</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (server, clients)</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; loaders = [train_loader_client_1, train_loader_client_2, ...]</span>
+<span class="sd">        &gt;&gt;&gt; server, clients = create_federated_setup(</span>
+<span class="sd">        ...     model_class=WaferCNN,</span>
+<span class="sd">        ...     client_loaders=loaders,</span>
+<span class="sd">        ...     test_loader=test_loader,</span>
+<span class="sd">        ...     config=FedAvgConfig(num_rounds=10, clients_per_round=5)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; history = server.train()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">criterion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">FedAvgConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Create global model</span>
+    <span class="n">global_model</span> <span class="o">=</span> <span class="n">model_class</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">global_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Create clients</span>
+    <span class="n">clients</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">loader</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">client_loaders</span><span class="p">):</span>
+        <span class="n">client_model</span> <span class="o">=</span> <span class="n">model_class</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">FedAveragingClient</span><span class="p">(</span>
+            <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span>
+            <span class="n">train_loader</span><span class="o">=</span><span class="n">loader</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">client_model</span><span class="p">,</span>
+            <span class="n">criterion</span><span class="o">=</span><span class="n">criterion</span><span class="p">,</span>
+            <span class="n">local_epochs</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">local_epochs</span><span class="p">,</span>
+            <span class="n">learning_rate</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">clients</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="c1"># Create server</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">FedAveragingServer</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">global_model</span><span class="p">,</span>
+        <span class="n">clients</span><span class="o">=</span><span class="n">clients</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+        <span class="n">test_loader</span><span class="o">=</span><span class="n">test_loader</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">server</span><span class="p">,</span> <span class="n">clients</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FedAvg module loaded. Use FedAveragingServer and FedAveragingClient.&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

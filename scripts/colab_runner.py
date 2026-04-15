@@ -4,11 +4,11 @@ Colab-specific runner: Setup, mount, and train in one script.
 Run in Colab with: exec(open('colab_runner.py').read())
 """
 
-import os
-import sys
-import subprocess
-from pathlib import Path
 import logging
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -17,21 +17,24 @@ def is_colab():
     """Check if running in Google Colab."""
     try:
         import google.colab
+
         return True
     except ImportError:
         return False
+
 
 def run_cmd(cmd):
     """Run shell command."""
     logger.info(f"\n> {cmd}")
     return subprocess.run(cmd, shell=True, capture_output=False).returncode == 0
 
+
 def setup_colab():
     """Full Colab setup and training pipeline."""
 
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("COLAB SETUP: Wafer Defect Detection")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
     if not is_colab():
         logger.warning("Warning: Not running in Colab. Some features may not work.")
@@ -44,12 +47,16 @@ def setup_colab():
 
     # Step 2: Checkout branch
     logger.info("\n[2/6] Checking out feature branch...")
-    run_cmd("git checkout feature/complete-implementation 2>/dev/null || echo 'Branch not available yet, using main'")
+    run_cmd(
+        "git checkout feature/complete-implementation 2>/dev/null || echo 'Branch not available yet, using main'"
+    )
 
     # Step 3: Install dependencies
     logger.info("\n[3/6] Installing dependencies...")
     run_cmd("pip install --upgrade pip")
-    run_cmd("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118")
+    run_cmd(
+        "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118"
+    )
     run_cmd("pip install -q -e '.[dev]'")
 
     # Step 4: Setup dataset
@@ -63,10 +70,12 @@ def setup_colab():
 
     if choice == "1":
         from google.colab import files
+
         logger.info("\nSelect LSWMD_new.pkl from your computer...")
         uploaded = files.upload()
         if uploaded:
             import shutil
+
             filename = list(uploaded.keys())[0]
             os.makedirs("data", exist_ok=True)
             shutil.move(filename, "data/LSWMD_new.pkl")
@@ -74,11 +83,13 @@ def setup_colab():
 
     elif choice == "2":
         from google.colab import drive
+
         drive.mount("/content/drive", force_remount=True)
         logger.info("\nDataset in Drive? Specify path:")
         drive_path = input("Path (e.g., /content/drive/MyDrive/LSWMD_new.pkl): ").strip()
         if os.path.exists(drive_path):
             import shutil
+
             os.makedirs("data", exist_ok=True)
             shutil.copy(drive_path, "data/LSWMD_new.pkl")
             logger.info("Dataset copied from Drive")
@@ -89,9 +100,13 @@ def setup_colab():
     logger.info("\n[5/6] Verifying setup...")
     try:
         import torch
+
         logger.info(f"✓ PyTorch: {torch.__version__}")
-        logger.info(f"✓ GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
+        logger.info(
+            f"✓ GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}"
+        )
         from src.models import WaferCNN, get_resnet18
+
         logger.info(f"✓ Package imports OK")
     except Exception as e:
         logger.warning(f"✗ Verification failed: {e}")
@@ -127,29 +142,32 @@ def setup_colab():
         args = "--model all --epochs 5 --device cuda --batch-size 64"
 
     # Start training
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("Starting training...")
-    logger.info("="*70)
+    logger.info("=" * 70)
     run_cmd(f"python train.py {args}")
 
     # Save to Drive (if available)
     logger.info("\n[Saving results...]")
     try:
-        run_cmd("cp -r checkpoints /content/drive/MyDrive/wafer_results 2>/dev/null || echo 'Drive not mounted'")
+        run_cmd(
+            "cp -r checkpoints /content/drive/MyDrive/wafer_results 2>/dev/null || echo 'Drive not mounted'"
+        )
         logger.info("Results saved to Drive/wafer_results")
     except:
         logger.info("Could not save to Drive (not mounted)")
 
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("Training complete!")
-    logger.info("="*70)
+    logger.info("=" * 70)
     return True
+
 
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     if is_colab():
         setup_colab()

@@ -142,7 +142,7 @@ def generate_dot(
     """Generate DOT graph source."""
     lines = [
         "digraph src_dependencies {",
-        '    rankdir=LR;',
+        "    rankdir=LR;",
         '    fontname="Helvetica";',
         '    node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=10];',
         '    edge [color="#666666", arrowsize=0.7];',
@@ -174,7 +174,7 @@ def generate_dot(
 
         for i, (subpkg, members) in enumerate(sorted(subpackages.items())):
             color = get_color(subpkg)
-            lines.append(f'    subgraph cluster_{i} {{')
+            lines.append(f"    subgraph cluster_{i} {{")
             lines.append(f'        label="{subpkg}";')
             lines.append(f'        style="rounded,filled";')
             lines.append(f'        fillcolor="{color}22";')
@@ -199,13 +199,15 @@ def generate_dot(
         for deps in external_deps.values():
             ext_all.update(deps)
         if ext_all:
-            lines.append('    subgraph cluster_external {')
+            lines.append("    subgraph cluster_external {")
             lines.append('        label="External";')
             lines.append('        style="dashed,rounded";')
             lines.append('        color="#999999";')
             for ext in sorted(ext_all):
                 node_id = f"ext_{ext}"
-                lines.append(f'        {node_id} [label="{ext}", fillcolor="#EEEEEE", shape=ellipse];')
+                lines.append(
+                    f'        {node_id} [label="{ext}", fillcolor="#EEEEEE", shape=ellipse];'
+                )
             lines.append("    }")
             lines.append("")
 
@@ -248,7 +250,7 @@ def generate_simplified_dot(
 
     lines = [
         "digraph src_packages {",
-        '    rankdir=LR;',
+        "    rankdir=LR;",
         '    fontname="Helvetica";',
         '    node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=12, penwidth=2];',
         '    edge [color="#666666", arrowsize=0.8, penwidth=1.5];',
@@ -300,6 +302,7 @@ def dot_to_svg(dot_path: Path, svg_path: Path) -> bool:
 # ---------------------------------------------------------------------------
 # Pure-Python SVG renderer (fallback when graphviz dot is broken/missing)
 # ---------------------------------------------------------------------------
+
 
 def _estimate_text_width(text: str, font_size: float = 10) -> float:
     """Rough estimate of text width in pixels (monospace-ish approximation)."""
@@ -383,11 +386,11 @@ def render_svg_fallback(
     svg_lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {svg_w} {svg_h}" '
         f'width="{svg_w}" height="{svg_h}">',
-        '<defs>',
+        "<defs>",
         '  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">',
         '    <polygon points="0 0, 10 3.5, 0 7" fill="#666" />',
-        '  </marker>',
-        '</defs>',
+        "  </marker>",
+        "</defs>",
         f'<rect width="{svg_w}" height="{svg_h}" fill="white" />',
         f'<text x="{svg_w/2}" y="24" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" '
         f'font-size="14" font-weight="bold" fill="#333">{title}</text>',
@@ -476,7 +479,7 @@ def render_svg_fallback(
             f'fill="#333">{n["label"]}</text>'
         )
 
-    svg_lines.append('</svg>')
+    svg_lines.append("</svg>")
     return "\n".join(svg_lines)
 
 
@@ -530,7 +533,9 @@ def render_graph_as_svg(
                 edges.append((src, tgt))
 
         clusters = dict(sorted(subpackages.items()))
-        svg_content = render_svg_fallback(nodes, edges, clusters=clusters, title="src module dependencies")
+        svg_content = render_svg_fallback(
+            nodes, edges, clusters=clusters, title="src module dependencies"
+        )
 
     svg_path.write_text(svg_content, encoding="utf-8")
 
@@ -562,7 +567,9 @@ def main() -> None:
     print(f"  DOT: {dot_simple_path}")
 
     # 3. Full graph with external deps
-    dot_ext = generate_dot(all_modules, internal_deps, external_deps, cluster=True, include_external=True)
+    dot_ext = generate_dot(
+        all_modules, internal_deps, external_deps, cluster=True, include_external=True
+    )
     dot_ext_path = OUTPUT_DIR / "pydeps_dependency_graph_with_externals.dot"
     dot_ext_path.write_text(dot_ext, encoding="utf-8")
     print(f"  DOT: {dot_ext_path}")

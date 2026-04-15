@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.semi_supervised &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.training.simclr" href="../simclr/index.html" />
+    <link rel="prev" title="src.training.pipeline" href="../pipeline/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.semi_supervised</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/semi_supervised/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.semi_supervised">
+<span id="src-training-semi-supervised"></span><h1>src.training.semi_supervised<a class="headerlink" href="#module-src.training.semi_supervised" title="Link to this heading"></a></h1>
+<p>FixMatch semi-supervised training for wafer defect detection.</p>
+<p>Leverages the ~640K unlabeled wafers in WM-811K alongside the ~172K labeled
+ones. High-confidence pseudo-labels on weakly-augmented unlabeled samples
+supervise strongly-augmented versions, yielding consistency regularization
+without external labeling effort.</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[111] Sohn et al. (2020). “FixMatch: Simplifying Semi-Supervised Learning</dt><dd><p>with Consistency and Confidence”. arXiv:2001.07685</p>
+</dd>
+<dt>[114] Berthelot et al. (2019). “MixMatch: A Holistic Approach to</dt><dd><p>Semi-Supervised Learning”. arXiv:1905.02249</p>
+</dd>
+</dl>
+<p>[117] Zhu et al. (2005). “Semi-Supervised Learning Literature Survey”
+[118] Zhai et al. (2019). “S4L: Self-Supervised Semi-Supervised Learning”.</p>
+<blockquote>
+<div><p>arXiv:1905.03670</p>
+</div></blockquote>
+<dl class="simple">
+<dt>[120] Lee (2013). “Pseudo-Label: The Simple and Efficient Semi-Supervised</dt><dd><p>Learning Method”. ICML Workshop</p>
+</dd>
+</dl>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.semi_supervised.logger" title="src.training.semi_supervised.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.semi_supervised.UnlabeledWaferDataset" title="src.training.semi_supervised.UnlabeledWaferDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UnlabeledWaferDataset</span></code></a></p></td>
+<td><p>Dataset for unlabeled wafer maps (no class labels).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.semi_supervised.FixMatchTrainer" title="src.training.semi_supervised.FixMatchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FixMatchTrainer</span></code></a></p></td>
+<td><p>FixMatch semi-supervised training for wafer defect detection.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.semi_supervised.get_weak_transform" title="src.training.semi_supervised.get_weak_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_weak_transform</span></code></a>(→ torchvision.transforms.Compose)</p></td>
+<td><p>Weak augmentation: horizontal flip only.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.semi_supervised.get_strong_transform" title="src.training.semi_supervised.get_strong_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_strong_transform</span></code></a>(→ torchvision.transforms.Compose)</p></td>
+<td><p>Strong augmentation: flip + rotation + affine + noise + erasing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.semi_supervised.extract_unlabeled_maps" title="src.training.semi_supervised.extract_unlabeled_maps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_unlabeled_maps</span></code></a>(→ List[numpy.ndarray])</p></td>
+<td><p>Extract wafer maps that are NOT in known_classes.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.training.semi_supervised.logger">
+<span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.semi_supervised.get_weak_transform">
+<span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">get_weak_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torchvision.transforms.Compose</span></span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#get_weak_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.get_weak_transform" title="Link to this definition"></a></dt>
+<dd><p>Weak augmentation: horizontal flip only.</p>
+<p>FixMatch uses minimal augmentation for the “teacher” branch so that the
+pseudo-label is as clean as possible.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.semi_supervised.get_strong_transform">
+<span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">get_strong_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torchvision.transforms.Compose</span></span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#get_strong_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.get_strong_transform" title="Link to this definition"></a></dt>
+<dd><p>Strong augmentation: flip + rotation + affine + noise + erasing.</p>
+<p>FixMatch uses aggressive augmentation for the “student” branch so that
+the model learns invariance to a wide range of perturbations.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.semi_supervised.UnlabeledWaferDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">UnlabeledWaferDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_maps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weak_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torchvision.transforms.Compose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strong_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torchvision.transforms.Compose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(96,</span> <span class="pre">96)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#UnlabeledWaferDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.UnlabeledWaferDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>Dataset for unlabeled wafer maps (no class labels).</p>
+<p>Each __getitem__ call returns two views of the same wafer map:
+one with weak augmentation and one with strong augmentation, as
+required by the FixMatch consistency loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw_maps</strong> – List of raw numpy wafer-map arrays (variable size).</p></li>
+<li><p><strong>weak_transform</strong> – Transform pipeline for the weak (teacher) view.</p></li>
+<li><p><strong>strong_transform</strong> – Transform pipeline for the strong (student) view.</p></li>
+<li><p><strong>target_size</strong> – Spatial size to resize each map to.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.UnlabeledWaferDataset.maps">
+<span class="sig-name descname"><span class="pre">maps</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#UnlabeledWaferDataset.maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.UnlabeledWaferDataset.maps" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.UnlabeledWaferDataset.weak_transform">
+<span class="sig-name descname"><span class="pre">weak_transform</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#UnlabeledWaferDataset.weak_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.UnlabeledWaferDataset.weak_transform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.UnlabeledWaferDataset.strong_transform">
+<span class="sig-name descname"><span class="pre">strong_transform</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#UnlabeledWaferDataset.strong_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.UnlabeledWaferDataset.strong_transform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.UnlabeledWaferDataset.target_size">
+<span class="sig-name descname"><span class="pre">target_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(96,</span> <span class="pre">96)</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#UnlabeledWaferDataset.target_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.UnlabeledWaferDataset.target_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">FixMatchTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer" title="Link to this definition"></a></dt>
+<dd><p>FixMatch semi-supervised training for wafer defect detection.</p>
+<p>Uses labeled data with standard cross-entropy loss combined with unlabeled
+data via a pseudo-label consistency loss.  High-confidence predictions on
+weakly-augmented unlabeled samples become pseudo-labels for the
+corresponding strongly-augmented versions.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.model" title="Link to this definition"></a></dt>
+<dd><p>The classification model being trained.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.num_classes" title="Link to this definition"></a></dt>
+<dd><p>Number of target classes (9 for WM-811K).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.confidence_threshold">
+<span class="sig-name descname"><span class="pre">confidence_threshold</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.confidence_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.confidence_threshold" title="Link to this definition"></a></dt>
+<dd><p>Minimum softmax probability to accept a
+pseudo-label (tau in the paper).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.lambda_u">
+<span class="sig-name descname"><span class="pre">lambda_u</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.lambda_u"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.lambda_u" title="Link to this definition"></a></dt>
+<dd><p>Weight for the unsupervised consistency loss.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.device" title="Link to this definition"></a></dt>
+<dd><p>Compute device string (“cpu” or “cuda”).</p>
+</dd></dl>
+
+<p class="rubric">References</p>
+<p>[111] Sohn et al. (2020). “FixMatch”. arXiv:2001.07685
+[114] Berthelot et al. (2019). “MixMatch”. arXiv:1905.02249
+[120] Lee (2013). “Pseudo-Label”. arXiv:1908.02983</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">confidence_threshold</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.95</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.confidence_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">lambda_u</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.lambda_u"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">device</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cpu'</span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.semi_supervised.FixMatchTrainer.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labeled_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unlabeled_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.lr_scheduler.LRScheduler</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitored_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'val_macro_f1'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#FixMatchTrainer.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.FixMatchTrainer.train" title="Link to this definition"></a></dt>
+<dd><p>Train with the FixMatch algorithm.</p>
+<dl class="simple">
+<dt>Per iteration:</dt><dd><ol class="arabic simple">
+<li><p>Sample labeled batch <code class="docutils literal notranslate"><span class="pre">(x_l,</span> <span class="pre">y_l)</span></code> and unlabeled batch
+<code class="docutils literal notranslate"><span class="pre">(x_u_weak,</span> <span class="pre">x_u_strong)</span></code>.</p></li>
+<li><p>Supervised loss: <code class="docutils literal notranslate"><span class="pre">L_s</span> <span class="pre">=</span> <span class="pre">CE(model(x_l),</span> <span class="pre">y_l)</span></code>.</p></li>
+<li><p>Pseudo-labels: <code class="docutils literal notranslate"><span class="pre">q</span> <span class="pre">=</span> <span class="pre">softmax(model(x_u_weak))</span></code>,
+<code class="docutils literal notranslate"><span class="pre">mask</span> <span class="pre">=</span> <span class="pre">max(q,</span> <span class="pre">dim=1)</span> <span class="pre">&gt;=</span> <span class="pre">threshold</span></code>.</p></li>
+<li><p>Unsupervised loss: <code class="docutils literal notranslate"><span class="pre">L_u</span> <span class="pre">=</span> <span class="pre">CE(model(x_u_strong[mask]),</span>
+<span class="pre">argmax(q[mask]))</span></code>.</p></li>
+<li><p>Total: <code class="docutils literal notranslate"><span class="pre">L</span> <span class="pre">=</span> <span class="pre">L_s</span> <span class="pre">+</span> <span class="pre">lambda_u</span> <span class="pre">*</span> <span class="pre">L_u</span></code>.</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labeled_loader</strong> – DataLoader yielding <code class="docutils literal notranslate"><span class="pre">(images,</span> <span class="pre">labels)</span></code>.</p></li>
+<li><p><strong>unlabeled_loader</strong> – DataLoader yielding <code class="docutils literal notranslate"><span class="pre">(weak_images,</span> <span class="pre">strong_images)</span></code>.</p></li>
+<li><p><strong>val_loader</strong> – DataLoader for validation (labeled).</p></li>
+<li><p><strong>optimizer</strong> – Optimizer instance.</p></li>
+<li><p><strong>criterion</strong> – Loss function for supervised branch.</p></li>
+<li><p><strong>epochs</strong> – Number of training epochs.</p></li>
+<li><p><strong>scheduler</strong> – Optional LR scheduler.</p></li>
+<li><p><strong>gradient_clip</strong> – Optional max gradient norm.</p></li>
+<li><p><strong>monitored_metric</strong> – Metric used for best-model selection.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(best_model,</span> <span class="pre">history_dict)</span></code> where <em>history_dict</em> contains
+per-epoch losses, accuracies, F1 scores, and pseudo-label
+statistics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.semi_supervised.extract_unlabeled_maps">
+<span class="sig-prename descclassname"><span class="pre">src.training.semi_supervised.</span></span><span class="sig-name descname"><span class="pre">extract_unlabeled_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/semi_supervised.html#extract_unlabeled_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.semi_supervised.extract_unlabeled_maps" title="Link to this definition"></a></dt>
+<dd><p>Extract wafer maps that are NOT in known_classes.</p>
+<p>The WM-811K dataset has ~811K total wafers but only ~172K have a failure
+type label in <code class="docutils literal notranslate"><span class="pre">known_classes</span></code>. The remaining ~640K are either marked
+as empty/unknown or have no label at all. This function collects those
+unlabeled maps for use in semi-supervised training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – Full WM-811K DataFrame with <code class="docutils literal notranslate"><span class="pre">failureClass</span></code> and <code class="docutils literal notranslate"><span class="pre">waferMap</span></code> columns.</p></li>
+<li><p><strong>known_classes</strong> – List of valid label strings (e.g., KNOWN_CLASSES).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of raw numpy wafer-map arrays (variable sizes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../pipeline/index.html" class="btn btn-neutral float-left" title="src.training.pipeline" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../simclr/index.html" class="btn btn-neutral float-right" title="src.training.simclr" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

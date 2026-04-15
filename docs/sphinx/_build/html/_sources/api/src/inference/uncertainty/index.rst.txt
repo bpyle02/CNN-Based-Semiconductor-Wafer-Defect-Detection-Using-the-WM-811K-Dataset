@@ -1,0 +1,334 @@
+src.inference.uncertainty
+=========================
+
+.. py:module:: src.inference.uncertainty
+
+.. autoapi-nested-parse::
+
+   Uncertainty quantification using Monte Carlo Dropout.
+
+   Implements Bayesian approximation via dropout (Gal & Ghahramani, ICML 2016)
+   for uncertainty estimation in deep neural networks. Enables confidence intervals,
+   reliability analysis, and active learning strategies.
+
+   Key concepts:
+   - MC Dropout: Run inference T times with dropout enabled, treat predictions
+     as samples from a posterior distribution
+   - Aleatoric uncertainty: Data noise (parameter uncertainty, irreducible)
+   - Epistemic uncertainty: Model uncertainty (reducible with more data)
+   - Prediction entropy and variance as uncertainty measures
+
+   .. rubric:: References
+
+   [28] Gal & Ghahramani (2016). "Dropout as Bayesian Approximation". arXiv:1506.02142
+   [29] Guo et al. (2017). "On Calibration of Modern Neural Networks". arXiv:1706.04599
+   [31] Kendall & Gal (2017). "What Uncertainties Do We Need?". arXiv:1703.04977
+   [48] Srivastava et al. (2014). "Dropout". JMLR
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.uncertainty.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.inference.uncertainty.MCDropoutModel
+   src.inference.uncertainty.TemperatureScaler
+   src.inference.uncertainty.UncertaintyEstimator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.inference.uncertainty.plot_uncertainty_distribution
+   src.inference.uncertainty.enable_dropout
+   src.inference.uncertainty.disable_dropout
+   src.inference.uncertainty.compute_confidence_intervals
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: MCDropoutModel(model: torch.nn.Module, num_iterations: int = 50, device: str = 'cpu')
+
+   Monte Carlo Dropout wrapper for uncertainty estimation.
+
+   Enables dropout during inference and runs multiple forward passes
+   to generate a posterior distribution over predictions. This approximates
+   Bayesian inference via stochastic forward passes.
+
+   .. attribute:: model
+
+      PyTorch model (any architecture)
+
+   .. attribute:: num_iterations
+
+      Number of forward passes (T samples from posterior)
+
+   .. attribute:: device
+
+      Compute device ('cpu' or 'cuda')
+
+   Initialize MC Dropout wrapper.
+
+   :param model: PyTorch model with Dropout layers
+   :param num_iterations: Number of stochastic forward passes (default 50)
+   :param device: Compute device ('cpu' or 'cuda')
+
+   :raises ValueError: If num_iterations < 1
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: num_iterations
+      :value: 50
+
+
+
+   .. py:attribute:: device
+      :value: 'cpu'
+
+
+
+   .. py:method:: predict_with_uncertainty(x: torch.Tensor, return_dist: bool = False) -> Union[Tuple[numpy.ndarray, numpy.ndarray], Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]]
+
+      Run MC Dropout inference T times and compute uncertainty estimates.
+
+      Algorithm:
+      1. Run model forward pass T times with dropout enabled
+      2. Collect logits/probabilities from each pass
+      3. Compute mean and variance across T samples
+      4. Variance approximates epistemic uncertainty (model confidence)
+
+      :param x: Input tensor (B, C, H, W) or (B, features...)
+      :param return_dist: If True, also return raw distribution of predictions
+
+      :returns:   - mean_pred: Mean prediction across T passes, shape (B, num_classes)
+                  - uncertainty: Standard deviation (epistemic uncertainty), shape (B,)
+                  - If return_dist=True: Also returns (B, T, num_classes) distribution
+      :rtype: - Tuple of (mean_pred, uncertainty) where
+
+      Shape:
+          Input: (B, ...)
+          Output: mean (B, C), uncertainty (B,)
+
+
+
+   .. py:method:: predict_proba_with_uncertainty(x: torch.Tensor) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+
+      Get class probabilities with per-class uncertainty.
+
+      Returns mean and std of class probabilities across T passes.
+
+      :param x: Input tensor (B, ...)
+
+      :returns: Mean probabilities (B, C)
+                - std_probs: Standard deviation of probabilities (B, C)
+                - entropy: Predictive entropy as uncertainty (B,)
+      :rtype: - mean_probs
+
+
+
+   .. py:method:: confidence_intervals(x: torch.Tensor, percentiles: Tuple[float, float] = (2.5, 97.5)) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+
+      Compute percentile-based confidence intervals for predictions.
+
+      For each sample and class, computes the percentile bounds across
+      the T stochastic forward passes.
+
+      :param x: Input tensor (B, ...)
+      :param percentiles: Lower and upper percentile bounds (default 95% CI)
+
+      :returns: Best estimate (median), shape (B, C)
+                - lower_bound: Lower percentile, shape (B, C)
+                - upper_bound: Upper percentile, shape (B, C)
+      :rtype: - point_pred
+
+
+
+.. py:class:: TemperatureScaler
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Temperature scaling for probability calibration.
+   Learns a single scalar parameter T to scale logits before softmax.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: temperature
+
+
+   .. py:method:: forward(logits: torch.Tensor) -> torch.Tensor
+
+
+   .. py:method:: fit(logits: torch.Tensor, labels: torch.Tensor, lr: float = 0.01, max_iter: int = 100)
+
+      Fit temperature T on a validation set using NLL loss.
+
+
+
+.. py:class:: UncertaintyEstimator(model: torch.nn.Module, num_iterations: int = 50, device: str = 'cpu')
+
+   High-level API for uncertainty analysis on datasets.
+
+   Provides methods for:
+   - Uncertainty estimation across full datasets
+   - Identifying most uncertain predictions (active learning)
+   - Calibration analysis (uncertainty vs. correctness)
+   - Confidence intervals and reliability metrics
+   - Temperature scaling for calibration
+
+   Initialize UncertaintyEstimator.
+
+   :param model: PyTorch model
+   :param num_iterations: MC Dropout samples (default 50)
+   :param device: Compute device
+
+
+   .. py:attribute:: mc_model
+
+
+   .. py:attribute:: device
+      :value: 'cpu'
+
+
+
+   .. py:attribute:: temp_scaler
+      :type:  Optional[TemperatureScaler]
+      :value: None
+
+
+
+   .. py:method:: calibrate(dataloader: torch.utils.data.DataLoader)
+
+      Fit temperature scaling on a validation/calibration set.
+
+      :param dataloader: DataLoader with (images, labels) for calibration.
+
+
+
+   .. py:method:: estimate_dataset_uncertainty(dataloader: torch.utils.data.DataLoader, return_predictions: bool = False, use_temp_scaling: bool = True) -> Dict[str, numpy.ndarray]
+
+      Estimate uncertainty for all samples in a dataset.
+
+      :param dataloader: PyTorch DataLoader
+      :param return_predictions: If True, also return class predictions
+      :param use_temp_scaling: If True and calibrated, apply temperature scaling
+
+      :returns:
+
+                - 'uncertainty': Shape (N,), epistemic uncertainty per sample
+                - 'mean_probs': Shape (N, C), mean class probabilities
+                - 'entropy': Shape (N,), predictive entropy
+                - 'predictions': Shape (N,), argmax predictions (if return_predictions=True)
+                - 'true_labels': Shape (N,), ground truth labels (if available)
+      :rtype: Dictionary with keys
+
+
+
+   .. py:method:: predict_with_maybe_temp(x: torch.Tensor, use_temp_scaling: bool = True)
+
+      Internal helper to apply temperature scaling if available.
+
+
+
+   .. py:method:: get_uncertain_samples(dataloader: torch.utils.data.DataLoader, k: int = 100, metric: str = 'entropy') -> Dict[str, numpy.ndarray]
+
+      Get top-K most uncertain predictions (for active learning).
+
+      :param dataloader: PyTorch DataLoader
+      :param k: Number of uncertain samples to return
+      :param metric: Uncertainty metric ('entropy', 'variance', or 'margin')
+                     - 'entropy': Predictive entropy H(y|x)
+                     - 'variance': Mean class probability variance
+                     - 'margin': Margin between top-2 predicted classes
+
+      :returns:
+
+                - 'indices': Shape (K,), indices into dataset
+                - 'uncertainties': Shape (K,), uncertainty scores
+                - 'predictions': Shape (K, C), predicted probabilities
+                - 'top2_margin': Shape (K,), margin between top 2 classes
+      :rtype: Dictionary with
+
+
+
+   .. py:method:: uncertainty_calibration(dataloader: torch.utils.data.DataLoader) -> Dict[str, float]
+
+      Compute calibration metrics: uncertainty vs. correctness.
+
+      Well-calibrated model: high uncertainty -> low accuracy on those samples.
+      Poorly calibrated: no correlation between uncertainty and correctness.
+
+      Metrics:
+      - Brier Score: Mean squared error of probability predictions
+      - ECE (Expected Calibration Error): Max absolute difference between
+        predicted confidence and empirical accuracy across confidence bins
+      - AUROC: Area under receiver operating characteristic curve
+
+      :param dataloader: PyTorch DataLoader with (images, labels)
+
+      :returns: Dictionary with calibration metrics
+
+
+
+.. py:function:: plot_uncertainty_distribution(uncertainties: numpy.ndarray, predictions: Optional[numpy.ndarray] = None, true_labels: Optional[numpy.ndarray] = None, class_names: Optional[List[str]] = None, figsize: Tuple[int, int] = (15, 10)) -> None
+
+   Visualize uncertainty distribution across samples and classes.
+
+   Creates subplots showing:
+   1. Histogram of uncertainties
+   2. Uncertainty vs. prediction confidence (calibration)
+   3. Per-class uncertainty distribution
+   4. Uncertainty vs. correctness (if labels provided)
+
+   :param uncertainties: Array of uncertainty scores, shape (N,)
+   :param predictions: Predicted class probabilities, shape (N, C)
+   :param true_labels: Ground truth labels, shape (N,)
+   :param class_names: List of class names (optional)
+   :param figsize: Figure size (width, height)
+
+
+.. py:function:: enable_dropout(model: torch.nn.Module) -> None
+
+   Enable dropout layers during inference (utility function).
+
+   :param model: PyTorch model
+
+
+.. py:function:: disable_dropout(model: torch.nn.Module) -> None
+
+   Disable dropout layers (standard inference mode).
+
+   :param model: PyTorch model
+
+
+.. py:function:: compute_confidence_intervals(predictions: numpy.ndarray, percentiles: Tuple[float, float] = (2.5, 97.5)) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+
+   Compute confidence intervals from prediction distribution.
+
+   :param predictions: Array of shape (N, T, C) where:
+                       N = samples, T = MC samples, C = classes
+   :param percentiles: (lower, upper) percentile bounds
+
+   :returns: Best estimate (median), shape (N, C)
+             - lower_bound: Lower percentile, shape (N, C)
+             - upper_bound: Upper percentile, shape (N, C)
+   :rtype: - point_est
+
+

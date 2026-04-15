@@ -6,7 +6,7 @@ and easy experimentation.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -59,10 +59,7 @@ class TrainConfig:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary for logging."""
-        return {
-            k: v for k, v in self.__dict__.items()
-            if v is not None and k != 'loss_weights'
-        }
+        return {k: v for k, v in self.__dict__.items() if v is not None and k != "loss_weights"}
 
     def __str__(self) -> str:
         """Pretty print configuration."""
@@ -80,4 +77,4 @@ class AnalysisConfig:
     confusion_matrix_normalize: bool = True
     plot_dpi: int = 120
     font_size: int = 11
-    style: str = 'seaborn-v0_8-whitegrid'
+    style: str = "seaborn-v0_8-whitegrid"

@@ -1,0 +1,20 @@
+src.mlops
+=========
+
+.. py:module:: src.mlops
+
+.. autoapi-nested-parse::
+
+   MLOps integration: W&B, MLflow, and experiment tracking.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/mlops/wandb_logger/index
+
+

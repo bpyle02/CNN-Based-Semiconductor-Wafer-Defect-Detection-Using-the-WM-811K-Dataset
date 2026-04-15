@@ -1,0 +1,587 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.ride &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.ride</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.models.ride</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">RIDE: Routing Diverse Distributed Experts for Long-Tailed Recognition.</span>
+
+<span class="sd">Uses K expert classifiers with a shared backbone. A gating network routes</span>
+<span class="sd">each sample to the appropriate expert based on learned class-frequency</span>
+<span class="sd">awareness. Experts are encouraged to be diverse via a diversity loss.</span>
+
+<span class="sd">Reference: [181] Wang et al. (2022). &quot;RIDE: Routing Diverse Distributed</span>
+<span class="sd">    Experts&quot;. arXiv:2208.09043</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+<div class="viewcode-block" id="logger">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.logger">[docs]</a>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="RIDEModel">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RIDEModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RIDE: Routing Diverse Distributed Experts for Long-Tailed Recognition.</span>
+
+<span class="sd">    Uses K expert classifiers with a shared backbone. A gating network routes</span>
+<span class="sd">    each sample to the appropriate expert based on learned class-frequency</span>
+<span class="sd">    awareness. Experts are encouraged to be diverse via a diversity loss.</span>
+
+<span class="sd">    Reference: [181] Wang et al. (2022). arXiv:2208.09043</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">feature_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="n">num_experts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">feature_dim</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;feature_dim must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_classes</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_experts</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_experts must be &gt;= 2&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reduction</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reduction must be &gt;= 1&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RIDEModel.backbone">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.backbone">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">backbone</span></div>
+
+<div class="viewcode-block" id="RIDEModel.num_experts">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.num_experts">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_experts</span> <span class="o">=</span> <span class="n">num_experts</span></div>
+
+<div class="viewcode-block" id="RIDEModel.num_classes">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.num_classes">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span></div>
+
+<div class="viewcode-block" id="RIDEModel.feature_dim">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.feature_dim">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_dim</span> <span class="o">=</span> <span class="n">feature_dim</span></div>
+
+
+        <span class="c1"># K expert classifiers (each is a Linear layer)</span>
+<div class="viewcode-block" id="RIDEModel.experts">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.experts">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experts</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_experts</span><span class="p">)</span>
+        <span class="p">])</span></div>
+
+
+        <span class="c1"># Gating network: routes each sample to experts</span>
+        <span class="n">gate_hidden</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">feature_dim</span> <span class="o">//</span> <span class="n">reduction</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="RIDEModel.gate">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.gate">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">gate_hidden</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">gate_hidden</span><span class="p">,</span> <span class="n">num_experts</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backbone_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detect_backbone_type</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_detect_backbone_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect backbone architecture for feature extraction dispatch.&quot;&quot;&quot;</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span>
+        <span class="n">cls_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+
+        <span class="c1"># WaferCNN / WaferCNNFPN: has .features (Sequential) and .avg_pool</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;avg_pool&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;classifier&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;wafer_cnn&quot;</span>
+
+        <span class="c1"># torchvision ResNet: has layer1..layer4 and fc</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;layer4&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;fc&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;resnet&quot;</span>
+
+        <span class="c1"># torchvision EfficientNet: has .features and .classifier</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;classifier&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;EfficientNet&quot;</span> <span class="ow">in</span> <span class="n">cls_name</span> <span class="ow">or</span> <span class="s2">&quot;efficientnet&quot;</span> <span class="ow">in</span> <span class="n">cls_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">return</span> <span class="s2">&quot;efficientnet&quot;</span>
+            <span class="c1"># Also handles MobileNet and similar torchvision models</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;avgpool&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;efficientnet&quot;</span>
+
+        <span class="c1"># Generic fallback</span>
+        <span class="k">return</span> <span class="s2">&quot;generic&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features from backbone (handle different backbone types).</span>
+
+<span class="sd">        Dispatches to the appropriate extraction path based on detected</span>
+<span class="sd">        backbone architecture. Returns a (B, feature_dim) tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backbone_type</span> <span class="o">==</span> <span class="s2">&quot;wafer_cnn&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_wafer_cnn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backbone_type</span> <span class="o">==</span> <span class="s2">&quot;resnet&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_resnet</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backbone_type</span> <span class="o">==</span> <span class="s2">&quot;efficientnet&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_efficientnet</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_generic</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_wafer_cnn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;WaferCNN: features -&gt; avg_pool -&gt; flatten.&quot;&quot;&quot;</span>
+        <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">avg_pool</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_resnet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ResNet: forward through all layers except fc.&quot;&quot;&quot;</span>
+        <span class="n">bb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">bn1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">maxpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">layer1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">layer2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">layer3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">layer4</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">bb</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_efficientnet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;EfficientNet: features -&gt; adaptive_avg_pool -&gt; flatten.&quot;&quot;&quot;</span>
+        <span class="n">feat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">feat</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_generic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic fallback: call backbone(x), flatten if spatial.&quot;&quot;&quot;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="RIDEModel.forward">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDEModel.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            x: (B, C, H, W) input images</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            logits: (B, num_classes) -- gated combination of expert outputs</span>
+<span class="sd">            expert_outputs: (B, num_experts, num_classes) -- individual expert logits</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># (B, feature_dim)</span>
+
+        <span class="c1"># Gate: soft routing weights</span>
+        <span class="n">gate_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">features</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (B, num_experts)</span>
+
+        <span class="c1"># Expert predictions</span>
+        <span class="n">expert_logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">expert</span><span class="p">(</span><span class="n">features</span><span class="p">)</span> <span class="k">for</span> <span class="n">expert</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">experts</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>  <span class="c1"># (B, num_experts, num_classes)</span>
+
+        <span class="c1"># Weighted combination</span>
+        <span class="c1"># gate_weights: (B, num_experts, 1) * expert_logits: (B, num_experts, num_classes)</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="p">(</span><span class="n">gate_weights</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">expert_logits</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (B, num_classes)</span>
+
+        <span class="k">return</span> <span class="n">logits</span><span class="p">,</span> <span class="n">expert_logits</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RIDELoss">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDELoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RIDELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RIDE training loss: classification + diversity.</span>
+
+<span class="sd">    L = L_cls + lambda_div * L_diversity</span>
+
+<span class="sd">    L_cls: standard classification loss on gated output</span>
+<span class="sd">    L_diversity: encourages experts to make different predictions</span>
+<span class="sd">                 via KL divergence between expert pairs</span>
+
+<span class="sd">    Reference: [181] Wang et al. (2022). arXiv:2208.09043</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">diversity_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">num_experts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">diversity_weight</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;diversity_weight must be non-negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_experts</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_experts must be &gt;= 2&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RIDELoss.criterion">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDELoss.criterion">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">criterion</span></div>
+
+<div class="viewcode-block" id="RIDELoss.diversity_weight">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDELoss.diversity_weight">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diversity_weight</span> <span class="o">=</span> <span class="n">diversity_weight</span></div>
+
+<div class="viewcode-block" id="RIDELoss.num_experts">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDELoss.num_experts">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_experts</span> <span class="o">=</span> <span class="n">num_experts</span></div>
+
+
+<div class="viewcode-block" id="RIDELoss.forward">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.RIDELoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">logits</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">expert_outputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">targets</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute RIDE loss.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            logits: (B, num_classes) gated combined output</span>
+<span class="sd">            expert_outputs: (B, num_experts, num_classes) individual expert logits</span>
+<span class="sd">            targets: (B,) integer class labels</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Scalar loss = cls_loss + diversity_weight * diversity_loss</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cls_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">diversity_weight</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">div_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_diversity_loss</span><span class="p">(</span><span class="n">expert_outputs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cls_loss</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">diversity_weight</span> <span class="o">*</span> <span class="n">div_loss</span>
+        <span class="k">return</span> <span class="n">cls_loss</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_diversity_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expert_outputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pairwise KL divergence between experts to encourage diversity.</span>
+
+<span class="sd">        Computes the mean KL(p_i || p_j) over all ordered pairs (i, j)</span>
+<span class="sd">        where i != j, using softmax probabilities from each expert.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expert_outputs: (B, num_experts, num_classes) raw logits</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Scalar diversity loss (negative: we want to maximize divergence,</span>
+<span class="sd">            so we negate the KL mean to create a loss that decreases when</span>
+<span class="sd">            experts become more diverse).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_experts</span> <span class="o">=</span> <span class="n">expert_outputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Convert logits to log-probs and probs</span>
+        <span class="n">log_probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">expert_outputs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (B, K, C)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">expert_outputs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>           <span class="c1"># (B, K, C)</span>
+
+        <span class="c1"># Compute mean pairwise KL divergence</span>
+        <span class="n">total_kl</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">expert_outputs</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">num_pairs</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_experts</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_experts</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># KL(p_i || p_j) = sum(p_i * (log p_i - log p_j))</span>
+                <span class="n">kl_ij</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span>
+                    <span class="n">log_probs</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:],</span>  <span class="c1"># input: log Q</span>
+                    <span class="n">probs</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="p">:],</span>       <span class="c1"># target: P</span>
+                    <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;batchmean&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">total_kl</span> <span class="o">=</span> <span class="n">total_kl</span> <span class="o">+</span> <span class="n">kl_ij</span>
+                <span class="n">num_pairs</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">mean_kl</span> <span class="o">=</span> <span class="n">total_kl</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">num_pairs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Negate: high KL means experts are diverse (good), so we want to</span>
+        <span class="c1"># minimize -KL to encourage diversity.</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">mean_kl</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_dim_for_backbone</span><span class="p">(</span><span class="n">backbone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">backbone</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the feature dimensionality for a given backbone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        backbone_name: one of &#39;cnn&#39;, &#39;cnn_fpn&#39;, &#39;resnet&#39;, &#39;efficientnet&#39;,</span>
+<span class="sd">            &#39;vit&#39;, &#39;swin&#39;</span>
+<span class="sd">        backbone: the instantiated backbone module</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Integer feature dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">backbone_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="c1"># WaferCNN: last feature_channels element</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cnn&quot;</span><span class="p">,</span> <span class="s2">&quot;cnn_fpn&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;feature_channels&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">backbone</span><span class="o">.</span><span class="n">feature_channels</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Fallback: probe with dummy input</span>
+        <span class="k">return</span> <span class="n">_probe_feature_dim</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span>
+
+    <span class="c1"># ResNet: fc.in_features (before we replaced fc)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;resnet&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;fc&quot;</span><span class="p">):</span>
+            <span class="n">fc</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">fc</span>
+            <span class="c1"># Could be Sequential (from build_classifier_head) or Linear</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">fc</span><span class="o">.</span><span class="n">in_features</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">fc</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">in_features</span>
+        <span class="k">return</span> <span class="mi">512</span>  <span class="c1"># ResNet-18 default</span>
+
+    <span class="c1"># EfficientNet: classifier[1].in_features or features output channels</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;efficientnet&quot;</span><span class="p">,</span> <span class="s2">&quot;effnet&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;classifier&quot;</span><span class="p">):</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">classifier</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">clf</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">in_features</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">clf</span><span class="o">.</span><span class="n">in_features</span>
+        <span class="k">return</span> <span class="mi">1280</span>  <span class="c1"># EfficientNet-B0 default</span>
+
+    <span class="c1"># ViT / Swin: probe</span>
+    <span class="k">return</span> <span class="n">_probe_feature_dim</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_probe_feature_dim</span><span class="p">(</span><span class="n">backbone</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Probe feature dim by running a dummy forward pass.</span>
+
+<span class="sd">    Tries to extract features the same way RIDEModel would, then</span>
+<span class="sd">    measures the output dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">backbone</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">dummy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="c1"># Try WaferCNN-style extraction</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;avg_pool&quot;</span><span class="p">):</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">avg_pool</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">feat</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Try ResNet-style</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;layer4&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;avgpool&quot;</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">bn1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">maxpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">layer1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">layer2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">layer3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">layer4</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Try EfficientNet-style</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">):</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">feat</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Full forward pass fallback</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">backbone</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="build_ride_model">
+<a class="viewcode-back" href="../../../api/src/models/ride/index.html#src.models.ride.build_ride_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_ride_model</span><span class="p">(</span>
+    <span class="n">backbone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
+    <span class="n">num_experts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">reduction</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RIDEModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory to create RIDE model from a backbone name.</span>
+
+<span class="sd">    Creates the appropriate backbone (WaferCNN, ResNet, etc.), determines</span>
+<span class="sd">    feature_dim, and wraps in RIDEModel.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        backbone_name: &#39;cnn&#39;, &#39;resnet&#39;, &#39;efficientnet&#39;, &#39;vit&#39;, &#39;swin&#39;</span>
+<span class="sd">        num_classes: number of output classes</span>
+<span class="sd">        num_experts: number of expert classifiers</span>
+<span class="sd">        reduction: gate hidden-dimension reduction factor</span>
+<span class="sd">        device: target device</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        RIDEModel instance on the specified device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.cnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferCNN</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.fpn</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferCNNFPN</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.vit</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_vit_small</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.swin</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_swin_tiny</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">backbone_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cnn&quot;</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">WaferCNN</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cnn_fpn&quot;</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">WaferCNNFPN</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;resnet&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.pretrained</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_resnet18</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">get_resnet18</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">freeze_until</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;efficientnet&quot;</span><span class="p">,</span> <span class="s2">&quot;effnet&quot;</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.pretrained</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_efficientnet_b0</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">get_efficientnet_b0</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">freeze_until</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;vit&quot;</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">get_vit_small</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">image_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;swin&quot;</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">get_swin_tiny</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown backbone &#39;</span><span class="si">{</span><span class="n">backbone_name</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected one of: cnn, cnn_fpn, resnet, efficientnet, vit, swin&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">feature_dim</span> <span class="o">=</span> <span class="n">_get_feature_dim_for_backbone</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">backbone</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;RIDE: backbone=</span><span class="si">%s</span><span class="s2">, feature_dim=</span><span class="si">%d</span><span class="s2">, num_experts=</span><span class="si">%d</span><span class="s2">, num_classes=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_experts</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">RIDEModel</span><span class="p">(</span>
+        <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">,</span>
+        <span class="n">feature_dim</span><span class="o">=</span><span class="n">feature_dim</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">num_experts</span><span class="o">=</span><span class="n">num_experts</span><span class="p">,</span>
+        <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

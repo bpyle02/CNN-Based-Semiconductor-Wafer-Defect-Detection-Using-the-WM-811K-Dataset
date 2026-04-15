@@ -1,0 +1,554 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.ensemble &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.models.fpn" href="../fpn/index.html" />
+    <link rel="prev" title="src.models.cnn" href="../cnn/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../training/index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.ensemble</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/models/ensemble/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.models.ensemble">
+<span id="src-models-ensemble"></span><h1>src.models.ensemble<a class="headerlink" href="#module-src.models.ensemble" title="Link to this heading"></a></h1>
+<p>Model ensembling for improved predictions.</p>
+<p>Supports multiple aggregation strategies:
+- Voting: Majority vote from predictions
+- Averaging: Average of softmax probabilities
+- Weighted Averaging: Weighted combination of probabilities
+- Learned Weights: Optimized per-model weights via validation macro F1
+- Stacking: Meta-learner trained on base model softmax outputs</p>
+<p class="rubric">References</p>
+<p>[30] Lakshminarayanan et al. (2017). “Deep Ensembles”. arXiv:1612.01474</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.ensemble.logger" title="src.models.ensemble.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleModel</span></code></a></p></td>
+<td><p>Ensemble of multiple neural network models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.ensemble.EnsembleEvaluator" title="src.models.ensemble.EnsembleEvaluator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleEvaluator</span></code></a></p></td>
+<td><p>Evaluate ensemble model performance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.ensemble.LearnedWeightEnsemble" title="src.models.ensemble.LearnedWeightEnsemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LearnedWeightEnsemble</span></code></a></p></td>
+<td><p>Ensemble with weights learned to maximize macro F1 on validation data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.ensemble.StackingEnsemble" title="src.models.ensemble.StackingEnsemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StackingEnsemble</span></code></a></p></td>
+<td><p>Stacking ensemble: train a meta-learner on base model predictions.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.ensemble.create_ensemble_from_checkpoints" title="src.models.ensemble.create_ensemble_from_checkpoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_ensemble_from_checkpoints</span></code></a>(→ EnsembleModel)</p></td>
+<td><p>Load models from checkpoints and create ensemble.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.models.ensemble.logger">
+<span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'averaging'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Ensemble of multiple neural network models.</p>
+<p>Combines predictions from multiple models using various aggregation strategies.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.models">
+<span class="sig-name descname"><span class="pre">models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.models" title="Link to this definition"></a></dt>
+<dd><p>List of trained PyTorch models</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.aggregation">
+<span class="sig-name descname"><span class="pre">aggregation</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.aggregation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.aggregation" title="Link to this definition"></a></dt>
+<dd><p>Strategy for combining predictions (“voting”, “averaging”, “weighted_averaging”)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.weights">
+<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#src.models.ensemble.EnsembleModel.weights" title="Link to this definition"></a></dt>
+<dd><p>Weights for each model (used in weighted_averaging)</p>
+</dd></dl>
+
+<p>Initialize ensemble.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>models</strong> – List of trained models</p></li>
+<li><p><strong>aggregation</strong> – How to combine predictions (“voting”, “averaging”, “weighted_averaging”)</p></li>
+<li><p><strong>weights</strong> – Weights for each model (summed to 1.0)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">aggregation</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'averaging'</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.aggregation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.num_models">
+<span class="sig-name descname"><span class="pre">num_models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.num_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.num_models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass with ensemble aggregation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor (batch_size, channels, height, width)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aggregated logits (batch_size, num_classes)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.device</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><span class="pre">EnsembleModel</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.to" title="Link to this definition"></a></dt>
+<dd><p>Move all models to device.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><span class="pre">EnsembleModel</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.eval" title="Link to this definition"></a></dt>
+<dd><p>Set all models to eval mode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleModel.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><span class="pre">EnsembleModel</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleModel.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleModel.train" title="Link to this definition"></a></dt>
+<dd><p>Set all models to train mode.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleEvaluator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleEvaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ensemble</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><span class="pre">EnsembleModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleEvaluator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleEvaluator" title="Link to this definition"></a></dt>
+<dd><p>Evaluate ensemble model performance.</p>
+<p>Provides metrics and analysis for ensemble predictions compared to individual models.</p>
+<p>Initialize evaluator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ensemble</strong> – EnsembleModel instance</p></li>
+<li><p><strong>device</strong> – Device to run evaluation on</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleEvaluator.ensemble">
+<span class="sig-name descname"><span class="pre">ensemble</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleEvaluator.ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleEvaluator.ensemble" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleEvaluator.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleEvaluator.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleEvaluator.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleEvaluator.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleEvaluator.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleEvaluator.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate ensemble on test data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_loader</strong> – Test data loader</p></li>
+<li><p><strong>num_classes</strong> – Number of classes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with metrics for ensemble and individual models</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.EnsembleEvaluator.get_agreement_matrix">
+<span class="sig-name descname"><span class="pre">get_agreement_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#EnsembleEvaluator.get_agreement_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.EnsembleEvaluator.get_agreement_matrix" title="Link to this definition"></a></dt>
+<dd><p>Compute agreement between models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Agreement matrix showing how often each pair of models agrees</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.ensemble.create_ensemble_from_checkpoints">
+<span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">create_ensemble_from_checkpoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checkpoint_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_constructors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'averaging'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.ensemble.EnsembleModel" title="src.models.ensemble.EnsembleModel"><span class="pre">EnsembleModel</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#create_ensemble_from_checkpoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.create_ensemble_from_checkpoints" title="Link to this definition"></a></dt>
+<dd><p>Load models from checkpoints and create ensemble.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>checkpoint_paths</strong> – List of paths to model checkpoints</p></li>
+<li><p><strong>model_constructors</strong> – List of functions that create models</p></li>
+<li><p><strong>device</strong> – Device to load models on</p></li>
+<li><p><strong>aggregation</strong> – Aggregation strategy</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EnsembleModel instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">LearnedWeightEnsemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Ensemble with weights learned to maximize macro F1 on validation data.</p>
+<p>Optimizes per-model weights using the validation set’s macro F1 score.
+Uses scipy.optimize.minimize to find optimal weights under a simplex constraint.</p>
+<p>Reference: [30] Lakshminarayanan et al. (2017). arXiv:1612.01474</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.models">
+<span class="sig-name descname"><span class="pre">models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.num_models">
+<span class="sig-name descname"><span class="pre">num_models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.num_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.num_models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.optimize_weights">
+<span class="sig-name descname"><span class="pre">optimize_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.optimize_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.optimize_weights" title="Link to this definition"></a></dt>
+<dd><p>Find weights that maximize macro F1 on validation set.</p>
+<p>Uses Nelder-Mead optimization over the probability simplex.
+The objective function computes the negative macro F1 of the
+weighted-average softmax predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>val_loader</strong> – Validation data loader.</p></li>
+<li><p><strong>class_names</strong> – List of class name strings (used for logging).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optimal weight vector as a numpy array of shape (num_models,).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.forward" title="Link to this definition"></a></dt>
+<dd><p>Weighted ensemble forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor (batch_size, channels, height, width).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Log-probabilities (batch_size, num_classes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.predict" title="Link to this definition"></a></dt>
+<dd><p>Weighted ensemble prediction (class indices).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>images</strong> – Input tensor (batch_size, channels, height, width).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Predicted class indices (batch_size,).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.LearnedWeightEnsemble.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#LearnedWeightEnsemble.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.LearnedWeightEnsemble.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate ensemble on a test set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_loader</strong> – Test data loader.</p></li>
+<li><p><strong>class_names</strong> – List of class name strings.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with accuracy, macro_f1, and weighted_f1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">StackingEnsemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Stacking ensemble: train a meta-learner on base model predictions.</p>
+<p>Each base model produces softmax outputs on validation data.
+A small neural network (meta-learner) is trained to combine these predictions.</p>
+<p>Architecture: Linear(num_models * num_classes, num_classes).</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.base_models">
+<span class="sig-name descname"><span class="pre">base_models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.base_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.base_models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.num_models">
+<span class="sig-name descname"><span class="pre">num_models</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.num_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.num_models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.meta_learner">
+<span class="sig-name descname"><span class="pre">meta_learner</span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.meta_learner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.meta_learner" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.fit" title="Link to this definition"></a></dt>
+<dd><p>Train meta-learner on validation predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>val_loader</strong> – Validation data loader.</p></li>
+<li><p><strong>epochs</strong> – Training epochs for the meta-learner.</p></li>
+<li><p><strong>lr</strong> – Learning rate for the meta-learner optimizer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of per-epoch training losses.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.forward" title="Link to this definition"></a></dt>
+<dd><p>Stacked ensemble forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor (batch_size, channels, height, width).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Logits from meta-learner (batch_size, num_classes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.predict" title="Link to this definition"></a></dt>
+<dd><p>Stacked ensemble prediction (class indices).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>images</strong> – Input tensor (batch_size, channels, height, width).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Predicted class indices (batch_size,).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.ensemble.StackingEnsemble.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/models/ensemble.html#StackingEnsemble.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.ensemble.StackingEnsemble.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate stacking ensemble on a test set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_loader</strong> – Test data loader.</p></li>
+<li><p><strong>class_names</strong> – List of class name strings.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with accuracy, macro_f1, and weighted_f1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../cnn/index.html" class="btn btn-neutral float-left" title="src.models.cnn" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../fpn/index.html" class="btn btn-neutral float-right" title="src.models.fpn" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

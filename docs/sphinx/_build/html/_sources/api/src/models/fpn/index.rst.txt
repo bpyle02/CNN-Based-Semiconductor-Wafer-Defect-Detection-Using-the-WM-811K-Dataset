@@ -1,0 +1,182 @@
+src.models.fpn
+==============
+
+.. py:module:: src.models.fpn
+
+.. autoapi-nested-parse::
+
+   Feature Pyramid Network (FPN) variant for wafer defect classification.
+
+   Fuses multi-scale features from a 4-stage CNN backbone via top-down
+   lateral connections, improving detection of defects at varying spatial
+   scales (e.g. large Edge-Ring vs. thin Scratch vs. small Loc).
+
+   .. rubric:: References
+
+   [91] Lin et al. (2017). "Feature Pyramid Networks for Object Detection".
+        arXiv:1612.03144
+   [47] Ioffe & Szegedy (2015). "Batch Normalization". arXiv:1502.03167
+   [48] Srivastava et al. (2014). "Dropout: Preventing Overfitting". JMLR
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.models.fpn.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.models.fpn.FPNBlock
+   src.models.fpn.WaferCNNFPN
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: FPNBlock(in_channels_list: List[int], out_channels: int = 256)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Feature Pyramid Network block.
+
+   Combines a top-down pathway (upsampled coarser features) with
+   lateral connections (same-level features) via 1x1 convolutions.
+
+   The lateral connections project each backbone stage to a common
+   channel dimension (``out_channels``). Starting from the coarsest
+   level, each feature map is upsampled by 2x and element-wise added
+   to the next finer lateral output, propagating high-level semantics
+   to lower levels while retaining spatial detail.
+
+   Reference: [91] Lin et al. (2017). arXiv:1612.03144
+
+   :param in_channels_list: Number of channels at each backbone stage,
+                            ordered from finest (largest spatial) to coarsest (smallest
+                            spatial).  E.g. ``[32, 64, 128, 256]``.
+   :param out_channels: Common channel dimension for all FPN output levels.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: out_channels
+      :value: 256
+
+
+
+   .. py:attribute:: lateral_convs
+
+
+   .. py:attribute:: smooth_convs
+
+
+   .. py:method:: forward(features: List[torch.Tensor]) -> List[torch.Tensor]
+
+      Build the feature pyramid from backbone feature maps.
+
+      :param features: List of feature maps from each stage, ordered
+                       finest-to-coarsest.
+                       E.g. ``[(B,32,48,48), (B,64,24,24), (B,128,12,12), (B,256,6,6)]``
+
+      :returns: List of FPN feature maps (same ordering), all with
+                ``out_channels`` channels. Spatial sizes match the input
+                features at each level.
+
+
+
+.. py:class:: WaferCNNFPN(num_classes: int = 9, feature_channels: Sequence[int] = (32, 64, 128, 256), fpn_out_channels: int = 128, dropout_rate: float = 0.5, input_channels: int = 3, use_batch_norm: bool = True)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Custom CNN with FPN for multi-scale defect detection.
+
+   Extends WaferCNN by extracting intermediate feature maps from each
+   of the 4 convolutional stages and fusing them via a Feature Pyramid
+   Network. The fused multi-scale features are globally average-pooled
+   and concatenated for classification, allowing the model to leverage
+   both fine spatial detail (important for small Loc defects and thin
+   Scratch patterns) and coarse semantic information (important for
+   large Edge-Ring defects).
+
+   Architecture:
+       - 4 conv blocks identical to WaferCNN:
+         Conv-BN-ReLU-Conv-BN-ReLU-MaxPool per stage
+       - Feature extraction at each stage:
+         F1(48x48), F2(24x24), F3(12x12), F4(6x6)
+       - FPN fuses into P1, P2, P3, P4 (all ``fpn_out_channels``)
+       - Global average pool each Pi, concatenate
+       - Classifier: Linear(4 * fpn_out_channels, num_classes)
+
+   .. rubric:: References
+
+   [91] Lin et al. (2017). arXiv:1612.03144
+   [47] Ioffe & Szegedy (2015). arXiv:1502.03167
+   [48] Srivastava et al. (2014). JMLR
+
+   :param num_classes: Number of output classes.
+   :param feature_channels: Output channels per conv stage.
+   :param fpn_out_channels: Common channel dimension for FPN levels.
+   :param dropout_rate: Dropout before the classifier head.
+   :param input_channels: Number of input image channels.
+   :param use_batch_norm: Apply BatchNorm after each convolution.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+   .. py:attribute:: feature_channels
+      :value: (32, 64, 128, 256)
+
+
+
+   .. py:attribute:: fpn_out_channels
+      :value: 128
+
+
+
+   .. py:attribute:: dropout_rate
+      :value: 0.5
+
+
+
+   .. py:attribute:: use_batch_norm
+      :value: True
+
+
+
+   .. py:attribute:: stages
+
+
+   .. py:attribute:: fpn
+
+
+   .. py:attribute:: gap
+
+
+   .. py:attribute:: classifier
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      Forward pass through backbone, FPN, and classifier.
+
+      :param x: Input tensor of shape ``(B, C, H, W)``.
+
+      :returns: Logits of shape ``(B, num_classes)``.
+
+
+

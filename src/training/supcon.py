@@ -205,7 +205,9 @@ class PaCoLoss(nn.Module):
 
         # Remove self-similarity (diagonal for the B x B part)
         self_mask = torch.zeros(
-            batch_size, batch_size + self.num_classes, device=device,
+            batch_size,
+            batch_size + self.num_classes,
+            device=device,
         )
         self_mask[:, :batch_size] = torch.eye(batch_size, device=device)
         mask = mask * (1 - self_mask)
@@ -434,7 +436,9 @@ class SupConTrainer:
         model_type: str = "auto",
         device: str = "cpu",
     ) -> None:
-        self.device = torch.device(device if torch.cuda.is_available() or device == "cpu" else "cpu")
+        self.device = torch.device(
+            device if torch.cuda.is_available() or device == "cpu" else "cpu"
+        )
         self.num_classes = num_classes
         self.model_type = model_type
 
@@ -524,7 +528,10 @@ class SupConTrainer:
                 current_lr = optimizer.param_groups[0]["lr"]
                 logger.info(
                     "SupCon pretrain epoch %d/%d  loss=%.4f  lr=%.6f",
-                    epoch + 1, epochs, avg_loss, current_lr,
+                    epoch + 1,
+                    epochs,
+                    avg_loss,
+                    current_lr,
                 )
 
         logger.info("SupCon pretraining complete. Final loss: %.4f", history["loss"][-1])
@@ -615,7 +622,10 @@ class SupConTrainer:
                 current_lr = optimizer.param_groups[0]["lr"]
                 logger.info(
                     "PaCo pretrain epoch %d/%d  loss=%.4f  lr=%.6f",
-                    epoch + 1, epochs, avg_loss, current_lr,
+                    epoch + 1,
+                    epochs,
+                    avg_loss,
+                    current_lr,
                 )
 
         logger.info("PaCo pretraining complete. Final loss: %.4f", history["loss"][-1])
@@ -658,10 +668,15 @@ class SupConTrainer:
             class_weights = class_weights.to(self.device)
         criterion = nn.CrossEntropyLoss(weight=class_weights)
         optimizer = torch.optim.Adam(
-            self.classifier.parameters(), lr=lr, weight_decay=weight_decay,
+            self.classifier.parameters(),
+            lr=lr,
+            weight_decay=weight_decay,
         )
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.5, patience=3,
+            optimizer,
+            mode="min",
+            factor=0.5,
+            patience=3,
         )
 
         history: Dict[str, List[float]] = {
@@ -736,7 +751,11 @@ class SupConTrainer:
             if (epoch + 1) % max(1, epochs // 5) == 0 or epoch == 0:
                 logger.info(
                     "SupCon finetune epoch %d/%d  train_loss=%.4f  val_loss=%.4f  val_acc=%.4f",
-                    epoch + 1, epochs, avg_train_loss, avg_val_loss, val_acc,
+                    epoch + 1,
+                    epochs,
+                    avg_train_loss,
+                    avg_val_loss,
+                    val_acc,
                 )
 
         # Restore best checkpoint

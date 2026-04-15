@@ -1,19 +1,19 @@
 import re
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 pkgs = []
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     for line in f:
         line = line.strip()
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             continue
-        name = re.split('[>=<!~ ]', line)[0]
+        name = re.split("[>=<!~ ]", line)[0]
         if name:
             pkgs.append(name)
 
 for p in pkgs:
     try:
         v = version(p)
-        print(f'{p}=={v}')
+        print(f"{p}=={v}")
     except PackageNotFoundError:
-        print(f'# {p} NOT INSTALLED in py313')
+        print(f"# {p} NOT INSTALLED in py313")

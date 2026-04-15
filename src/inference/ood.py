@@ -70,9 +70,10 @@ def fit_ood_threshold(
 @dataclass
 class OODPrediction:
     """Structured OOD prediction output."""
-    pred: torch.Tensor          # (N,) argmax class indices
-    confidence: torch.Tensor    # (N,) softmax max probability
-    is_ood: torch.Tensor        # (N,) bool flags (True if OOD)
+
+    pred: torch.Tensor  # (N,) argmax class indices
+    confidence: torch.Tensor  # (N,) softmax max probability
+    is_ood: torch.Tensor  # (N,) bool flags (True if OOD)
 
 
 class OODDetector:
@@ -122,9 +123,7 @@ class OODDetector:
         return self.threshold
 
     @torch.no_grad()
-    def predict(
-        self, x: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def predict(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return (pred, confidence, is_ood) for a batch of inputs.
 
         Args:
@@ -137,9 +136,7 @@ class OODDetector:
               is_ood      - boolean OOD flag (True iff energy > threshold)
         """
         if self.threshold is None:
-            raise RuntimeError(
-                "OODDetector threshold not fitted. Call .fit(val_loader) first."
-            )
+            raise RuntimeError("OODDetector threshold not fitted. Call .fit(val_loader) first.")
         logits = self._logits(x)
         probs = F.softmax(logits, dim=-1)
         confidence, pred = probs.max(dim=-1)

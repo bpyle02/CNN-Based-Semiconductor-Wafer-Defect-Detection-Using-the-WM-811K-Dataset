@@ -9,20 +9,28 @@ References:
     [61] (2020). "Yield Prediction Using ML in Semiconductor Manufacturing"
 """
 
+import logging
 from pathlib import Path
 from typing import Any, Optional
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from src.exceptions import DataLoadError
-import logging
 
 logger = logging.getLogger(__name__)
 
 # Ref [7]: 9 failure classes from WM-811K dataset (Wu et al., IEEE TSM 2014)
 KNOWN_CLASSES = [
-    'Center', 'Donut', 'Edge-Loc', 'Edge-Ring',
-    'Loc', 'Near-full', 'Random', 'Scratch', 'none'
+    "Center",
+    "Donut",
+    "Edge-Loc",
+    "Edge-Ring",
+    "Loc",
+    "Near-full",
+    "Random",
+    "Scratch",
+    "none",
 ]
 
 
@@ -53,21 +61,21 @@ def load_dataset(path: Optional[Path] = None) -> pd.DataFrame:
     except Exception as e:
         raise DataLoadError(f"Failed to load dataset from {path}: {e}") from e
 
-    df['failureClass'] = df['failureType'].apply(extract_failure_label)
+    df["failureClass"] = df["failureType"].apply(extract_failure_label)
 
     logger.info("\n--- Dataset Info ---")
     logger.info(f"Dataset Shape: {df.shape}")
     logger.info(f"Dataset Columns: {df.columns.tolist()}")
-    memory_mb = df.memory_usage(deep=True).sum() / (1024 ** 2)
+    memory_mb = df.memory_usage(deep=True).sum() / (1024**2)
     logger.info(f"Dataset Memory Usage: {memory_mb:.2f} MB\n")
     logger.info(f"{df.head()}")
 
-    class_counts = df['failureClass'].value_counts()
+    class_counts = df["failureClass"].value_counts()
     logger.info("\n--- Failure Class Distribution (Before Filtering) ---")
     logger.info(class_counts.to_string())
 
     logger.info("\n--- Data Quality Checks ---")
-    unique_classes = df['failureClass'].unique().tolist()
+    unique_classes = df["failureClass"].unique().tolist()
     logger.info(f"Unique failure classes: {unique_classes}")
     logger.info(f"Total wafers: {len(df):,}")
 
@@ -93,7 +101,7 @@ def extract_failure_label(failure_label: Any) -> str:
             if failure_label.size > 0:
                 val = failure_label.flatten()[0]
                 if isinstance(val, bytes):
-                    return val.decode('latin1').strip()
+                    return val.decode("latin1").strip()
                 if isinstance(val, (str, np.str_)):
                     return str(val).strip()
 
@@ -105,24 +113,24 @@ def extract_failure_label(failure_label: Any) -> str:
             if isinstance(inner, (list, np.ndarray)) and len(inner) > 0:
                 val = inner[0]
                 if isinstance(val, bytes):
-                    return val.decode('latin1').strip()
+                    return val.decode("latin1").strip()
                 return str(val).strip()
 
             # Direct list element
             if isinstance(inner, bytes):
-                return inner.decode('latin1').strip()
+                return inner.decode("latin1").strip()
             return str(inner).strip()
 
         # Handle direct strings/bytes
         if isinstance(failure_label, bytes):
-            return failure_label.decode('latin1').strip()
+            return failure_label.decode("latin1").strip()
         if isinstance(failure_label, str):
             return failure_label.strip()
 
     except (IndexError, TypeError, AttributeError, UnicodeDecodeError) as e:
         logger.debug(f"Could not parse failure label: {e}")
 
-    return 'unknown'
+    return "unknown"
 
 
 if __name__ == "__main__":

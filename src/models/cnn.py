@@ -57,9 +57,7 @@ class SPPLayer(nn.Module):
     def __init__(self, pool_sizes: Sequence[int] = (1, 2, 4)) -> None:
         super().__init__()
         self.pool_sizes = pool_sizes
-        self.pools = nn.ModuleList([
-            nn.AdaptiveAvgPool2d(s) for s in pool_sizes
-        ])
+        self.pools = nn.ModuleList([nn.AdaptiveAvgPool2d(s) for s in pool_sizes])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

@@ -1,0 +1,220 @@
+src.models.vit
+==============
+
+.. py:module:: src.models.vit
+
+.. autoapi-nested-parse::
+
+   Vision Transformer (ViT) architecture for wafer defect classification.
+
+   Adapts the Vision Transformer from Dosovitskiy et al. to work with 96x96 wafer maps.
+   Includes patch embedding, transformer encoder, and classification head.
+
+   .. rubric:: References
+
+   [3] Dosovitskiy et al. (2021). "An Image is Worth 16x16 Words". arXiv:2010.11929
+   [23] Vaswani et al. (2017). "Attention Is All You Need". arXiv:1706.03762
+   [102] Touvron et al. (2021). "DeiT: Data-Efficient Image Transformers". arXiv:2012.12877
+   [103] Liu et al. (2021). "Swin Transformer". arXiv:2103.14030
+   [105] Yuan et al. (2021). "Tokens-to-Token ViT". arXiv:2101.11986
+   [107] Wu et al. (2021). "CvT: Convolutional Vision Transformer". arXiv:2103.15808
+   [108] Dai et al. (2021). "CoAtNet". arXiv:2106.04803
+   [109] Mehta & Rastegari (2022). "MobileViT". arXiv:2110.02178
+   [110] Graham et al. (2021). "LeViT: Vision Transformer in ConvNet's Clothing". arXiv:2104.01136
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.models.vit.PatchEmbedding
+   src.models.vit.TransformerEncoder
+   src.models.vit.ViT
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.models.vit.get_vit_small
+   src.models.vit.get_vit_tiny
+
+
+Module Contents
+---------------
+
+.. py:class:: PatchEmbedding(image_size: int = 96, patch_size: int = 8, in_channels: int = 3, embed_dim: int = 768)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Convert image to patch embeddings.
+
+   Splits input image into non-overlapping patches and linearly embeds them.
+   Positional encodings are added by the ViT class after CLS token prepend.
+
+   :param image_size: Height/width of input image (assumed square)
+   :param patch_size: Height/width of each patch
+   :param in_channels: Number of input channels (e.g., 3 for RGB)
+   :param embed_dim: Dimension of patch embeddings
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: image_size
+      :value: 96
+
+
+
+   .. py:attribute:: patch_size
+      :value: 8
+
+
+
+   .. py:attribute:: num_patches
+      :value: 144
+
+
+
+   .. py:attribute:: proj
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      :param x: Input tensor of shape (B, C, H, W)
+
+      :returns: Patch embeddings of shape (B, num_patches, embed_dim)
+
+
+
+.. py:class:: TransformerEncoder(embed_dim: int = 768, num_heads: int = 12, mlp_dim: int = 3072, dropout: float = 0.0, attention_dropout: float = 0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Transformer encoder block with multi-head attention and feed-forward.
+
+   :param embed_dim: Embedding dimension
+   :param num_heads: Number of attention heads
+   :param mlp_dim: Dimension of feed-forward network
+   :param dropout: Dropout rate
+   :param attention_dropout: Dropout rate in attention
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: norm1
+
+
+   .. py:attribute:: attn
+
+
+   .. py:attribute:: norm2
+
+
+   .. py:attribute:: mlp
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      :param x: Input tensor of shape (B, num_patches, embed_dim)
+
+      :returns: Output tensor of shape (B, num_patches, embed_dim)
+
+
+
+.. py:class:: ViT(image_size: int = 96, patch_size: int = 8, in_channels: int = 3, num_classes: int = 9, embed_dim: int = 384, num_heads: int = 6, num_layers: int = 12, mlp_dim: int = 1536, dropout: float = 0.1, attention_dropout: float = 0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Vision Transformer for image classification.
+
+   Adapts ViT from Dosovitskii et al. (An Image is Worth 16x16 Words, ICLR 2021)
+   to work with 96x96 wafer maps.
+
+   Architecture:
+       - Patch embedding (96x96 -> 12x12 = 144 patches of 8x8)
+       - Class token prepended
+       - Positional embeddings added
+       - Transformer encoder stack
+       - Classification head (MLP on [CLS] token)
+
+   :param image_size: Input image size (96)
+   :param patch_size: Patch size (16)
+   :param in_channels: Input channels (3)
+   :param num_classes: Number of classes (9)
+   :param embed_dim: Embedding dimension (384 for ViT-small)
+   :param num_heads: Number of attention heads (6 for ViT-small)
+   :param num_layers: Number of transformer layers (12)
+   :param mlp_dim: Feed-forward dimension
+   :param dropout: Dropout rate
+   :param attention_dropout: Attention dropout rate
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: embed_dim
+      :value: 384
+
+
+
+   .. py:attribute:: num_patches
+      :value: 144
+
+
+
+   .. py:attribute:: patch_embed
+
+
+   .. py:attribute:: cls_token
+
+
+   .. py:attribute:: pos_embed
+
+
+   .. py:attribute:: dropout
+
+
+   .. py:attribute:: encoder_layers
+
+
+   .. py:attribute:: norm
+
+
+   .. py:attribute:: cls_head
+
+
+   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+
+      :param x: Input tensor of shape (B, C, H, W)
+
+      :returns: Logits of shape (B, num_classes)
+
+
+
+.. py:function:: get_vit_small(num_classes: int = 9) -> ViT
+
+   Create a ViT-small model for wafer defect classification.
+
+   ViT-small configuration: embed_dim=384, num_heads=6, num_layers=12
+
+   :param num_classes: Number of output classes
+
+   :returns: Initialized ViT model
+
+
+.. py:function:: get_vit_tiny(num_classes: int = 9) -> ViT
+
+   Create a ViT-tiny model (smaller, faster) for wafer defect classification.
+
+   ViT-tiny configuration: embed_dim=192, num_heads=3, num_layers=12
+
+   :param num_classes: Number of output classes
+
+   :returns: Initialized ViT model
+
+

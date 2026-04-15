@@ -69,6 +69,10 @@ models:
     architecture: "resnet18"
     pretrained: true
     freeze_until: "layer3"  # Freeze everything before layer4
+    # Keep frozen BN layers in .eval() mode so their running stats don't
+    # drift on the WM-811K distribution (85% zero-background replicated
+    # grayscale). See src/models/pretrained.py::freeze_batchnorm_stats.
+    freeze_bn: true
     num_classes: 9
     dropout_rate: 0.5
     head_hidden_dim: null
@@ -82,6 +86,12 @@ models:
     architecture: "efficientnet_b0"
     pretrained: true
     freeze_until: "features.6"  # Freeze everything before features.7
+    # CRITICAL for EfficientNet: without this, the ~80 depthwise-BN layers
+    # in frozen blocks drift their running_mean/var during .train() while
+    # their (frozen) gamma/beta remain calibrated for ImageNet — producing
+    # train_loss ~0.3 but val_loss 3.7-4.5 and test macro-F1 0.19. Leave
+    # enabled unless you know exactly what you're doing.
+    freeze_bn: true
     num_classes: 9
     dropout_rate: 0.5
     head_hidden_dim: null

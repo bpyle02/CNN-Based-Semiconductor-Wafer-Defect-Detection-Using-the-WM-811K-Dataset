@@ -20,20 +20,23 @@ jobs:
       - name: flake8 (syntax / undefined names)
         run: flake8 src train.py --count --select=E9,F63,F7,F82 --show-source --statistics
       - name: flake8 (style, warn-only)
-        run: flake8 src train.py --count --exit-zero --max-complexity=15 --max-line-length=120 --statistics
+        run: flake8 src train.py --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
       - name: black --check
         run: black --check --line-length=100 src/ train.py
-        continue-on-error: true
       - name: isort --check-only
         run: isort --check-only --profile black src/ train.py
-        continue-on-error: true
+      - name: nbqa flake8 on notebooks
+        run: |
+          pip install nbqa
+          nbqa flake8 docs/*.ipynb
 
   test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.11', '3.12', '3.13']
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,10 +53,34 @@ jobs:
           python -c "from src.analysis import evaluate_model; print('analysis OK')"
       - name: CLI self-describes
         run: python train.py --help
-      - name: pytest
-        run: pytest -q --maxfail=5
+      - name: Tests with coverage (ubuntu full suite)
+        if: matrix.os == 'ubuntu-latest'
+        run: pytest --cov=src --cov-report=xml --cov-report=term --cov-fail-under=70
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+      - name: Tests (smoke subset on windows/macos)
+        if: matrix.os != 'ubuntu-latest'
+        shell: bash
+        run: |
+          if [ -f tests/unit/test_smoke.py ]; then
+            pytest tests/unit/test_smoke.py
+          else
+            pytest -q --ignore=tests/integration --maxfail=5
+          fi
       - name: Config load (base + colab_fast overlay)
+        if: matrix.os == 'ubuntu-latest'
         run: python -c "from src.config import load_config, load_merged_config; cfg = load_config('config.yaml'); print('device:', cfg.device); cfg2 = load_merged_config(['config.yaml', 'configs/colab_fast.yaml']); print('overlay patience:', cfg2.training.early_stopping.patience)"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build --target prod -t wafer-test .
+      - run: docker run --rm wafer-test python -c "from src.models import WaferCNN; WaferCNN()"
 
   metrics-regression:
     runs-on: ubuntu-latest

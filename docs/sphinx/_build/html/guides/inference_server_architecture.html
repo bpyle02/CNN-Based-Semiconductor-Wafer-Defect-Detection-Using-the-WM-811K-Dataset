@@ -1,0 +1,717 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inference Server Architecture &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Inference Server README" href="inference_server_readme.html" />
+    <link rel="prev" title="Federated Learning" href="federated_learning.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="env_doctor.html">Environment Doctor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federated_learning.html">Federated Learning</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Inference Server Architecture</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#inference-server-architecture-implementation">Inference Server Architecture &amp; Implementation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#components">Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#request-flow">Request Flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#performance-characteristics">Performance Characteristics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#security-considerations">Security Considerations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#future-enhancements">Future Enhancements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deployment-examples">Deployment Examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-files">Related Files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="inference_server_readme.html">Inference Server README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic_augmentation_guide.html">Synthetic Augmentation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="team_readme.html">Team README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uncertainty_quantification.html">Uncertainty Quantification</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Inference Server Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/inference_server_architecture.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="inference-server-architecture">
+<h1>Inference Server Architecture<a class="headerlink" href="#inference-server-architecture" title="Link to this heading"></a></h1>
+<section id="inference-server-architecture-implementation">
+<h2>Inference Server Architecture &amp; Implementation<a class="headerlink" href="#inference-server-architecture-implementation" title="Link to this heading"></a></h2>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>The real-time inference server (improvement #15) is a production-grade FastAPI application that provides REST endpoints for wafer defect classification. It supports dynamic model loading, concurrent inference, and comprehensive error handling.</p>
+</section>
+<section id="components">
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading"></a></h3>
+<section id="modelserver-class-src-inference-server-py">
+<h4>1. ModelServer Class (<code class="docutils literal notranslate"><span class="pre">src/inference/server.py</span></code>)<a class="headerlink" href="#modelserver-class-src-inference-server-py" title="Link to this heading"></a></h4>
+<p>Low-level model management wrapper with three main responsibilities:</p>
+<section id="model-lifecycle-management">
+<h5>Model Lifecycle Management<a class="headerlink" href="#model-lifecycle-management" title="Link to this heading"></a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ModelServer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Device handling</strong>: Automatically selects CPU/CUDA and validates availability</p></li>
+<li><p><strong>Checkpoint loading</strong>: Handles both raw state dicts and checkpoint wrappers</p></li>
+<li><p><strong>Model initialization</strong>: Creates appropriate architecture (CNN, ResNet, EfficientNet)</p></li>
+<li><p><strong>Parameter counting</strong>: Reports total and trainable parameters</p></li>
+</ul>
+</section>
+<section id="preprocessing-pipeline">
+<h5>Preprocessing Pipeline<a class="headerlink" href="#preprocessing-pipeline" title="Link to this heading"></a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">preprocess_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+</pre></div>
+</div>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>Grayscale conversion (if 3-channel)</p></li>
+<li><p>Size validation (32-512 pixels)</p></li>
+<li><p>Resize to 96x96</p></li>
+<li><p>Normalize: divide by 2.0 (as in training)</p></li>
+<li><p>Stack to 3 channels</p></li>
+<li><p>Apply ImageNet normalization (for ResNet/EfficientNet only)</p></li>
+</ol>
+<p><strong>Why this design:</strong></p>
+<ul class="simple">
+<li><p>Matches training preprocessing exactly</p></li>
+<li><p>Conditional ImageNet norm prevents incorrect normalization for CNN</p></li>
+<li><p>Input validation catches errors early</p></li>
+</ul>
+</section>
+<section id="inference-execution">
+<h5>Inference Execution<a class="headerlink" href="#inference-execution" title="Link to this heading"></a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Returns:</p>
+<ul class="simple">
+<li><p>Predicted class ID</p></li>
+<li><p>Softmax probabilities for all 9 classes</p></li>
+<li><p>Inference time in milliseconds</p></li>
+</ul>
+</section>
+</section>
+<section id="fastapi-application-factory-create-app">
+<h4>2. FastAPI Application Factory (<code class="docutils literal notranslate"><span class="pre">create_app</span></code>)<a class="headerlink" href="#fastapi-application-factory-create-app" title="Link to this heading"></a></h4>
+<p>Creates configured FastAPI app with endpoints. Key design decisions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_app</span><span class="p">(</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">model_checkpoint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModelType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FastAPI</span>
+</pre></div>
+</div>
+<p><strong>Features:</strong></p>
+<ul class="simple">
+<li><p>CORS middleware for cross-origin requests</p></li>
+<li><p>Centralized ModelServer instance (shared across endpoints)</p></li>
+<li><p>Optional startup model loading</p></li>
+<li><p>Comprehensive logging</p></li>
+</ul>
+</section>
+<section id="api-endpoints">
+<h4>3. API Endpoints<a class="headerlink" href="#api-endpoints" title="Link to this heading"></a></h4>
+<section id="core-endpoints">
+<h5>Core Endpoints<a class="headerlink" href="#core-endpoints" title="Link to this heading"></a></h5>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Method</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">/health</span></code></p></td>
+<td><p>GET</p></td>
+<td><p>Health check with model status</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">/models</span></code></p></td>
+<td><p>GET</p></td>
+<td><p>List available architectures</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">/model_info</span></code></p></td>
+<td><p>GET</p></td>
+<td><p>Detailed model information</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">/load_model</span></code></p></td>
+<td><p>POST</p></td>
+<td><p>Load checkpoint dynamically</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">/predict</span></code></p></td>
+<td><p>POST</p></td>
+<td><p>Inference on base64 image</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">/predict_file</span></code></p></td>
+<td><p>POST</p></td>
+<td><p>Inference on uploaded file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="request-response-models-pydantic">
+<h5>Request/Response Models (Pydantic)<a class="headerlink" href="#request-response-models-pydantic" title="Link to this heading"></a></h5>
+<p><strong>PredictionRequest:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="n">image_base64</span><span class="p">:</span> <span class="nb">str</span>              <span class="c1"># Base64-encoded PNG/JPEG</span>
+<span class="n">model_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>      <span class="c1"># (unused, reserved for future)</span>
+<span class="n">return_gradcam</span><span class="p">:</span> <span class="nb">bool</span>           <span class="c1"># (reserved for future)</span>
+</pre></div>
+</div>
+<p><strong>PredictionResponse:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># Predicted defect class</span>
+<span class="n">class_id</span><span class="p">:</span> <span class="nb">int</span>                  <span class="c1"># Integer ID (0-8)</span>
+<span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span>              <span class="c1"># Softmax probability</span>
+<span class="n">probabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="c1"># All class probabilities</span>
+<span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># Which model was used</span>
+<span class="n">input_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>   <span class="c1"># Final image size</span>
+<span class="n">inference_ms</span><span class="p">:</span> <span class="nb">float</span>            <span class="c1"># Execution time</span>
+<span class="n">gradcam_base64</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>  <span class="c1"># (reserved for future)</span>
+</pre></div>
+</div>
+<p><strong>LoadModelRequest:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span>          <span class="c1"># &quot;cnn&quot;, &quot;resnet&quot;, or &quot;efficientnet&quot;</span>
+<span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span>           <span class="c1"># Path to .pth file</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cli-entry-point-inference-server-py">
+<h4>4. CLI Entry Point (<code class="docutils literal notranslate"><span class="pre">inference_server.py</span></code>)<a class="headerlink" href="#cli-entry-point-inference-server-py" title="Link to this heading"></a></h4>
+<p>Command-line interface with argument parsing and server startup.</p>
+<p><strong>Key features:</strong></p>
+<ul class="simple">
+<li><p>Device validation (falls back to CPU if CUDA unavailable)</p></li>
+<li><p>Checkpoint path validation</p></li>
+<li><p>Structured logging with configurable levels</p></li>
+<li><p>Multi-worker support (via Uvicorn)</p></li>
+<li><p>Development mode with auto-reload</p></li>
+</ul>
+<p><strong>Typical usage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>inference_server.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--model<span class="w"> </span>checkpoints/best_cnn.pth<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--model-type<span class="w"> </span>cnn<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--workers<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="request-flow">
+<h3>Request Flow<a class="headerlink" href="#request-flow" title="Link to this heading"></a></h3>
+<section id="prediction-request-flow">
+<h4>Prediction Request Flow<a class="headerlink" href="#prediction-request-flow" title="Link to this heading"></a></h4>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>User Request
+    |
+    v
+FastAPI Validation (Pydantic)
+    |
+    +---&gt; PredictionRequest schema validation
+    |     - Base64 format check
+    |     - Size limits (10 MB)
+    |     - JSON parsing
+    |
+    v
+Endpoint Handler (/predict)
+    |
+    +---&gt; Model check (503 if none loaded)
+    |
+    +---&gt; Base64 decode
+    |
+    v
+ModelServer.preprocess_image()
+    |
+    +---&gt; Grayscale conversion
+    +---&gt; Size validation
+    +---&gt; Resize to 96x96
+    +---&gt; Normalize (/ 2.0)
+    +---&gt; Stack to 3 channels
+    +---&gt; ImageNet normalization (conditional)
+    +---&gt; Convert to torch.Tensor
+    |
+    v
+ModelServer.predict()
+    |
+    +---&gt; model.eval() (no gradient tracking)
+    +---&gt; Forward pass
+    +---&gt; Softmax probabilities
+    |
+    v
+Response Building
+    |
+    +---&gt; Extract class_id, confidence
+    +---&gt; Map to class name (KNOWN_CLASSES)
+    +---&gt; Build PredictionResponse
+    |
+    v
+HTTP 200 OK
+    |
+    +---&gt; JSON response with all predictions
+</pre></div>
+</div>
+</section>
+<section id="model-loading-flow">
+<h4>Model Loading Flow<a class="headerlink" href="#model-loading-flow" title="Link to this heading"></a></h4>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>User POST /load_model
+    |
+    v
+FastAPI Validation
+    |
+    +---&gt; LoadModelRequest schema
+    +---&gt; Path existence check
+    +---&gt; File extension validation (.pth)
+    |
+    v
+Endpoint Handler
+    |
+    +---&gt; ModelServer.load_model()
+    |
+    v
+Checkpoint Loading
+    |
+    +---&gt; torch.load(checkpoint_path)
+    +---&gt; Detect state dict format
+    |     (raw state vs checkpoint wrapper)
+    |
+    v
+Model Architecture Creation
+    |
+    +---&gt; ModelType determines architecture
+    +---&gt; WaferCNN | ResNet-18 | EfficientNet-B0
+    +---&gt; num_classes=9 hardcoded
+    |
+    v
+State Dict Loading
+    |
+    +---&gt; model.load_state_dict(state)
+    +---&gt; Device placement (.to(device))
+    +---&gt; Evaluation mode (.eval())
+    |
+    v
+Parameter Counting
+    |
+    +---&gt; Count total parameters
+    +---&gt; Count trainable parameters
+    |
+    v
+HTTP 200 OK
+    |
+    +---&gt; Model info with parameters
+    +---&gt; Ready for predictions
+</pre></div>
+</div>
+</section>
+</section>
+<section id="error-handling">
+<h3>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<section id="validation-errors-422-unprocessable-entity">
+<h4>Validation Errors (422 Unprocessable Entity)<a class="headerlink" href="#validation-errors-422-unprocessable-entity" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>Invalid base64 encoding</p></li>
+<li><p>Missing required fields</p></li>
+<li><p>Malformed JSON</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/predict<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;image_base64&quot;: &quot;invalid!!!&quot;}&#39;</span>
+<span class="c1"># Returns 422 with Pydantic validation error</span>
+</pre></div>
+</div>
+</section>
+<section id="business-logic-errors-400-503">
+<h4>Business Logic Errors (400/503)<a class="headerlink" href="#business-logic-errors-400-503" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Status</p></th>
+<th class="head"><p>Scenario</p></th>
+<th class="head"><p>Cause</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>400</p></td>
+<td><p>Bad image data</p></td>
+<td><p>Invalid image format, decode error</p></td>
+</tr>
+<tr class="row-odd"><td><p>503</p></td>
+<td><p>Service unavailable</p></td>
+<td><p>No model loaded</p></td>
+</tr>
+<tr class="row-even"><td><p>500</p></td>
+<td><p>Internal error</p></td>
+<td><p>Exception during inference</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="graceful-degradation">
+<h4>Graceful Degradation<a class="headerlink" href="#graceful-degradation" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># If CUDA unavailable, fall back to CPU</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;CUDA not available, falling back to CPU&quot;</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+
+<span class="c1"># Uncertainty imports optional</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.uncertainty</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCDropoutModel</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Uncertainty module not available&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-characteristics">
+<h3>Performance Characteristics<a class="headerlink" href="#performance-characteristics" title="Link to this heading"></a></h3>
+<section id="memory-usage">
+<h4>Memory Usage<a class="headerlink" href="#memory-usage" title="Link to this heading"></a></h4>
+<p><strong>Model sizes:</strong></p>
+<ul class="simple">
+<li><p>CNN: ~4.6 MB</p></li>
+<li><p>ResNet-18: ~45 MB</p></li>
+<li><p>EfficientNet-B0: ~20 MB</p></li>
+</ul>
+<p><strong>Runtime memory (100 concurrent requests):</strong></p>
+<ul class="simple">
+<li><p>CPU: ~300-500 MB</p></li>
+<li><p>GPU: ~600 MB GPU + 200 MB CPU</p></li>
+</ul>
+</section>
+<section id="inference-latency">
+<h4>Inference Latency<a class="headerlink" href="#inference-latency" title="Link to this heading"></a></h4>
+<p><strong>CPU (Intel i7):</strong></p>
+<ul class="simple">
+<li><p>Single image: 30-100ms</p></li>
+<li><p>Batch of 10: 200-400ms total</p></li>
+<li><p>Throughput: 10 images/sec</p></li>
+</ul>
+<p><strong>GPU (NVIDIA T4):</strong></p>
+<ul class="simple">
+<li><p>Single image: 5-15ms</p></li>
+<li><p>Batch of 10: 20-50ms total</p></li>
+<li><p>Throughput: 100+ images/sec</p></li>
+</ul>
+</section>
+<section id="scaling">
+<h4>Scaling<a class="headerlink" href="#scaling" title="Link to this heading"></a></h4>
+<p><strong>Horizontal (multiple workers):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gunicorn<span class="w"> </span>-w<span class="w"> </span><span class="m">4</span><span class="w"> </span>-k<span class="w"> </span>uvicorn.workers.UvicornWorker<span class="w"> </span>inference_server:app
+</pre></div>
+</div>
+<p><strong>Vertical (GPU):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>inference_server.py<span class="w"> </span>--device<span class="w"> </span>cuda<span class="w"> </span>--workers<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="security-considerations">
+<h3>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading"></a></h3>
+<section id="input-validation">
+<h4>Input Validation<a class="headerlink" href="#input-validation" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><strong>Base64 decoding</strong>: Try/catch with error message sanitization</p></li>
+<li><p><strong>File upload</strong>: Content-type checking (PNG/JPEG/BMP only)</p></li>
+<li><p><strong>Size limits</strong>: 10 MB for base64, standard file upload limit</p></li>
+<li><p><strong>Image dimensions</strong>: 32-512 pixel range (prevents extreme resizes)</p></li>
+</ol>
+</section>
+<section id="cors-configuration">
+<h4>CORS Configuration<a class="headerlink" href="#cors-configuration" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
+    <span class="n">CORSMiddleware</span><span class="p">,</span>
+    <span class="n">allow_origins</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>  <span class="c1"># Consider restricting in production</span>
+    <span class="n">allow_credentials</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">allow_methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
+    <span class="n">allow_headers</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Production recommendation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">allow_origins</span><span class="o">=</span><span class="p">[</span>
+    <span class="s2">&quot;http://localhost:3000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;https://myapp.example.com&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="model-checkpoint-validation">
+<h4>Model Checkpoint Validation<a class="headerlink" href="#model-checkpoint-validation" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>Path validation before loading</p></li>
+<li><p>Exception handling during torch.load()</p></li>
+<li><p>State dict shape validation (implicit via load_state_dict)</p></li>
+</ul>
+</section>
+</section>
+<section id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h3>
+<section id="test-coverage-test-inference-server-py">
+<h4>Test Coverage (<code class="docutils literal notranslate"><span class="pre">test_inference_server.py</span></code>)<a class="headerlink" href="#test-coverage-test-inference-server-py" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><strong>ModelServer direct usage</strong></p>
+<ul class="simple">
+<li><p>Model loading and switching</p></li>
+<li><p>Inference on synthetic images</p></li>
+<li><p>Parameter counting</p></li>
+</ul>
+</li>
+<li><p><strong>Endpoint testing (via TestClient)</strong></p>
+<ul class="simple">
+<li><p>Health checks</p></li>
+<li><p>Model listing</p></li>
+<li><p>Model loading with validation</p></li>
+<li><p>Predictions (base64 and file)</p></li>
+<li><p>Error scenarios</p></li>
+<li><p>Model info retrieval</p></li>
+</ul>
+</li>
+<li><p><strong>Integration tests</strong></p>
+<ul class="simple">
+<li><p>Full request/response cycle</p></li>
+<li><p>Concurrent endpoint calls</p></li>
+<li><p>Cleanup and resource management</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Run tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>test_inference_server.py
+</pre></div>
+</div>
+</section>
+</section>
+<section id="future-enhancements">
+<h3>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading"></a></h3>
+<section id="planned-features">
+<h4>Planned Features<a class="headerlink" href="#planned-features" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><strong>Batch predictions</strong>: <code class="docutils literal notranslate"><span class="pre">/predict_batch</span></code> endpoint</p></li>
+<li><p><strong>Model registry</strong>: Persistent model list and metadata</p></li>
+<li><p><strong>GradCAM explanations</strong>: Include activation maps in responses</p></li>
+<li><p><strong>Streaming responses</strong>: Generator-based large batch handling</p></li>
+<li><p><strong>Custom preprocessors</strong>: Per-model preprocessing pipelines</p></li>
+<li><p><strong>Request queue</strong>: Background task processing</p></li>
+</ol>
+</section>
+<section id="api-versioning">
+<h4>API Versioning<a class="headerlink" href="#api-versioning" title="Link to this heading"></a></h4>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>/v1/predict      (current)
+/v2/predict      (batch support)
+/v2/explain      (with GradCAM)
+/v2/models       (registry)
+</pre></div>
+</div>
+</section>
+</section>
+<section id="deployment-examples">
+<h3>Deployment Examples<a class="headerlink" href="#deployment-examples" title="Link to this heading"></a></h3>
+<section id="standalone-development">
+<h4>Standalone (Development)<a class="headerlink" href="#standalone-development" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>inference_server.py<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+</pre></div>
+</div>
+</section>
+<section id="production-with-gunicorn">
+<h4>Production with Gunicorn<a class="headerlink" href="#production-with-gunicorn" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gunicorn<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-w<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-k<span class="w"> </span>uvicorn.workers.UvicornWorker<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-b<span class="w"> </span><span class="m">0</span>.0.0.0:8000<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--access-logfile<span class="w"> </span>-<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--error-logfile<span class="w"> </span>-<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s1">&#39;inference_server:create_app()&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="docker-with-volume-mounts">
+<h4>Docker (with volume mounts)<a class="headerlink" href="#docker-with-volume-mounts" title="Link to this heading"></a></h4>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">python:3.9-slim</span>
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/app</span>
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>fastapi<span class="w"> </span>uvicorn<span class="w"> </span>torch<span class="w"> </span>torchvision
+<span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>.
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">8000</span>
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;inference_server.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--host&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>wafer-inference<span class="w"> </span>.
+docker<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span><span class="m">8000</span>:8000<span class="w"> </span>-v<span class="w"> </span>/path/to/checkpoints:/app/checkpoints<span class="w"> </span>wafer-inference
+</pre></div>
+</div>
+</section>
+<section id="kubernetes">
+<h4>Kubernetes<a class="headerlink" href="#kubernetes" title="Link to this heading"></a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wafer-inference</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wafer-inference</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">labels</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wafer-inference</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inference</span>
+<span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wafer-inference:latest</span>
+<span class="w">        </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span>
+<span class="w">        </span><span class="nt">livenessProbe</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">httpGet</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/health</span>
+<span class="w">            </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span>
+<span class="w">          </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="w">          </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="related-files">
+<h3>Related Files<a class="headerlink" href="#related-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/inference/server.py</span></code> - Main server implementation (750+ lines)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inference_server.py</span></code> - CLI entry point (180 lines)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_inference_server.py</span></code> - Comprehensive tests (260 lines)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INFERENCE_SERVER_README.md</span></code> - User-facing documentation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/models/</span></code> - Model architectures (CNN, ResNet, EfficientNet)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/data/preprocessing.py</span></code> - Image preprocessing utilities</p></li>
+</ul>
+</section>
+<section id="conclusion">
+<h3>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading"></a></h3>
+<p>The inference server is a production-ready, fully-featured REST API for wafer defect classification with:</p>
+<ul class="simple">
+<li><p>Multi-model support (CNN, ResNet, EfficientNet)</p></li>
+<li><p>Dynamic model loading</p></li>
+<li><p>Flexible input handling (base64, file upload)</p></li>
+<li><p>Comprehensive validation and error handling</p></li>
+<li><p>CORS support for web integration</p></li>
+<li><p>Async endpoints for high concurrency</p></li>
+<li><p>Full test coverage</p></li>
+<li><p>Extensive documentation</p></li>
+</ul>
+<p>It serves as improvement #15 of the 23-improvement roadmap and is ready for deployment in production environments.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="federated_learning.html" class="btn btn-neutral float-left" title="Federated Learning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference_server_readme.html" class="btn btn-neutral float-right" title="Inference Server README" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

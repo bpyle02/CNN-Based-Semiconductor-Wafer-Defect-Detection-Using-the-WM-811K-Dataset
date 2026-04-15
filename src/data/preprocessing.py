@@ -17,25 +17,25 @@ References:
     [118] Zhai et al. (2019). "S4L: Self-Supervised Semi-Supervised Learning". arXiv:1905.03670
 """
 
-from typing import Any, List, Sequence, Tuple, Optional
-from pathlib import Path
-from collections import Counter
+import logging
 import random
+from collections import Counter
+from pathlib import Path
+from typing import Any, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
 from skimage.transform import resize as skimage_resize
 from sklearn.preprocessing import LabelEncoder
-import logging
+from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
 
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from .dataset import load_dataset, KNOWN_CLASSES
+from .dataset import KNOWN_CLASSES, load_dataset
 
 
 class MixupCutmix:
@@ -65,9 +65,7 @@ class MixupCutmix:
         self.num_classes = num_classes
 
     @staticmethod
-    def _rand_bbox(
-        height: int, width: int, lam: float
-    ) -> Tuple[int, int, int, int]:
+    def _rand_bbox(height: int, width: int, lam: float) -> Tuple[int, int, int, int]:
         """Compute a random bounding box whose area ratio equals (1 - lam)."""
         cut_ratio = np.sqrt(1.0 - lam)
         cut_h = int(height * cut_ratio)
@@ -103,13 +101,19 @@ class MixupCutmix:
         roll = random.random()
         if roll < self.mixup_prob:
             # Mixup
-            lam = np.random.beta(self.mixup_alpha, self.mixup_alpha) if self.mixup_alpha > 0 else 1.0
+            lam = (
+                np.random.beta(self.mixup_alpha, self.mixup_alpha) if self.mixup_alpha > 0 else 1.0
+            )
             mixed = lam * images + (1.0 - lam) * images[indices]
             return mixed, labels, labels[indices], lam
 
         if roll < self.mixup_prob + self.cutmix_prob:
             # CutMix
-            lam = np.random.beta(self.cutmix_alpha, self.cutmix_alpha) if self.cutmix_alpha > 0 else 1.0
+            lam = (
+                np.random.beta(self.cutmix_alpha, self.cutmix_alpha)
+                if self.cutmix_alpha > 0
+                else 1.0
+            )
             _, _, height, width = images.shape
             y1, y2, x1, x2 = self._rand_bbox(height, width, lam)
             mixed = images.clone()
@@ -185,6 +189,7 @@ class ClassBalancedSampler(torch.utils.data.Sampler):
 
 class GaussianNoise:
     """Add Gaussian noise to simulate sensor measurement variability."""
+
     # Domain-specific: simulates sensor measurement variability in wafer imaging
 
     def __init__(self, mean: float = 0.0, std: float = 0.02):
@@ -220,7 +225,7 @@ class RadialDistortion:
         cy, cx = H / 2.0, W / 2.0
         y_coords = torch.arange(H, dtype=torch.float32) - cy
         x_coords = torch.arange(W, dtype=torch.float32) - cx
-        yy, xx = torch.meshgrid(y_coords, x_coords, indexing='ij')
+        yy, xx = torch.meshgrid(y_coords, x_coords, indexing="ij")
         r = torch.sqrt(xx**2 + yy**2)
         r_max = torch.sqrt(torch.tensor(cx**2 + cy**2))
         r_norm = r / r_max
@@ -253,17 +258,16 @@ class RadialJitter:
         # tensor is (C, H, W); affine_grid expects (N, C, H, W)
         x = tensor.unsqueeze(0)
         # Build 2x3 affine matrix: uniform scaling centered at origin
-        theta = torch.tensor(
-            [[scale, 0.0, 0.0],
-             [0.0, scale, 0.0]],
-            dtype=tensor.dtype
-        ).unsqueeze(0)
+        theta = torch.tensor([[scale, 0.0, 0.0], [0.0, scale, 0.0]], dtype=tensor.dtype).unsqueeze(
+            0
+        )
         grid = F.affine_grid(theta, x.size(), align_corners=False)
         out = F.grid_sample(x, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
         return out.squeeze(0)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(scale_range={self.scale_range})"
+
 
 TARGET_SIZE = (96, 96)  # 96x96 preserves defect patterns while keeping computation tractable [7]
 
@@ -299,7 +303,7 @@ class WaferMapDataset(Dataset):
         raw_maps: List[np.ndarray],
         labels: np.ndarray,
         transform: Optional[transforms.Compose] = None,
-        target_size: Tuple[int, int] = TARGET_SIZE
+        target_size: Tuple[int, int] = TARGET_SIZE,
     ) -> None:
         """
         Initialize dataset.
@@ -317,8 +321,7 @@ class WaferMapDataset(Dataset):
 
         if len(self.maps) != len(self.labels):
             raise ValueError(
-                f"Maps ({len(self.maps)}) and labels ({len(self.labels)}) "
-                "must have same length"
+                f"Maps ({len(self.maps)}) and labels ({len(self.labels)}) " "must have same length"
             )
 
     def __len__(self) -> int:
@@ -344,10 +347,7 @@ class WaferMapDataset(Dataset):
         wm = self.maps[idx]
 
         # Fast path: pre-resized + pre-normalized (see precompute_tensors.py).
-        if (
-            wm.shape == self.target_size
-            and wm.dtype in (np.float16, np.float32)
-        ):
+        if wm.shape == self.target_size and wm.dtype in (np.float16, np.float32):
             arr = wm.astype(np.float32, copy=False)
         else:
             # Original slow path for raw variable-shape wafer maps.
@@ -373,13 +373,14 @@ class PatchWaferDataset(Dataset):
     Dataset for high-resolution wafers that yields patches instead of resizing.
     Useful for preserving resolution-dependent defect signatures.
     """
+
     def __init__(
         self,
         raw_maps: List[np.ndarray],
         labels: np.ndarray,
         patch_size: int = 32,
         patches_per_wafer: int = 1,
-        transform: Optional[transforms.Compose] = None
+        transform: Optional[transforms.Compose] = None,
     ) -> None:
         self.maps = raw_maps
         self.labels = labels
@@ -394,12 +395,12 @@ class PatchWaferDataset(Dataset):
         wafer_idx = idx // self.patches_per_wafer
         wm = self.maps[wafer_idx]
         h, w = wm.shape
-        
+
         # Randomly sample a patch if wafer is larger than patch_size
         if h > self.patch_size and w > self.patch_size:
             top = np.random.randint(0, h - self.patch_size)
             left = np.random.randint(0, w - self.patch_size)
-            patch = wm[top:top+self.patch_size, left:left+self.patch_size]
+            patch = wm[top : top + self.patch_size, left : left + self.patch_size]
         else:
             # Pad or resize if smaller
             patch = skimage_resize(wm, (self.patch_size, self.patch_size), anti_aliasing=True)
@@ -416,12 +417,11 @@ class PatchWaferDataset(Dataset):
 
 
 def preprocess_wafer_maps(
-    wafer_maps: List[np.ndarray],
-    target_size: Tuple[int, int] = TARGET_SIZE
+    wafer_maps: List[np.ndarray], target_size: Tuple[int, int] = TARGET_SIZE
 ) -> List[np.ndarray]:
     """
     Resize all wafer maps to uniform size and normalize to [0, 1].
-    
+
     DEPRECATED: Preprocessing is now done lazily in WaferMapDataset.
     This function is kept for backward compatibility or one-off conversions.
 
@@ -435,9 +435,9 @@ def preprocess_wafer_maps(
     preprocessed = []
     for i, wm in enumerate(wafer_maps):
         arr = wm.astype(np.float32)
-        arr = skimage_resize(
-            arr, target_size, anti_aliasing=True, preserve_range=True
-        ).astype(np.float32)
+        arr = skimage_resize(arr, target_size, anti_aliasing=True, preserve_range=True).astype(
+            np.float32
+        )
         # WM-811K wafer maps use pixel values {0, 1, 2} representing
         # background, normal die, and defective die respectively.
         # Dividing by 2.0 normalizes to [0.0, 1.0] range.
@@ -451,7 +451,7 @@ def preprocess_wafer_maps(
 
 
 def preprocess_data(
-    dataset_path: Optional[Path] = None
+    dataset_path: Optional[Path] = None,
 ) -> Tuple[pd.DataFrame, transforms.Compose, transforms.Compose]:
     """
     Load raw dataset and filter to known classes.
@@ -464,13 +464,13 @@ def preprocess_data(
     """
     data = load_dataset(dataset_path)
 
-    labeled_mask = data['failureClass'].isin(KNOWN_CLASSES)
+    labeled_mask = data["failureClass"].isin(KNOWN_CLASSES)
     data_subset = data[labeled_mask].reset_index(drop=True)
 
     logger.info(f"\nLabeled wafers: {len(data_subset):,}  (out of {len(data):,} total)")
     logger.info(f"Dropped: {len(data) - len(data_subset):,} unlabeled / unknown wafers")
 
-    class_dist = data_subset['failureClass'].value_counts()
+    class_dist = data_subset["failureClass"].value_counts()
     logger.info("\n--- Failure Class Distribution (After Filtering) ---")
     logger.info(class_dist.to_string())
 
@@ -516,12 +516,14 @@ def get_image_transforms(augment: bool = True, domain_augment: bool = True) -> t
         ]
         if domain_augment:
             # Domain-specific augmentations for semiconductor wafer maps
-            augmentation_list.extend([
-                RadialDistortion(strength=0.1, p=0.3),
-                transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5)),
-                GaussianNoise(std=0.02),
-                transforms.RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(0.3, 3.3), value=0),
-            ])
+            augmentation_list.extend(
+                [
+                    RadialDistortion(strength=0.1, p=0.3),
+                    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.5)),
+                    GaussianNoise(std=0.02),
+                    transforms.RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(0.3, 3.3), value=0),
+                ]
+            )
         train_transform = transforms.Compose(augmentation_list)
     else:
         train_transform = transforms.Compose([])
@@ -551,10 +553,7 @@ def get_imagenet_normalize() -> transforms.Normalize:
     Returns:
         Normalize transform with ImageNet mean/std
     """
-    return transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    )
+    return transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 
 if __name__ == "__main__":

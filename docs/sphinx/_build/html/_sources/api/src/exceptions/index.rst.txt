@@ -1,0 +1,87 @@
+src.exceptions
+==============
+
+.. py:module:: src.exceptions
+
+.. autoapi-nested-parse::
+
+   Custom exception types for wafer defect detection.
+
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   src.exceptions.WaferMapError
+   src.exceptions.DataLoadError
+   src.exceptions.ModelError
+   src.exceptions.TrainingError
+   src.exceptions.InferenceError
+   src.exceptions.FederatedError
+
+
+Module Contents
+---------------
+
+.. py:exception:: WaferMapError
+
+   Bases: :py:obj:`Exception`
+
+
+   Base exception for wafer map operations.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: DataLoadError
+
+   Bases: :py:obj:`WaferMapError`
+
+
+   Raised when data cannot be loaded or parsed.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: ModelError
+
+   Bases: :py:obj:`WaferMapError`
+
+
+   Raised when model initialization/forward pass fails.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: TrainingError
+
+   Bases: :py:obj:`WaferMapError`
+
+
+   Raised during training/validation.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: InferenceError
+
+   Bases: :py:obj:`WaferMapError`
+
+
+   Raised during inference.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: FederatedError
+
+   Bases: :py:obj:`WaferMapError`
+
+
+   Raised during federated learning operations.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+

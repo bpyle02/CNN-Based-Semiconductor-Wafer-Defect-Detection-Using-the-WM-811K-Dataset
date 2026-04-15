@@ -161,15 +161,19 @@ def _seed_bootstrap(
     return {"mean": mean, "ci_lo": lo, "ci_hi": hi, "n": int(vals.size)}
 
 
-def bootstrap_from_archive(
-    metrics_dir: Path, n_bootstrap: int, seed: int
-) -> Dict[str, Any]:
+def bootstrap_from_archive(metrics_dir: Path, n_bootstrap: int, seed: int) -> Dict[str, Any]:
     rng = np.random.default_rng(seed)
     archives = _discover_archives(metrics_dir)
     if not archives:
-        raise FileNotFoundError(f"No archive JSON files matching <cond>_seed<N>.json in {metrics_dir}")
+        raise FileNotFoundError(
+            f"No archive JSON files matching <cond>_seed<N>.json in {metrics_dir}"
+        )
 
-    results: Dict[str, Any] = {"mode": "seed_bootstrap", "source": str(metrics_dir), "conditions": {}}
+    results: Dict[str, Any] = {
+        "mode": "seed_bootstrap",
+        "source": str(metrics_dir),
+        "conditions": {},
+    }
     for cond, seed_paths in sorted(archives.items()):
         runs = [_load_run(p) for _, p in sorted(seed_paths.items())]
         cond_out: Dict[str, Any] = {"seeds": sorted(seed_paths.keys()), "n_seeds": len(runs)}
@@ -265,10 +269,26 @@ def render_markdown(results: Dict[str, Any]) -> str:
     lines.append("| Condition | Macro F1 | Weighted F1 | Accuracy | ECE |")
     lines.append("|---|---|---|---|---|")
     for cond, m in sorted(results.get("conditions", {}).items()):
-        mf1 = _fmt_ci(m.get("macro_f1_mean", float("nan")), m.get("macro_f1_ci_lo", float("nan")), m.get("macro_f1_ci_hi", float("nan")))
-        wf1 = _fmt_ci(m.get("weighted_f1_mean", float("nan")), m.get("weighted_f1_ci_lo", float("nan")), m.get("weighted_f1_ci_hi", float("nan")))
-        acc = _fmt_ci(m.get("accuracy_mean", float("nan")), m.get("accuracy_ci_lo", float("nan")), m.get("accuracy_ci_hi", float("nan")))
-        ece = _fmt_ci(m.get("ece_mean", float("nan")), m.get("ece_ci_lo", float("nan")), m.get("ece_ci_hi", float("nan")))
+        mf1 = _fmt_ci(
+            m.get("macro_f1_mean", float("nan")),
+            m.get("macro_f1_ci_lo", float("nan")),
+            m.get("macro_f1_ci_hi", float("nan")),
+        )
+        wf1 = _fmt_ci(
+            m.get("weighted_f1_mean", float("nan")),
+            m.get("weighted_f1_ci_lo", float("nan")),
+            m.get("weighted_f1_ci_hi", float("nan")),
+        )
+        acc = _fmt_ci(
+            m.get("accuracy_mean", float("nan")),
+            m.get("accuracy_ci_lo", float("nan")),
+            m.get("accuracy_ci_hi", float("nan")),
+        )
+        ece = _fmt_ci(
+            m.get("ece_mean", float("nan")),
+            m.get("ece_ci_lo", float("nan")),
+            m.get("ece_ci_hi", float("nan")),
+        )
         lines.append(f"| {cond} | {mf1} | {wf1} | {acc} | {ece} |")
     lines.append("")
     return "\n".join(lines) + "\n"
@@ -280,27 +300,43 @@ def render_markdown(results: Dict[str, Any]) -> str:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     src = parser.add_mutually_exclusive_group()
-    src.add_argument("--metrics-dir", type=Path, default=DEFAULT_METRICS_DIR,
-                     help="Archive dir produced by run_rare_class_study.py")
-    src.add_argument("--predictions", type=Path, default=None,
-                     help="Per-sample JSON or .npz with {preds, labels}")
-    parser.add_argument("--name", default="model",
-                        help="Name for the --predictions condition in output (default: model)")
+    src.add_argument(
+        "--metrics-dir",
+        type=Path,
+        default=DEFAULT_METRICS_DIR,
+        help="Archive dir produced by run_rare_class_study.py",
+    )
+    src.add_argument(
+        "--predictions",
+        type=Path,
+        default=None,
+        help="Per-sample JSON or .npz with {preds, labels}",
+    )
+    parser.add_argument(
+        "--name",
+        default="model",
+        help="Name for the --predictions condition in output (default: model)",
+    )
     parser.add_argument("--n-bootstrap", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out-json", type=Path, default=DEFAULT_CI_JSON)
     parser.add_argument("--out-md", type=Path, default=DEFAULT_CI_MD)
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S"
+    )
 
     if args.predictions is not None:
         preds, labels = _load_predictions(args.predictions)
         logger.info("Per-sample mode: %d samples from %s", preds.size, args.predictions)
-        results = bootstrap_from_predictions(preds, labels, args.n_bootstrap, args.seed, name=args.name)
+        results = bootstrap_from_predictions(
+            preds, labels, args.n_bootstrap, args.seed, name=args.name
+        )
     else:
         logger.info("Archive mode: scanning %s", args.metrics_dir)
         results = bootstrap_from_archive(args.metrics_dir, args.n_bootstrap, args.seed)

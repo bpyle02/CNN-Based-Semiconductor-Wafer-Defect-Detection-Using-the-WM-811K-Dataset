@@ -1,0 +1,155 @@
+src.models.ride
+===============
+
+.. py:module:: src.models.ride
+
+.. autoapi-nested-parse::
+
+   RIDE: Routing Diverse Distributed Experts for Long-Tailed Recognition.
+
+   Uses K expert classifiers with a shared backbone. A gating network routes
+   each sample to the appropriate expert based on learned class-frequency
+   awareness. Experts are encouraged to be diverse via a diversity loss.
+
+   Reference: [181] Wang et al. (2022). "RIDE: Routing Diverse Distributed
+       Experts". arXiv:2208.09043
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.models.ride.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.models.ride.RIDEModel
+   src.models.ride.RIDELoss
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.models.ride.build_ride_model
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: RIDEModel(backbone: torch.nn.Module, feature_dim: int, num_classes: int = 9, num_experts: int = 3, reduction: int = 4)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   RIDE: Routing Diverse Distributed Experts for Long-Tailed Recognition.
+
+   Uses K expert classifiers with a shared backbone. A gating network routes
+   each sample to the appropriate expert based on learned class-frequency
+   awareness. Experts are encouraged to be diverse via a diversity loss.
+
+   Reference: [181] Wang et al. (2022). arXiv:2208.09043
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: backbone
+
+
+   .. py:attribute:: num_experts
+      :value: 3
+
+
+
+   .. py:attribute:: num_classes
+      :value: 9
+
+
+
+   .. py:attribute:: feature_dim
+
+
+   .. py:attribute:: experts
+
+
+   .. py:attribute:: gate
+
+
+   .. py:method:: forward(x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]
+
+      :param x: (B, C, H, W) input images
+
+      :returns: (B, num_classes) -- gated combination of expert outputs
+                expert_outputs: (B, num_experts, num_classes) -- individual expert logits
+      :rtype: logits
+
+
+
+.. py:class:: RIDELoss(criterion: torch.nn.Module, diversity_weight: float = 0.1, num_experts: int = 3)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   RIDE training loss: classification + diversity.
+
+   L = L_cls + lambda_div * L_diversity
+
+   L_cls: standard classification loss on gated output
+   L_diversity: encourages experts to make different predictions
+                via KL divergence between expert pairs
+
+   Reference: [181] Wang et al. (2022). arXiv:2208.09043
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: criterion
+
+
+   .. py:attribute:: diversity_weight
+      :value: 0.1
+
+
+
+   .. py:attribute:: num_experts
+      :value: 3
+
+
+
+   .. py:method:: forward(logits: torch.Tensor, expert_outputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+      Compute RIDE loss.
+
+      :param logits: (B, num_classes) gated combined output
+      :param expert_outputs: (B, num_experts, num_classes) individual expert logits
+      :param targets: (B,) integer class labels
+
+      :returns: Scalar loss = cls_loss + diversity_weight * diversity_loss
+
+
+
+.. py:function:: build_ride_model(backbone_name: str, num_classes: int = 9, num_experts: int = 3, reduction: int = 4, device: str = 'cpu') -> RIDEModel
+
+   Factory to create RIDE model from a backbone name.
+
+   Creates the appropriate backbone (WaferCNN, ResNet, etc.), determines
+   feature_dim, and wraps in RIDEModel.
+
+   :param backbone_name: 'cnn', 'resnet', 'efficientnet', 'vit', 'swin'
+   :param num_classes: number of output classes
+   :param num_experts: number of expert classifiers
+   :param reduction: gate hidden-dimension reduction factor
+   :param device: target device
+
+   :returns: RIDEModel instance on the specified device.
+
+

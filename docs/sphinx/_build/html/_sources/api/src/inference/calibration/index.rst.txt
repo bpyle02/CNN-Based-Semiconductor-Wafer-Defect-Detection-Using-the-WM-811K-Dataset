@@ -1,0 +1,86 @@
+src.inference.calibration
+=========================
+
+.. py:module:: src.inference.calibration
+
+.. autoapi-nested-parse::
+
+   Temperature scaling for post-hoc probability calibration.
+
+   Fits a single scalar ``T`` on a held-out validation set by minimizing
+   negative log-likelihood of softmax(logits / T).  Scaling logits by a
+   learned temperature does not change ``argmax`` predictions but it does
+   repair over/under-confident softmax outputs, which matters for ECE,
+   threshold-based decisioning, and downstream ensembling.
+
+   Reference:
+       Guo, Pleiss, Sun, Weinberger (2017). "On Calibration of Modern
+       Neural Networks." ICML. arXiv:1706.04599
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.calibration.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.inference.calibration.TemperatureScaling
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: TemperatureScaling
+
+   Post-hoc calibration by scaling logits by learned temperature T.
+
+   Fit T by minimizing NLL on a held-out validation set. T > 1 softens,
+   T < 1 sharpens. Does not change argmax predictions but makes softmax
+   probabilities trustworthy.
+
+
+   .. py:attribute:: temperature
+      :type:  float
+      :value: 1.0
+
+
+
+   .. py:attribute:: fitted
+      :type:  bool
+      :value: False
+
+
+
+   .. py:method:: fit(logits: Union[torch.Tensor, numpy.ndarray], labels: Union[torch.Tensor, numpy.ndarray]) -> float
+
+      Fit temperature by minimizing NLL on (logits, labels).
+
+      :param logits: ``(N, num_classes)`` raw model outputs (pre-softmax).
+      :param labels: ``(N,)`` integer class labels.
+
+      :returns: The fitted temperature scalar.
+
+
+
+   .. py:method:: transform(logits: torch.Tensor) -> torch.Tensor
+
+      Return logits divided by the fitted temperature.
+
+
+
+   .. py:method:: transform_probs(logits: torch.Tensor) -> torch.Tensor
+
+      Return calibrated softmax probabilities.
+
+
+

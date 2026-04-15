@@ -1,0 +1,27 @@
+src.cli.commands.cross_validate
+===============================
+
+.. py:module:: src.cli.commands.cross_validate
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli cross-validate`` — forwards to ``scripts/cross_validate.py``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.cross_validate.cross_validate
+
+
+Module Contents
+---------------
+
+.. py:function:: cross_validate(ctx: typer.Context) -> None
+
+   K-fold cross-validation. Flags forwarded to scripts/cross_validate.py.
+
+

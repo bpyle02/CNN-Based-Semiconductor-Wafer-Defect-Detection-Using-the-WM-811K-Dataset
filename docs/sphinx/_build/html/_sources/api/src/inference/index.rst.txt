@@ -1,0 +1,48 @@
+src.inference
+=============
+
+.. py:module:: src.inference
+
+.. autoapi-nested-parse::
+
+   Model inference and interpretability utilities.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/inference/calibration/index
+   /api/src/inference/gradcam/index
+   /api/src/inference/ood/index
+   /api/src/inference/server/index
+   /api/src/inference/tta/index
+   /api/src/inference/uncertainty/index
+   /api/src/inference/visualize/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.create_app
+   src.inference.ModelServer
+   src.inference.ModelType
+
+
+Package Contents
+----------------
+
+.. py:data:: create_app
+   :type:  Any
+
+.. py:data:: ModelServer
+   :type:  Any
+
+.. py:data:: ModelType
+   :type:  Any
+

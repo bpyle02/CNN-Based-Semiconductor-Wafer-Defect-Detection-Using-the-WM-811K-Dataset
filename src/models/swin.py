@@ -9,15 +9,14 @@ References:
           using Shifted Windows". arXiv:2103.14030
 """
 
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 
 
-def drop_path(
-    x: torch.Tensor, drop_prob: float = 0.0, training: bool = False
-) -> torch.Tensor:
+def drop_path(x: torch.Tensor, drop_prob: float = 0.0, training: bool = False) -> torch.Tensor:
     """Stochastic depth: randomly drop entire residual branch during training.
 
     Per-sample binary mask applied to the batch dimension so that each sample
@@ -78,9 +77,7 @@ def window_partition(x: torch.Tensor, window_size: int) -> torch.Tensor:
     return x
 
 
-def window_reverse(
-    windows: torch.Tensor, window_size: int, H: int, W: int
-) -> torch.Tensor:
+def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int) -> torch.Tensor:
     """Reverse window partition back to feature map.
 
     Args:
@@ -177,7 +174,7 @@ class WindowAttention(nn.Module):
         self.window_size = window_size
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
 
         # Relative position bias table: (2*Wh-1) * (2*Ww-1) entries, one per head
         self.relative_position_bias_table = nn.Parameter(
@@ -209,9 +206,7 @@ class WindowAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_dropout)
 
-    def forward(
-        self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Compute window attention with relative position bias.
 
         Args:
@@ -363,9 +358,7 @@ class SwinTransformerBlock(nn.Module):
         # Create pairwise mask: same region = 0, different = -100
         # (num_windows, N, 1) - (num_windows, 1, N) -> (num_windows, N, N)
         attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
-        attn_mask = attn_mask.masked_fill(attn_mask != 0, -100.0).masked_fill(
-            attn_mask == 0, 0.0
-        )
+        attn_mask = attn_mask.masked_fill(attn_mask != 0, -100.0).masked_fill(attn_mask == 0, 0.0)
         return attn_mask
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -384,9 +377,7 @@ class SwinTransformerBlock(nn.Module):
 
         # Cyclic shift for shifted window attention
         if self.shift_size > 0:
-            shifted_x = torch.roll(
-                x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2)
-            )
+            shifted_x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
         else:
             shifted_x = x
 
@@ -407,9 +398,7 @@ class SwinTransformerBlock(nn.Module):
 
         # Reverse cyclic shift
         if self.shift_size > 0:
-            x = torch.roll(
-                shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2)
-            )
+            x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
         else:
             x = shifted_x
 
@@ -567,8 +556,8 @@ class SwinTransformer(nn.Module):
         self.stages = nn.ModuleList()
         block_idx = 0
         for i_stage in range(self.num_stages):
-            stage_dim = embed_dim * (2 ** i_stage)
-            stage_resolution = patches_resolution // (2 ** i_stage)
+            stage_dim = embed_dim * (2**i_stage)
+            stage_resolution = patches_resolution // (2**i_stage)
 
             # For the last stage, adapt window_size if resolution < window_size
             stage_window_size = min(window_size, stage_resolution)

@@ -19,16 +19,17 @@ References:
     [48] Srivastava et al. (2014). "Dropout". JMLR
 """
 
-from typing import Tuple, Dict, List, Optional, Union
 import logging
+from typing import Dict, List, Optional, Tuple, Union
+
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.metrics import brier_score_loss
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +90,7 @@ class MCDropoutModel:
         self,
         x: torch.Tensor,
         return_dist: bool = False,
-    ) -> Union[
-        Tuple[np.ndarray, np.ndarray],
-        Tuple[np.ndarray, np.ndarray, np.ndarray]
-    ]:
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
         """
         Run MC Dropout inference T times and compute uncertainty estimates.
 
@@ -169,9 +167,7 @@ class MCDropoutModel:
             - std_probs: Standard deviation of probabilities (B, C)
             - entropy: Predictive entropy as uncertainty (B,)
         """
-        mean_probs, _, probs_dist = self.predict_with_uncertainty(
-            x, return_dist=True
-        )
+        mean_probs, _, probs_dist = self.predict_with_uncertainty(x, return_dist=True)
         std_probs = probs_dist.std(axis=1)  # (B, C)
 
         # Entropy as predictive uncertainty
@@ -222,11 +218,14 @@ class MCDropoutModel:
         return np.exp(x) / np.exp(x).sum(axis=axis, keepdims=True)
 
 
-class TemperatureScaler(nn.Module):  # Ref [29]: Guo et al. — temperature scaling for post-hoc calibration
+class TemperatureScaler(
+    nn.Module
+):  # Ref [29]: Guo et al. — temperature scaling for post-hoc calibration
     """
     Temperature scaling for probability calibration.
     Learns a single scalar parameter T to scale logits before softmax.
     """
+
     def __init__(self):
         super().__init__()
         self.temperature = nn.Parameter(torch.ones(1) * 1.5)
@@ -234,17 +233,19 @@ class TemperatureScaler(nn.Module):  # Ref [29]: Guo et al. — temperature scal
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
         return logits / self.temperature
 
-    def fit(self, logits: torch.Tensor, labels: torch.Tensor, lr: float = 0.01, max_iter: int = 100):
+    def fit(
+        self, logits: torch.Tensor, labels: torch.Tensor, lr: float = 0.01, max_iter: int = 100
+    ):
         """Fit temperature T on a validation set using NLL loss."""
         self.train()
         optimizer = torch.optim.LBFGS([self.temperature], lr=lr, max_iter=max_iter)
-        
+
         def eval():
             optimizer.zero_grad()
             loss = F.cross_entropy(self.forward(logits), labels)
             loss.backward()
             return loss
-        
+
         optimizer.step(eval)
         self.eval()
         return self.temperature.item()
@@ -283,24 +284,24 @@ class UncertaintyEstimator:
     def calibrate(self, dataloader: DataLoader):
         """
         Fit temperature scaling on a validation/calibration set.
-        
+
         Args:
             dataloader: DataLoader with (images, labels) for calibration.
         """
         self.mc_model.model.eval()
         all_logits = []
         all_labels = []
-        
+
         with torch.no_grad():
             for x, y in dataloader:
                 x = x.to(self.device)
                 logits = self.mc_model.model(x)
                 all_logits.append(logits.cpu())
                 all_labels.append(y)
-        
+
         logits = torch.cat(all_logits)
         labels = torch.cat(all_labels)
-        
+
         self.temp_scaler = TemperatureScaler().to(self.device)
         temp = self.temp_scaler.fit(logits.to(self.device), labels.to(self.device))
         logger.info(f"Temperature scaling fitted: T = {temp:.4f}")
@@ -346,9 +347,7 @@ class UncertaintyEstimator:
             x = x.to(self.device)
 
             # Get MC estimates
-            mean_p, std_p, entropy = (
-                self.predict_with_maybe_temp(x, use_temp_scaling)
-            )
+            mean_p, std_p, entropy = self.predict_with_maybe_temp(x, use_temp_scaling)
 
             # Epistemic uncertainty from variance
             eps_unc = std_p.mean(axis=1)  # Average across classes
@@ -359,14 +358,14 @@ class UncertaintyEstimator:
             predictions.extend(mean_p.argmax(axis=1))
 
         result = {
-            'uncertainty': np.array(uncertainties),
-            'mean_probs': np.array(mean_probs_list),
-            'entropy': np.array(entropies),
-            'predictions': np.array(predictions),
+            "uncertainty": np.array(uncertainties),
+            "mean_probs": np.array(mean_probs_list),
+            "entropy": np.array(entropies),
+            "predictions": np.array(predictions),
         }
 
         if has_labels:
-            result['true_labels'] = np.array(true_labels)
+            result["true_labels"] = np.array(true_labels)
 
         return result
 
@@ -374,11 +373,11 @@ class UncertaintyEstimator:
         """Internal helper to apply temperature scaling if available."""
         if not use_temp_scaling or self.temp_scaler is None:
             return self.mc_model.predict_proba_with_uncertainty(x)
-        
+
         # We need to manually do MC dropout to apply temperature scaling before softmax
         self.mc_model.model.eval()
         self.mc_model._enable_dropout()
-        
+
         logits_dist = []
         with torch.no_grad():
             for _ in range(self.mc_model.num_iterations):
@@ -386,21 +385,21 @@ class UncertaintyEstimator:
                 # Apply temperature scaling
                 scaled_logits = self.temp_scaler(logits)
                 logits_dist.append(scaled_logits.cpu().numpy())
-        
+
         logits_dist = np.array(logits_dist)  # (T, B, C)
         logits_dist = np.transpose(logits_dist, (1, 0, 2))  # (B, T, C)
-        
+
         probs_dist = self.mc_model._softmax_numpy(logits_dist)
         mean_probs = probs_dist.mean(axis=1)
         std_probs = probs_dist.std(axis=1)
-        
+
         # Entropy
         mean_probs64 = mean_probs.astype(np.float64, copy=False)
         entropy = -np.sum(
             mean_probs64 * np.log(np.clip(mean_probs64, 1e-12, 1.0)),
             axis=1,
         )
-        
+
         self.mc_model._disable_dropout()
         return mean_probs, std_probs, entropy
 
@@ -408,7 +407,7 @@ class UncertaintyEstimator:
         self,
         dataloader: DataLoader,
         k: int = 100,
-        metric: str = 'entropy',
+        metric: str = "entropy",
     ) -> Dict[str, np.ndarray]:
         """
         Get top-K most uncertain predictions (for active learning).
@@ -428,18 +427,18 @@ class UncertaintyEstimator:
             - 'predictions': Shape (K, C), predicted probabilities
             - 'top2_margin': Shape (K,), margin between top 2 classes
         """
-        if metric not in ['entropy', 'variance', 'margin']:
+        if metric not in ["entropy", "variance", "margin"]:
             raise ValueError(f"metric must be 'entropy', 'variance', or 'margin'")
 
         results = self.estimate_dataset_uncertainty(dataloader)
-        mean_probs = results['mean_probs']
+        mean_probs = results["mean_probs"]
 
         # Compute requested metric
-        if metric == 'entropy':
-            scores = results['entropy']
-        elif metric == 'variance':
+        if metric == "entropy":
+            scores = results["entropy"]
+        elif metric == "variance":
             scores = mean_probs.var(axis=1)
-        elif metric == 'margin':
+        elif metric == "margin":
             # Margin: difference between top-2 classes
             top2_probs = np.partition(mean_probs, -2, axis=1)[:, -2:]
             scores = 1.0 - (top2_probs.max(axis=1) - top2_probs.min(axis=1))
@@ -448,12 +447,12 @@ class UncertaintyEstimator:
         top_k_indices = np.argsort(scores)[-k:][::-1]
 
         return {
-            'indices': top_k_indices,
-            'uncertainties': scores[top_k_indices],
-            'predictions': mean_probs[top_k_indices],
-            'top2_margin': 1.0 - np.diff(
-                np.partition(mean_probs[top_k_indices], -2, axis=1)[:, -2:],
-                axis=1
+            "indices": top_k_indices,
+            "uncertainties": scores[top_k_indices],
+            "predictions": mean_probs[top_k_indices],
+            "top2_margin": 1.0
+            - np.diff(
+                np.partition(mean_probs[top_k_indices], -2, axis=1)[:, -2:], axis=1
             ).flatten(),
         }
 
@@ -479,17 +478,15 @@ class UncertaintyEstimator:
         Returns:
             Dictionary with calibration metrics
         """
-        results = self.estimate_dataset_uncertainty(
-            dataloader, return_predictions=True
-        )
+        results = self.estimate_dataset_uncertainty(dataloader, return_predictions=True)
 
-        if 'true_labels' not in results:
+        if "true_labels" not in results:
             raise ValueError("DataLoader must provide (x, y) pairs for calibration")
 
-        true_labels = results['true_labels']
-        mean_probs = results['mean_probs']
-        uncertainties = results['uncertainty']
-        predictions = results['predictions']
+        true_labels = results["true_labels"]
+        mean_probs = results["mean_probs"]
+        uncertainties = results["uncertainty"]
+        predictions = results["predictions"]
 
         # Accuracy per sample
         correct = (predictions == true_labels).astype(np.float32)
@@ -520,11 +517,11 @@ class UncertaintyEstimator:
         correlation = np.corrcoef(uncertainties, correct)[0, 1]
 
         return {
-            'brier_score': float(brier),
-            'ece': float(ece),
-            'uncertainty_accuracy_correlation': float(correlation),
-            'mean_uncertainty': float(uncertainties.mean()),
-            'std_uncertainty': float(uncertainties.std()),
+            "brier_score": float(brier),
+            "ece": float(ece),
+            "uncertainty_accuracy_correlation": float(correlation),
+            "mean_uncertainty": float(uncertainties.mean()),
+            "std_uncertainty": float(uncertainties.std()),
         }
 
 
@@ -552,16 +549,16 @@ def plot_uncertainty_distribution(
         figsize: Figure size (width, height)
     """
     fig, axes = plt.subplots(2, 2, figsize=figsize)
-    fig.suptitle('Monte Carlo Dropout Uncertainty Analysis', fontsize=16, fontweight='bold')
+    fig.suptitle("Monte Carlo Dropout Uncertainty Analysis", fontsize=16, fontweight="bold")
 
     # 1. Uncertainty histogram
     ax = axes[0, 0]
-    ax.hist(uncertainties, bins=30, color='steelblue', alpha=0.7, edgecolor='black')
-    ax.axvline(uncertainties.mean(), color='red', linestyle='--', linewidth=2, label='Mean')
-    ax.axvline(np.median(uncertainties), color='green', linestyle='--', linewidth=2, label='Median')
-    ax.set_xlabel('Epistemic Uncertainty')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Uncertainty Distribution')
+    ax.hist(uncertainties, bins=30, color="steelblue", alpha=0.7, edgecolor="black")
+    ax.axvline(uncertainties.mean(), color="red", linestyle="--", linewidth=2, label="Mean")
+    ax.axvline(np.median(uncertainties), color="green", linestyle="--", linewidth=2, label="Median")
+    ax.set_xlabel("Epistemic Uncertainty")
+    ax.set_ylabel("Frequency")
+    ax.set_title("Uncertainty Distribution")
     ax.legend()
     ax.grid(True, alpha=0.3)
 
@@ -570,21 +567,30 @@ def plot_uncertainty_distribution(
         ax = axes[0, 1]
         confidences = predictions.max(axis=1)
         ax.scatter(confidences, uncertainties, alpha=0.5, s=20)
-        ax.set_xlabel('Prediction Confidence')
-        ax.set_ylabel('Epistemic Uncertainty')
-        ax.set_title('Uncertainty vs. Confidence (Calibration)')
+        ax.set_xlabel("Prediction Confidence")
+        ax.set_ylabel("Epistemic Uncertainty")
+        ax.set_title("Uncertainty vs. Confidence (Calibration)")
         ax.grid(True, alpha=0.3)
 
         # Add correlation
         corr = np.corrcoef(confidences, uncertainties)[0, 1]
         ax.text(
-            0.05, 0.95, f'Correlation: {corr:.3f}',
-            transform=ax.transAxes, verticalalignment='top',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            0.05,
+            0.95,
+            f"Correlation: {corr:.3f}",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
         )
     else:
-        axes[0, 1].text(0.5, 0.5, 'Provide predictions for calibration plot',
-                        ha='center', va='center', transform=axes[0, 1].transAxes)
+        axes[0, 1].text(
+            0.5,
+            0.5,
+            "Provide predictions for calibration plot",
+            ha="center",
+            va="center",
+            transform=axes[0, 1].transAxes,
+        )
 
     # 3. Per-class uncertainty
     if predictions is not None and class_names is not None:
@@ -594,13 +600,19 @@ def plot_uncertainty_distribution(
             uncertainties[predicted_classes == i] for i in range(predictions.shape[1])
         ]
         bp = ax.boxplot(class_uncertainties, labels=class_names)
-        ax.set_ylabel('Epistemic Uncertainty')
-        ax.set_title('Uncertainty by Predicted Class')
-        ax.tick_params(axis='x', rotation=45)
-        ax.grid(True, alpha=0.3, axis='y')
+        ax.set_ylabel("Epistemic Uncertainty")
+        ax.set_title("Uncertainty by Predicted Class")
+        ax.tick_params(axis="x", rotation=45)
+        ax.grid(True, alpha=0.3, axis="y")
     else:
-        axes[1, 0].text(0.5, 0.5, 'Provide predictions and class names',
-                        ha='center', va='center', transform=axes[1, 0].transAxes)
+        axes[1, 0].text(
+            0.5,
+            0.5,
+            "Provide predictions and class names",
+            ha="center",
+            va="center",
+            transform=axes[1, 0].transAxes,
+        )
 
     # 4. Uncertainty vs. correctness
     if true_labels is not None and predictions is not None:
@@ -613,27 +625,33 @@ def plot_uncertainty_distribution(
         incorrect_unc = uncertainties[correct == 0]
 
         parts = ax.violinplot(
-            [correct_unc, incorrect_unc],
-            positions=[0, 1],
-            showmeans=True,
-            showmedians=True
+            [correct_unc, incorrect_unc], positions=[0, 1], showmeans=True, showmedians=True
         )
         ax.set_xticks([0, 1])
-        ax.set_xticklabels(['Correct', 'Incorrect'])
-        ax.set_ylabel('Epistemic Uncertainty')
-        ax.set_title('Uncertainty by Prediction Correctness')
-        ax.grid(True, alpha=0.3, axis='y')
+        ax.set_xticklabels(["Correct", "Incorrect"])
+        ax.set_ylabel("Epistemic Uncertainty")
+        ax.set_title("Uncertainty by Prediction Correctness")
+        ax.grid(True, alpha=0.3, axis="y")
 
         # Correlation
         corr = np.corrcoef(correct, uncertainties)[0, 1]
         ax.text(
-            0.05, 0.95, f'Correlation: {corr:.3f}',
-            transform=ax.transAxes, verticalalignment='top',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            0.05,
+            0.95,
+            f"Correlation: {corr:.3f}",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
         )
     else:
-        axes[1, 1].text(0.5, 0.5, 'Provide true labels and predictions',
-                        ha='center', va='center', transform=axes[1, 1].transAxes)
+        axes[1, 1].text(
+            0.5,
+            0.5,
+            "Provide true labels and predictions",
+            ha="center",
+            va="center",
+            transform=axes[1, 1].transAxes,
+        )
 
     plt.tight_layout()
     plt.show()

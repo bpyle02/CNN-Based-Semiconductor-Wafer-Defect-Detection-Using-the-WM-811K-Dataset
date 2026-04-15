@@ -1,0 +1,267 @@
+src.training.losses
+===================
+
+.. py:module:: src.training.losses
+
+.. autoapi-nested-parse::
+
+   Custom loss functions and builders for training on imbalanced datasets.
+
+   .. rubric:: References
+
+   [15] Lin et al. (2017). "Focal Loss for Dense Object Detection". arXiv:1708.02002
+   [16] Cui et al. (2019). "Class-Balanced Loss". arXiv:1901.05555
+   [19] He & Garcia (2009). "Learning from Imbalanced Data". DOI:10.1109/TKDE.2008.239
+   [20] Muller et al. (2019). "When Does Label Smoothing Help?". arXiv:1906.02629
+   [73] Cao et al. (2019). "Learning Imbalanced Datasets with Label-Distribution-Aware Margin Loss". arXiv:1906.07413
+   [79] Deng et al. (2019). "ArcFace: Additive Angular Margin Loss". arXiv:1801.07698
+   [80] Wang et al. (2018). "CosFace: Large Margin Cosine Loss". arXiv:1801.09414
+   [81] Wen et al. (2016). "Center Loss for Face Recognition". ECCV
+   [83] Wang et al. (2019). "Multi-Similarity Loss". arXiv:1904.06627
+   [84] Kim et al. (2020). "Proxy Anchor Loss for Deep Metric Learning". arXiv:2003.13911
+   [131] Sudre et al. (2017). "Generalised Dice Loss". arXiv:1707.03237
+   [132] Salehi et al. (2017). "Tversky Loss". arXiv:1706.05721
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.training.losses.FocalLoss
+   src.training.losses.LogitAdjustedLoss
+   src.training.losses.DiceLoss
+   src.training.losses.TverskyLoss
+   src.training.losses.CosineClassifier
+   src.training.losses.CostSensitiveCE
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.training.losses.build_cost_matrix_wm811k
+   src.training.losses.build_classification_loss
+
+
+Module Contents
+---------------
+
+.. py:class:: FocalLoss(weight: Optional[torch.Tensor] = None, gamma: float = 2.0, reduction: str = 'mean', label_smoothing: float = 0.0, moderate_weights: bool = True)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Focal loss for addressing class imbalance.
+
+   The loss down-weights easy examples by scaling the standard cross-entropy
+   term with ``(1 - pt) ** gamma``.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: gamma
+      :value: 2.0
+
+
+
+   .. py:attribute:: reduction
+      :value: 'mean'
+
+
+
+   .. py:attribute:: label_smoothing
+      :value: 0.0
+
+
+
+   .. py:method:: forward(inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+
+.. py:class:: LogitAdjustedLoss(class_frequencies: torch.Tensor, tau: float = 1.0, reduction: str = 'mean')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Logit-adjusted softmax cross-entropy for long-tail classification.
+
+   Adds log(class_prior) to logits before computing CE, correcting the
+   decision boundary shift caused by class imbalance. Fisher-consistent
+   for balanced error rate.
+
+   L = CE(logits + tau * log(pi), y)
+
+   Reference: Menon et al. (2021). "Long-tail learning via logit adjustment". arXiv:2007.07314
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: tau
+      :value: 1.0
+
+
+
+   .. py:attribute:: reduction
+      :value: 'mean'
+
+
+
+   .. py:method:: forward(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+
+.. py:class:: DiceLoss(smooth: float = 1.0, reduction: str = 'mean')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Dice loss for multi-class classification.
+
+   Treats classification as soft set-overlap optimization.
+   L_c = 1 - (2 * sum(p_c * y_c) + smooth) / (sum(p_c) + sum(y_c) + smooth)
+
+   Reference: [131] Sudre et al. (2017). "Generalised Dice Loss". arXiv:1707.03237
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: smooth
+      :value: 1.0
+
+
+
+   .. py:attribute:: reduction
+      :value: 'mean'
+
+
+
+   .. py:method:: forward(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+
+.. py:class:: TverskyLoss(alpha: float = 0.3, beta: float = 0.7, smooth: float = 1.0, reduction: str = 'mean')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Tversky loss with controllable FP/FN tradeoff.
+
+   Generalizes Dice loss with alpha (FP weight) and beta (FN weight).
+   Setting alpha=beta=0.5 recovers Dice loss.
+   Setting alpha<beta penalizes false negatives more (better for recall on rare classes).
+
+   Reference: [132] Salehi et al. (2017). "Tversky Loss". arXiv:1706.05721
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: alpha
+      :value: 0.3
+
+
+
+   .. py:attribute:: beta
+      :value: 0.7
+
+
+
+   .. py:attribute:: smooth
+      :value: 1.0
+
+
+
+   .. py:attribute:: reduction
+      :value: 'mean'
+
+
+
+   .. py:method:: forward(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+
+.. py:class:: CosineClassifier(in_features: int, num_classes: int, temperature: float = 16.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Cosine similarity classifier with learnable temperature.
+
+   Replaces standard Linear(in, out) with normalized weight vectors and
+   cosine similarity, preventing magnitude bias in imbalanced settings.
+
+   logits = temperature * cos(features, W) = temperature * (F/||F|| . W/||W||)
+
+   References: [79] Deng et al. (2019). "ArcFace". arXiv:1801.07698
+               [80] Wang et al. (2018). "CosFace". arXiv:1801.09414
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: weight
+
+
+   .. py:attribute:: temperature
+
+
+   .. py:method:: forward(features: torch.Tensor) -> torch.Tensor
+
+
+.. py:class:: CostSensitiveCE(cost_matrix: torch.Tensor, class_weights: Optional[torch.Tensor] = None, reduction: str = 'mean')
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Cross-entropy with a per-class-pair misclassification cost matrix.
+
+   The cost matrix ``cost[true, pred]`` specifies the penalty for predicting
+   class ``pred`` when the true class is ``true``. The default (identity on
+   diagonal, 1 elsewhere) recovers vanilla cross-entropy. Off-diagonal
+   entries can be raised to express domain-specific priorities, e.g. a
+   missed Near-full pattern on a wafer is far costlier than confusing two
+   visually similar edge-localized patterns.
+
+   Formally, for softmax probabilities p_k(x) and true label y,
+       L(x, y) = - sum_k cost[y, k] * log p_k(x)
+   when reduction='mean' we average over the batch. This matches the
+   cost-sensitive CE of Elkan (2001), "The Foundations of Cost-Sensitive
+   Learning", and the "cost-weighted cross-entropy" used in imbalanced
+   manufacturing defect classification.
+
+   :param cost_matrix: (C, C) tensor. Entry (i, j) is the cost of predicting
+                       j when truth is i. Diagonal entries are typically 0 or 1;
+                       off-diagonals are >= 1 to penalize misclassifications.
+   :param class_weights: Optional (C,) tensor multiplied onto per-sample loss
+                         based on the true class (for prior re-weighting, e.g. inverse
+                         frequency). Orthogonal to the cost matrix.
+   :param reduction: 'mean' | 'sum' | 'none'.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:attribute:: reduction
+      :value: 'mean'
+
+
+
+   .. py:method:: forward(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor
+
+
+.. py:function:: build_cost_matrix_wm811k(class_names, near_full_missed: float = 10.0, rare_missed: float = 5.0, edge_confusion: float = 0.5, default: float = 1.0) -> torch.Tensor
+
+   Construct the defensible WM-811K cost matrix used by cost_sensitive.yaml.
+
+   Convention: cost[true, pred]. Diagonal (correct) = 0. Off-diagonal rules
+   are applied in the order below; later rules override earlier ones.
+
+   1. All off-diagonals default to ``default`` (=1).
+   2. Rows for Near-full and rare classes (Donut, Random) assign
+      ``near_full_missed`` / ``rare_missed`` to their off-diagonal entries
+      (missing these is catastrophic / high-impact).
+   3. Pairwise confusion within {Loc, Edge-Loc, Edge-Ring} is soft-penalized
+      at ``edge_confusion`` < 1 (patterns look similar, penalize less).
+
+
+.. py:function:: build_classification_loss(loss_name: str = 'CrossEntropyLoss', *, class_weights: Optional[torch.Tensor] = None, label_smoothing: float = 0.0, focal_gamma: float = 2.0, reduction: str = 'mean', moderate_weights: bool = True, class_frequencies: Optional[torch.Tensor] = None, logit_adjustment_tau: float = 1.0, tversky_alpha: float = 0.3, tversky_beta: float = 0.7, cost_matrix: Optional[torch.Tensor] = None) -> torch.nn.Module
+
+   Create a classification loss function from normalized config values.
+
+

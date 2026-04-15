@@ -92,6 +92,71 @@ def set_frozen_prefixes(model: nn.Module, frozen_prefixes: Sequence[str]) -> Non
         param.requires_grad = not any(name.startswith(prefix) for prefix in prefixes)
 
 
+def freeze_batchnorm_stats(
+    model: nn.Module,
+    frozen_prefixes: Sequence[str],
+) -> None:
+    """Keep BatchNorm running stats fixed for frozen sub-modules.
+
+    When transferring ImageNet-pretrained backbones to a very different input
+    distribution (e.g. WM-811K replicated-grayscale wafer maps with ~85% zero
+    background), the *frozen* BN layers still update ``running_mean`` /
+    ``running_var`` in ``.train()`` mode by default. The BN affine weights
+    (gamma/beta) were calibrated against the original ImageNet stats, so drift
+    at training time produces a catastrophic mismatch at ``.eval()`` time —
+    train loss looks fine while val loss explodes. This is the standard
+    "transfer-learning BN gotcha" and is especially severe for EfficientNet-B0
+    (dozens of depthwise-BN layers).
+
+    This helper:
+      1. Sets frozen BN modules to ``.eval()`` so forward passes use the
+         pretrained running stats instead of updating them.
+      2. Monkey-patches ``model.train()`` so subsequent training-loop calls
+         (``model.train()`` in the inner loop) re-apply the ``.eval()`` state
+         to frozen BN layers. Without this, the first ``model.train()`` after
+         construction would flip them back to training mode.
+
+    Args:
+        model: The pretrained model whose frozen BN layers should be frozen.
+        frozen_prefixes: Tuple of parameter-name prefixes considered frozen.
+    """
+    prefixes = tuple(prefix for prefix in frozen_prefixes if prefix)
+    if not prefixes:
+        return
+
+    def _collect_frozen_bn_modules() -> list[nn.modules.batchnorm._BatchNorm]:
+        frozen: list[nn.modules.batchnorm._BatchNorm] = []
+        for module_name, module in model.named_modules():
+            if not isinstance(module, nn.modules.batchnorm._BatchNorm):
+                continue
+            if any(
+                module_name == prefix or module_name.startswith(prefix + ".") for prefix in prefixes
+            ):
+                frozen.append(module)
+        return frozen
+
+    frozen_bns = _collect_frozen_bn_modules()
+    if not frozen_bns:
+        return
+
+    for bn in frozen_bns:
+        bn.eval()
+
+    original_train = model.train
+
+    def train_keeping_frozen_bn_eval(self_ref, mode: bool = True):  # noqa: ANN001
+        result = original_train(mode)
+        if mode:
+            for bn in frozen_bns:
+                bn.eval()
+        return result
+
+    # Bind as instance method so ``model.train()`` honors the override.
+    import types
+
+    model.train = types.MethodType(train_keeping_frozen_bn_eval, model)
+
+
 def resolve_frozen_prefixes(
     freeze_until: Optional[str],
     backbone_prefixes: Sequence[str],
@@ -128,6 +193,7 @@ def get_resnet18(
     frozen_prefixes: Optional[Sequence[str]] = None,
     head_dropout: float = 0.5,
     head_hidden_dim: Optional[int] = None,
+    freeze_bn: bool = True,
 ) -> nn.Module:
     """
     ResNet-18 pretrained on ImageNet with configurable fine-tuning.
@@ -157,10 +223,14 @@ def get_resnet18(
     )
 
     if frozen_prefixes is not None:
-        set_frozen_prefixes(model, frozen_prefixes)
+        applied_frozen: Tuple[str, ...] = tuple(frozen_prefixes)
+        set_frozen_prefixes(model, applied_frozen)
     else:
-        resolved_frozen = resolve_frozen_prefixes(freeze_until, RESNET18_BACKBONE_PREFIXES)
-        set_frozen_prefixes(model, resolved_frozen)
+        applied_frozen = resolve_frozen_prefixes(freeze_until, RESNET18_BACKBONE_PREFIXES)
+        set_frozen_prefixes(model, applied_frozen)
+
+    if freeze_bn and pretrained and applied_frozen:
+        freeze_batchnorm_stats(model, applied_frozen)
 
     return model
 
@@ -173,6 +243,7 @@ def get_efficientnet_b0(
     frozen_prefixes: Optional[Sequence[str]] = None,
     head_dropout: float = 0.5,
     head_hidden_dim: Optional[int] = None,
+    freeze_bn: bool = True,
 ) -> nn.Module:
     """
     EfficientNet-B0 pretrained on ImageNet with configurable fine-tuning.
@@ -202,13 +273,17 @@ def get_efficientnet_b0(
     )
 
     if frozen_prefixes is not None:
-        set_frozen_prefixes(model, frozen_prefixes)
+        applied_frozen: Tuple[str, ...] = tuple(frozen_prefixes)
+        set_frozen_prefixes(model, applied_frozen)
     else:
-        resolved_frozen = resolve_frozen_prefixes(
+        applied_frozen = resolve_frozen_prefixes(
             freeze_until,
             EFFICIENTNET_B0_BACKBONE_PREFIXES,
         )
-        set_frozen_prefixes(model, resolved_frozen)
+        set_frozen_prefixes(model, applied_frozen)
+
+    if freeze_bn and pretrained and applied_frozen:
+        freeze_batchnorm_stats(model, applied_frozen)
 
     return model
 

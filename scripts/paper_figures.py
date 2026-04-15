@@ -50,8 +50,15 @@ logger = logging.getLogger("paper_figures")
 # Style
 # ---------------------------------------------------------------------------
 CLASS_ORDER: Tuple[str, ...] = (
-    "Center", "Donut", "Edge-Loc", "Edge-Ring",
-    "Loc", "Near-full", "Random", "Scratch", "none",
+    "Center",
+    "Donut",
+    "Edge-Loc",
+    "Edge-Ring",
+    "Loc",
+    "Near-full",
+    "Random",
+    "Scratch",
+    "none",
 )
 
 MODEL_DISPLAY: Dict[str, str] = {
@@ -68,21 +75,23 @@ MODEL_DISPLAY: Dict[str, str] = {
 
 
 def _apply_style() -> None:
-    plt.rcParams.update({
-        "font.family": "serif",
-        "font.size": 9,
-        "axes.titlesize": 10,
-        "axes.labelsize": 9,
-        "xtick.labelsize": 8,
-        "ytick.labelsize": 8,
-        "legend.fontsize": 8,
-        "figure.dpi": 150,
-        "savefig.dpi": 300,
-        "savefig.bbox": "tight",
-        "axes.grid": True,
-        "grid.alpha": 0.3,
-        "grid.linestyle": "--",
-    })
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.size": 9,
+            "axes.titlesize": 10,
+            "axes.labelsize": 9,
+            "xtick.labelsize": 8,
+            "ytick.labelsize": 8,
+            "legend.fontsize": 8,
+            "figure.dpi": 150,
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+            "grid.linestyle": "--",
+        }
+    )
 
 
 def _display(name: str) -> str:
@@ -230,10 +239,17 @@ def figure_confusion_matrices(results_dir: Path, out_dir: Path, fmt: str) -> Non
             for j in range(norm.shape[1]):
                 v = norm[i, j]
                 if v >= 0.01:
-                    ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                            fontsize=6, color="white" if v > 0.5 else "black")
+                    ax.text(
+                        j,
+                        i,
+                        f"{v:.2f}",
+                        ha="center",
+                        va="center",
+                        fontsize=6,
+                        color="white" if v > 0.5 else "black",
+                    )
 
-    for ax in axes.flat[len(model_mats):]:
+    for ax in axes.flat[len(model_mats) :]:
         ax.set_visible(False)
 
     fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.85, label="Row-normalized count")
@@ -247,7 +263,9 @@ def figure_training_curves(results_dir: Path, out_dir: Path, fmt: str) -> None:
     logger.info("figure: training curves")
     histories: Dict[str, dict] = {}
     metrics = _load_metrics(results_dir) or {}
-    for name in sorted(set(metrics.keys()) | {"cnn", "resnet", "efficientnet", "swin", "ride", "vit"}):
+    for name in sorted(
+        set(metrics.keys()) | {"cnn", "resnet", "efficientnet", "swin", "ride", "vit"}
+    ):
         h = _load_history(results_dir, name)
         if h:
             histories[name] = h
@@ -265,7 +283,9 @@ def figure_training_curves(results_dir: Path, out_dir: Path, fmt: str) -> None:
         label = _display(name)
         if "train_loss" in h and h["train_loss"]:
             epochs = range(1, len(h["train_loss"]) + 1)
-            ax_loss.plot(epochs, h["train_loss"], label=f"{label} (train)", linestyle="--", alpha=0.7)
+            ax_loss.plot(
+                epochs, h["train_loss"], label=f"{label} (train)", linestyle="--", alpha=0.7
+            )
         if "val_loss" in h and h["val_loss"]:
             epochs = range(1, len(h["val_loss"]) + 1)
             ax_loss.plot(epochs, h["val_loss"], label=f"{label} (val)", linestyle="-")
@@ -295,9 +315,7 @@ def figure_macro_f1_comparison(results_dir: Path, out_dir: Path, fmt: str) -> No
         logger.warning("  no metrics.json — skipping")
         return
 
-    models = sorted(
-        [k for k, v in metrics.items() if isinstance(v, dict) and "macro_f1" in v]
-    )
+    models = sorted([k for k, v in metrics.items() if isinstance(v, dict) and "macro_f1" in v])
     if not models:
         logger.warning("  metrics.json has no macro_f1 entries — skipping")
         return
@@ -339,8 +357,12 @@ def figure_macro_f1_comparison(results_dir: Path, out_dir: Path, fmt: str) -> No
     x = np.arange(len(models))
     ax.bar(x, means, color="#4c72b0", edgecolor="black", linewidth=0.5)
     if np.any(~np.isnan(lower)):
-        yerr = np.vstack([means - np.where(np.isnan(lower), means, lower),
-                          np.where(np.isnan(upper), means, upper) - means])
+        yerr = np.vstack(
+            [
+                means - np.where(np.isnan(lower), means, lower),
+                np.where(np.isnan(upper), means, upper) - means,
+            ]
+        )
         ax.errorbar(x, means, yerr=yerr, fmt="none", ecolor="black", capsize=3)
     ax.set_xticks(x)
     ax.set_xticklabels([_display(m) for m in models], rotation=30, ha="right")
@@ -425,8 +447,7 @@ def figure_ensemble_comparison(results_dir: Path, out_dir: Path, fmt: str) -> No
     ys = np.array([p[2] for p in points])
     ax.scatter(xs, ys, s=40, color="#4c72b0", edgecolor="black", zorder=3)
     for name, x, y in points:
-        ax.annotate(_display(name), (x, y), textcoords="offset points",
-                    xytext=(5, 5), fontsize=7)
+        ax.annotate(_display(name), (x, y), textcoords="offset points", xytext=(5, 5), fontsize=7)
 
     lo = float(min(xs.min(), ys.min()) - 0.05)
     hi = float(max(xs.max(), ys.max()) + 0.05)
@@ -451,21 +472,25 @@ def table_results(results_dir: Path, out_dir: Path) -> None:
     for name, entry in sorted(metrics.items()):
         if not isinstance(entry, dict) or "accuracy" not in entry:
             continue
-        rows.append((
-            _display(name),
-            float(entry.get("accuracy", float("nan"))),
-            float(entry.get("macro_f1", float("nan"))),
-            float(entry.get("weighted_f1", float("nan"))),
-        ))
+        rows.append(
+            (
+                _display(name),
+                float(entry.get("accuracy", float("nan"))),
+                float(entry.get("macro_f1", float("nan"))),
+                float(entry.get("weighted_f1", float("nan"))),
+            )
+        )
 
     ensemble_block: List[Tuple[str, float, float, float]] = []
     for method, m in (ens.get("ensemble") or {}).items():
-        ensemble_block.append((
-            f"Ensemble ({method})",
-            float(m.get("accuracy", float("nan"))),
-            float(m.get("macro_f1", float("nan"))),
-            float(m.get("weighted_f1", float("nan"))),
-        ))
+        ensemble_block.append(
+            (
+                f"Ensemble ({method})",
+                float(m.get("accuracy", float("nan"))),
+                float(m.get("macro_f1", float("nan"))),
+                float(m.get("weighted_f1", float("nan"))),
+            )
+        )
 
     student_row: Optional[Tuple[str, float, float, float]] = None
     if distill and "test" in distill:
@@ -513,10 +538,12 @@ def main() -> int:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--results-dir", type=Path,
-                        default=Path(__file__).resolve().parents[1] / "results")
-    parser.add_argument("--output-dir", type=Path, default=None,
-                        help="Defaults to <results-dir>/paper/.")
+    parser.add_argument(
+        "--results-dir", type=Path, default=Path(__file__).resolve().parents[1] / "results"
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Defaults to <results-dir>/paper/."
+    )
     parser.add_argument("--format", choices=("pdf", "png"), default="pdf")
     args = parser.parse_args()
 

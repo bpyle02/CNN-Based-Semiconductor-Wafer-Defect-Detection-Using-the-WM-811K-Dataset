@@ -14,14 +14,15 @@ References:
     [41] Ganin et al. (2016). "Domain-Adversarial Training". arXiv:1505.07818
 """
 
+import logging
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, ConcatDataset
-from typing import Tuple, Dict, Any, Optional, List
-import numpy as np
-from collections import defaultdict
-import logging
+from torch.utils.data import ConcatDataset, DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class CORLAlignmentLoss(nn.Module):
         ) / (target_features.shape[0] - 1)
 
         # CORAL loss: Frobenius norm of difference
-        coral_loss = torch.norm(source_cov - target_cov, p='fro')
+        coral_loss = torch.norm(source_cov - target_cov, p="fro")
 
         return self.lambda_coral * coral_loss
 
@@ -150,10 +151,10 @@ class DomainAdaptationTrainer:
     def __init__(
         self,
         model: nn.Module,
-        method: str = 'fine_tuning',
-        device: str = 'cuda',
+        method: str = "fine_tuning",
+        device: str = "cuda",
     ) -> None:
-        if method not in ['fine_tuning', 'coral', 'adversarial']:
+        if method not in ["fine_tuning", "coral", "adversarial"]:
             raise ValueError(f"Unknown method: {method}")
 
         self.model = model.to(device)
@@ -176,7 +177,7 @@ class DomainAdaptationTrainer:
         if freeze_backbone and num_layers_unfreeze is None:
             # Freeze all but last layer
             for name, param in self.model.named_parameters():
-                if 'fc' not in name and 'classifier' not in name:
+                if "fc" not in name and "classifier" not in name:
                     param.requires_grad = False
         elif num_layers_unfreeze is not None:
             # Unfreeze last N layers
@@ -211,14 +212,14 @@ class DomainAdaptationTrainer:
         Returns:
             Dictionary with training history
         """
-        if self.method == 'fine_tuning':
+        if self.method == "fine_tuning":
             return self._adapt_fine_tuning(
                 target_loader,
                 criterion,
                 optimizer,
                 epochs,
             )
-        elif self.method == 'coral':
+        elif self.method == "coral":
             return self._adapt_coral(
                 source_loader,
                 target_loader,
@@ -227,7 +228,7 @@ class DomainAdaptationTrainer:
                 epochs,
                 lambda_domain,
             )
-        elif self.method == 'adversarial':
+        elif self.method == "adversarial":
             return self._adapt_adversarial(
                 source_loader,
                 target_loader,
@@ -268,7 +269,7 @@ class DomainAdaptationTrainer:
                 num_batches += 1
 
             avg_loss = total_loss / num_batches
-            history['loss'].append(avg_loss)
+            history["loss"].append(avg_loss)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
                 logger.info(f"Fine-tuning Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
@@ -330,7 +331,7 @@ class DomainAdaptationTrainer:
                 class_loss = criterion(source_outputs, source_labels)
 
                 # Extract features for CORAL (get intermediate features)
-                if hasattr(self.model, 'features'):
+                if hasattr(self.model, "features"):
                     source_feats = self.model.features(source_images)
                     target_feats = self.model.features(target_images)
                 else:
@@ -351,8 +352,8 @@ class DomainAdaptationTrainer:
 
             avg_loss = total_loss / num_batches
             avg_coral = total_coral_loss / num_batches
-            history['loss'].append(avg_loss)
-            history['coral_loss'].append(avg_coral)
+            history["loss"].append(avg_loss)
+            history["coral_loss"].append(avg_coral)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
                 logger.info(
@@ -373,11 +374,13 @@ class DomainAdaptationTrainer:
     ) -> Dict[str, Any]:
         """Domain-adversarial training."""
         # Infer feature dimension from model's final layer
-        feature_dim = getattr(self.model, 'fc', getattr(self.model, 'classifier', [None]))
-        if hasattr(feature_dim, 'in_features'):
+        feature_dim = getattr(self.model, "fc", getattr(self.model, "classifier", [None]))
+        if hasattr(feature_dim, "in_features"):
             feature_dim = feature_dim.in_features
         elif isinstance(feature_dim, nn.Sequential) and len(feature_dim) > 0:
-            feature_dim = feature_dim[-1].in_features if hasattr(feature_dim[-1], 'in_features') else 512
+            feature_dim = (
+                feature_dim[-1].in_features if hasattr(feature_dim[-1], "in_features") else 512
+            )
         else:
             feature_dim = 512
         self.discriminator = DomainAdversarialLoss(
@@ -426,7 +429,7 @@ class DomainAdaptationTrainer:
                 class_loss = criterion(source_outputs, source_labels)
 
                 # Get features for discriminator
-                if hasattr(self.model, 'features'):
+                if hasattr(self.model, "features"):
                     source_feats = self.model.features(source_images)
                     target_feats = self.model.features(target_images)
                 else:
@@ -452,8 +455,8 @@ class DomainAdaptationTrainer:
 
             avg_loss = total_loss / num_batches
             avg_disc = total_disc_loss / num_batches
-            history['loss'].append(avg_loss)
-            history['disc_loss'].append(avg_disc)
+            history["loss"].append(avg_loss)
+            history["disc_loss"].append(avg_disc)
 
             if (epoch + 1) % max(1, epochs // 5) == 0:
                 logger.info(

@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.fpn &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.models.pretrained" href="../pretrained/index.html" />
+    <link rel="prev" title="src.models.ensemble" href="../ensemble/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../training/index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.fpn</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/models/fpn/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.models.fpn">
+<span id="src-models-fpn"></span><h1>src.models.fpn<a class="headerlink" href="#module-src.models.fpn" title="Link to this heading"></a></h1>
+<p>Feature Pyramid Network (FPN) variant for wafer defect classification.</p>
+<p>Fuses multi-scale features from a 4-stage CNN backbone via top-down
+lateral connections, improving detection of defects at varying spatial
+scales (e.g. large Edge-Ring vs. thin Scratch vs. small Loc).</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[91] Lin et al. (2017). “Feature Pyramid Networks for Object Detection”.</dt><dd><p>arXiv:1612.03144</p>
+</dd>
+</dl>
+<p>[47] Ioffe &amp; Szegedy (2015). “Batch Normalization”. arXiv:1502.03167
+[48] Srivastava et al. (2014). “Dropout: Preventing Overfitting”. JMLR</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.fpn.logger" title="src.models.fpn.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.fpn.FPNBlock" title="src.models.fpn.FPNBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FPNBlock</span></code></a></p></td>
+<td><p>Feature Pyramid Network block.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.fpn.WaferCNNFPN" title="src.models.fpn.WaferCNNFPN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaferCNNFPN</span></code></a></p></td>
+<td><p>Custom CNN with FPN for multi-scale defect detection.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.models.fpn.logger">
+<span class="sig-prename descclassname"><span class="pre">src.models.fpn.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.fpn.FPNBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.fpn.</span></span><span class="sig-name descname"><span class="pre">FPNBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">256</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#FPNBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.FPNBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Feature Pyramid Network block.</p>
+<p>Combines a top-down pathway (upsampled coarser features) with
+lateral connections (same-level features) via 1x1 convolutions.</p>
+<p>The lateral connections project each backbone stage to a common
+channel dimension (<code class="docutils literal notranslate"><span class="pre">out_channels</span></code>). Starting from the coarsest
+level, each feature map is upsampled by 2x and element-wise added
+to the next finer lateral output, propagating high-level semantics
+to lower levels while retaining spatial detail.</p>
+<p>Reference: [91] Lin et al. (2017). arXiv:1612.03144</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels_list</strong> – Number of channels at each backbone stage,
+ordered from finest (largest spatial) to coarsest (smallest
+spatial).  E.g. <code class="docutils literal notranslate"><span class="pre">[32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256]</span></code>.</p></li>
+<li><p><strong>out_channels</strong> – Common channel dimension for all FPN output levels.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.FPNBlock.out_channels">
+<span class="sig-name descname"><span class="pre">out_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">256</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#FPNBlock.out_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.FPNBlock.out_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.FPNBlock.lateral_convs">
+<span class="sig-name descname"><span class="pre">lateral_convs</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#FPNBlock.lateral_convs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.FPNBlock.lateral_convs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.FPNBlock.smooth_convs">
+<span class="sig-name descname"><span class="pre">smooth_convs</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#FPNBlock.smooth_convs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.FPNBlock.smooth_convs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.fpn.FPNBlock.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#FPNBlock.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.FPNBlock.forward" title="Link to this definition"></a></dt>
+<dd><p>Build the feature pyramid from backbone feature maps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>features</strong> – List of feature maps from each stage, ordered
+finest-to-coarsest.
+E.g. <code class="docutils literal notranslate"><span class="pre">[(B,32,48,48),</span> <span class="pre">(B,64,24,24),</span> <span class="pre">(B,128,12,12),</span> <span class="pre">(B,256,6,6)]</span></code></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of FPN feature maps (same ordering), all with
+<code class="docutils literal notranslate"><span class="pre">out_channels</span></code> channels. Spatial sizes match the input
+features at each level.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.fpn.</span></span><span class="sig-name descname"><span class="pre">WaferCNNFPN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fpn_out_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_batch_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Custom CNN with FPN for multi-scale defect detection.</p>
+<p>Extends WaferCNN by extracting intermediate feature maps from each
+of the 4 convolutional stages and fusing them via a Feature Pyramid
+Network. The fused multi-scale features are globally average-pooled
+and concatenated for classification, allowing the model to leverage
+both fine spatial detail (important for small Loc defects and thin
+Scratch patterns) and coarse semantic information (important for
+large Edge-Ring defects).</p>
+<dl class="simple">
+<dt>Architecture:</dt><dd><ul class="simple">
+<li><p>4 conv blocks identical to WaferCNN:
+Conv-BN-ReLU-Conv-BN-ReLU-MaxPool per stage</p></li>
+<li><p>Feature extraction at each stage:
+F1(48x48), F2(24x24), F3(12x12), F4(6x6)</p></li>
+<li><p>FPN fuses into P1, P2, P3, P4 (all <code class="docutils literal notranslate"><span class="pre">fpn_out_channels</span></code>)</p></li>
+<li><p>Global average pool each Pi, concatenate</p></li>
+<li><p>Classifier: Linear(4 * fpn_out_channels, num_classes)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>[91] Lin et al. (2017). arXiv:1612.03144
+[47] Ioffe &amp; Szegedy (2015). arXiv:1502.03167
+[48] Srivastava et al. (2014). JMLR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_classes</strong> – Number of output classes.</p></li>
+<li><p><strong>feature_channels</strong> – Output channels per conv stage.</p></li>
+<li><p><strong>fpn_out_channels</strong> – Common channel dimension for FPN levels.</p></li>
+<li><p><strong>dropout_rate</strong> – Dropout before the classifier head.</p></li>
+<li><p><strong>input_channels</strong> – Number of input image channels.</p></li>
+<li><p><strong>use_batch_norm</strong> – Apply BatchNorm after each convolution.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.feature_channels">
+<span class="sig-name descname"><span class="pre">feature_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256)</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.feature_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.feature_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.fpn_out_channels">
+<span class="sig-name descname"><span class="pre">fpn_out_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.fpn_out_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.fpn_out_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.dropout_rate">
+<span class="sig-name descname"><span class="pre">dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.dropout_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.dropout_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.use_batch_norm">
+<span class="sig-name descname"><span class="pre">use_batch_norm</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.use_batch_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.use_batch_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.stages">
+<span class="sig-name descname"><span class="pre">stages</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.stages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.stages" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.fpn">
+<span class="sig-name descname"><span class="pre">fpn</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.fpn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.fpn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.gap">
+<span class="sig-name descname"><span class="pre">gap</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.gap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.gap" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.classifier">
+<span class="sig-name descname"><span class="pre">classifier</span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.classifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.fpn.WaferCNNFPN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/fpn.html#WaferCNNFPN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.fpn.WaferCNNFPN.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass through backbone, FPN, and classifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Logits of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">num_classes)</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ensemble/index.html" class="btn btn-neutral float-left" title="src.models.ensemble" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../pretrained/index.html" class="btn btn-neutral float-right" title="src.models.pretrained" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

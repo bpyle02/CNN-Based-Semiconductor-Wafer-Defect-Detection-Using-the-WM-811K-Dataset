@@ -16,10 +16,11 @@ References:
     [110] Graham et al. (2021). "LeViT: Vision Transformer in ConvNet's Clothing". arXiv:2104.01136
 """
 
-import torch
-import torch.nn as nn
 import math
 from typing import Optional, Tuple
+
+import torch
+import torch.nn as nn
 
 
 # Ref [3]: Dosovitskiy et al. — patch embedding via Conv2d projection

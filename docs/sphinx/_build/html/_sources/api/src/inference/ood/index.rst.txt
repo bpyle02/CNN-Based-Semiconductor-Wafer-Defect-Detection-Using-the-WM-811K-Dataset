@@ -1,0 +1,135 @@
+src.inference.ood
+=================
+
+.. py:module:: src.inference.ood
+
+.. autoapi-nested-parse::
+
+   Out-of-distribution detection via free-energy scoring.
+
+   Implements the energy-based OOD detector of Liu et al. (2020),
+   "Energy-based Out-of-distribution Detection" (NeurIPS), arXiv:2010.03759.
+
+   A classifier's logits define a free energy
+       E(x; T) = -T * logsumexp(f(x) / T, dim=-1)
+   which is lower for in-distribution samples (sharp, confident logits)
+   and higher for OOD samples. Thresholding on E gives a lightweight,
+   post-hoc OOD detector requiring no auxiliary data or retraining.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.inference.ood.OODPrediction
+   src.inference.ood.OODDetector
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.inference.ood.energy_score
+   src.inference.ood.fit_ood_threshold
+
+
+Module Contents
+---------------
+
+.. py:function:: energy_score(logits: torch.Tensor, T: float = 1.0) -> torch.Tensor
+
+   Return the free energy per sample: -T * logsumexp(logits / T).
+
+   :param logits: Tensor of shape (..., num_classes).
+   :param T: Temperature. Higher T smooths the energy surface.
+
+   :returns: -1]. Lower values indicate
+             in-distribution samples; higher values indicate OOD.
+   :rtype: Energy tensor of shape logits.shape[
+
+
+.. py:function:: fit_ood_threshold(val_logits: torch.Tensor, val_labels: Optional[torch.Tensor] = None, target_fpr: float = 0.05, T: float = 1.0) -> float
+
+   Pick the energy threshold whose FPR on in-dist val data equals target_fpr.
+
+   The threshold is the (1 - target_fpr) quantile of in-distribution
+   energies: by construction, only target_fpr of clean samples exceed it
+   and are (falsely) flagged as OOD.
+
+   :param val_logits: (N, C) logits on a clean, in-distribution validation set.
+   :param val_labels: Unused; accepted for API symmetry (the threshold is
+                      label-free because all val samples are assumed in-distribution).
+   :param target_fpr: Desired false-positive rate on in-dist val data.
+   :param T: Temperature passed to ``energy_score``.
+
+   :returns: Scalar threshold such that energies above it are predicted OOD.
+
+
+.. py:class:: OODPrediction
+
+   Structured OOD prediction output.
+
+
+   .. py:attribute:: pred
+      :type:  torch.Tensor
+
+
+   .. py:attribute:: confidence
+      :type:  torch.Tensor
+
+
+   .. py:attribute:: is_ood
+      :type:  torch.Tensor
+
+
+.. py:class:: OODDetector(model: torch.nn.Module, T: float = 1.0, threshold: Optional[float] = None, device: Optional[str] = None)
+
+   Wraps a trained classifier with post-hoc energy-based OOD detection.
+
+   Usage:
+       detector = OODDetector(model, device='cuda')
+       detector.fit(val_loader, target_fpr=0.05)
+       pred, conf, is_ood = detector.predict(x)
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: T
+
+
+   .. py:attribute:: threshold
+      :value: None
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:method:: fit(val_loader, target_fpr: float = 0.05) -> float
+
+      Collect val-set logits and fit the energy threshold.
+
+      :param val_loader: Iterable yielding (images, labels) batches, all in-dist.
+      :param target_fpr: Desired FPR on in-dist val data.
+
+      :returns: The fitted threshold (also stored on ``self.threshold``).
+
+
+
+   .. py:method:: predict(x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+
+      Return (pred, confidence, is_ood) for a batch of inputs.
+
+      :param x: Input tensor of shape (N, ...).
+
+      :returns:   pred        - argmax class index
+                  confidence  - softmax max probability
+                  is_ood      - boolean OOD flag (True iff energy > threshold)
+      :rtype: Tuple of three tensors, each of length N
+
+
+

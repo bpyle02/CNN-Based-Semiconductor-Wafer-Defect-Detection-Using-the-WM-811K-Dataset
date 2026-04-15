@@ -18,21 +18,22 @@ References:
     [130] Liang et al. (2018). "ODIN: OOD Detection". arXiv:1706.02690
 """
 
+import logging
+import warnings
+from typing import Any, Dict, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import numpy as np
-from typing import Tuple, Dict, Any, Optional
 from sklearn.ensemble import IsolationForest
-from sklearn.svm import OneClassSVM
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, roc_curve
-import warnings
-import logging
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import OneClassSVM
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 
-warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class AnomalyDetectionAutoencoder(nn.Module):
@@ -74,7 +75,9 @@ class AnomalyDetectionAutoencoder(nn.Module):
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(32, input_channels, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                32, input_channels, kernel_size=3, stride=2, padding=1, output_padding=1
+            ),
             nn.Sigmoid(),  # Constrain to [0, 1]
         )
 
@@ -119,10 +122,10 @@ class AnomalyDetector:
 
     def __init__(
         self,
-        method: str = 'isolation_forest',
-        device: str = 'cuda',
+        method: str = "isolation_forest",
+        device: str = "cuda",
     ) -> None:
-        if method not in ['isolation_forest', 'one_class_svm', 'autoencoder', 'mahalanobis']:
+        if method not in ["isolation_forest", "one_class_svm", "autoencoder", "mahalanobis"]:
             raise ValueError(f"Unknown method: {method}")
 
         self.method = method
@@ -157,7 +160,7 @@ class AnomalyDetector:
 
                 # Extract features from model
                 # Assumes model has a method to get features
-                if hasattr(model, 'features'):
+                if hasattr(model, "features"):
                     feats = model.features(images)
                     feats = torch.nn.functional.adaptive_avg_pool2d(feats, (1, 1))
                     feats = feats.flatten(1)
@@ -206,8 +209,8 @@ class AnomalyDetector:
         features_normalized = self.scaler.fit_transform(features)
 
         self.model = OneClassSVM(
-            kernel='rbf',
-            gamma='auto',
+            kernel="rbf",
+            gamma="auto",
             nu=nu,
         )
         self.model.fit(features_normalized)
@@ -340,17 +343,17 @@ class AnomalyDetector:
             normal_loader: DataLoader for normal class
             **kwargs: Method-specific arguments
         """
-        if self.method == 'autoencoder':
+        if self.method == "autoencoder":
             self.fit_autoencoder(normal_loader, **kwargs)
         else:
             # Extract features for other methods
             features = self.extract_features(model, normal_loader)
 
-            if self.method == 'isolation_forest':
+            if self.method == "isolation_forest":
                 self.fit_isolation_forest(features, **kwargs)
-            elif self.method == 'one_class_svm':
+            elif self.method == "one_class_svm":
                 self.fit_one_class_svm(features, **kwargs)
-            elif self.method == 'mahalanobis':
+            elif self.method == "mahalanobis":
                 self.fit_mahalanobis(features, **kwargs)
 
     def score(
@@ -368,16 +371,16 @@ class AnomalyDetector:
         Returns:
             Array of anomaly scores
         """
-        if self.method == 'autoencoder':
+        if self.method == "autoencoder":
             return self.predict_autoencoder(model, data_loader)
 
         features = self.extract_features(model, data_loader)
 
-        if self.method == 'isolation_forest':
+        if self.method == "isolation_forest":
             return self.predict_isolation_forest(features)
-        elif self.method == 'one_class_svm':
+        elif self.method == "one_class_svm":
             return self.predict_one_class_svm(features)
-        elif self.method == 'mahalanobis':
+        elif self.method == "mahalanobis":
             return self.predict_mahalanobis(features)
 
     def evaluate(
@@ -402,7 +405,7 @@ class AnomalyDetector:
 
         # For Isolation Forest and OCSVM: -1=anomaly, 1=normal
         # Flip so higher=more anomalous
-        if self.method in ['isolation_forest', 'one_class_svm']:
+        if self.method in ["isolation_forest", "one_class_svm"]:
             normal_scores = -normal_scores
             anomaly_scores = -anomaly_scores
 
@@ -415,8 +418,8 @@ class AnomalyDetector:
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
         metrics = {
-            'auroc': auroc,
-            'fpr_at_95_tpr': np.min(fpr[tpr >= 0.95]) if np.any(tpr >= 0.95) else 1.0,
+            "auroc": auroc,
+            "fpr_at_95_tpr": np.min(fpr[tpr >= 0.95]) if np.any(tpr >= 0.95) else 1.0,
         }
 
         return metrics
@@ -425,7 +428,7 @@ class AnomalyDetector:
 class OODDetector:
     """Out-of-distribution detection."""
 
-    def __init__(self, method: str = 'mahalanobis', threshold: float = 0.95) -> None:
+    def __init__(self, method: str = "mahalanobis", threshold: float = 0.95) -> None:
         self.method = method
         self.threshold = threshold  # Percentile for anomaly threshold
         self.feature_mean = None
@@ -438,9 +441,9 @@ class OODDetector:
         cov = np.cov(features.T)
         cov += np.eye(cov.shape[0]) * 1e-6  # Regularization
         self.feature_cov_inv = np.linalg.inv(cov)
-        if self.method == 'mahalanobis':
+        if self.method == "mahalanobis":
             train_scores = self._mahalanobis_distance(features)
-        elif self.method == 'odin':
+        elif self.method == "odin":
             train_scores = self._odin_score(features)
         else:
             raise ValueError(f"Unknown OOD method: {self.method}")
@@ -450,9 +453,9 @@ class OODDetector:
         """Return True for OOD samples."""
         if self.ood_threshold is None:
             raise RuntimeError("OODDetector must be fitted before calling detect_ood.")
-        if self.method == 'mahalanobis':
+        if self.method == "mahalanobis":
             scores = self._mahalanobis_distance(features)
-        elif self.method == 'odin':
+        elif self.method == "odin":
             scores = self._odin_score(features)
         else:
             raise ValueError(f"Unknown OOD method: {self.method}")

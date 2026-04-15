@@ -9,16 +9,18 @@ References:
     [149] Amershi et al. (2019). "Software Engineering for ML". arXiv:1904.07204
 """
 
+import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import torch
-import logging
 
 logger = logging.getLogger(__name__)
 
 try:
     import wandb
+
     HAS_WANDB = True
 except ImportError:
     HAS_WANDB = False
@@ -72,10 +74,14 @@ class WandBLogger:
     def log_model(self, model: torch.nn.Module, checkpoint_path: str) -> None:
         """Log model artifact."""
         if self.enabled:
+            run = wandb.run
+            if run is None:
+                logger.warning("wandb.run is None; cannot log model artifact")
+                return
             artifact = wandb.Artifact(
-                name=f"model-{wandb.run.id}",
+                name=f"model-{run.id}",
                 type="model",
-                description=f"Model checkpoint from step {wandb.run.step}"
+                description=f"Model checkpoint from step {run.step}",
             )
             artifact.add_file(checkpoint_path)
             wandb.log_artifact(artifact)
@@ -88,15 +94,22 @@ class WandBLogger:
     ) -> None:
         """Log confusion matrix."""
         if self.enabled:
+            # sklearn.metrics.confusion_matrix accepts array-like; coerce to
+            # numpy ndarray so the type signature is satisfied uniformly.
             from sklearn.metrics import confusion_matrix as cm
-            conf_matrix = cm(y_true, y_pred)
-            wandb.log({
-                "confusion_matrix": wandb.plot.confusion_matrix(
-                    y_true=y_true,
-                    preds=y_pred,
-                    class_names=class_names
-                )
-            })
+
+            y_true_arr = np.asarray(y_true)
+            y_pred_arr = np.asarray(y_pred)
+            cm(y_true_arr, y_pred_arr)
+            wandb.log(
+                {
+                    "confusion_matrix": wandb.plot.confusion_matrix(
+                        y_true=y_true_arr.tolist(),
+                        preds=y_pred_arr.tolist(),
+                        class_names=class_names,
+                    )
+                }
+            )
 
     def finish(self) -> None:
         """Finish logging run."""
@@ -127,6 +140,7 @@ class MLFlowLogger:
 
         try:
             import mlflow
+
             self.mlflow = mlflow
             self.mlflow.set_tracking_uri(tracking_uri)
             self.mlflow.set_experiment(experiment_name)

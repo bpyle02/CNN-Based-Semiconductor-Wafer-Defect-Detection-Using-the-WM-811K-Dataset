@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 # Multi-stage Docker build for wafer defect detection
 # Stage 1: Base image with CUDA
 FROM pytorch/pytorch:2.0-cuda11.8-runtime-ubuntu22.04 as base
@@ -14,13 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Stage 2: Development (with dev tools)
 FROM base as development
 
-RUN pip install --upgrade pip setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 # Copy project files first so the editable install has the package tree
 COPY . .
 
 # Editable install with full dev extras (packaging defined in pyproject.toml)
-RUN pip install -e ".[dev]"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -e ".[dev]"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -32,18 +35,24 @@ EXPOSE 8501 8000
 CMD ["python", "train.py", "--model", "all", "--epochs", "5", "--device", "cuda"]
 
 # Stage 3: Production (minimal image)
-FROM base as production
+# Aliased as both `prod` and `production` so CI (`--target prod`) and legacy
+# callers (`--target production`) both resolve.
+FROM base as prod
 
-RUN pip install --upgrade pip
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip
 
 # Copy only files needed for the production serving stack
 COPY pyproject.toml setup.py /app/
 COPY train.py /app/
 COPY src /app/src
-COPY config.yaml /app/ 2>/dev/null || true
+# config.yaml is required; if missing the build fails loudly instead of silently
+# producing a broken image. Keep a committed config.yaml at the repo root.
+COPY config.yaml /app/config.yaml
 
 # Production install: core + server extras only (FastAPI, uvicorn)
-RUN pip install --no-cache-dir ".[server]"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install ".[server]"
 
 WORKDIR /app
 
@@ -57,10 +66,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Run inference server
 CMD ["python", "-m", "src.inference.server"]
 
+# Back-compat alias for callers that still reference `production`.
+FROM prod as production
+
 # Stage 4: Jupyter (for interactive development)
 FROM development as jupyter
 
-RUN pip install jupyter jupyterlab ipywidgets
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install jupyter jupyterlab ipywidgets
 
 EXPOSE 8888
 

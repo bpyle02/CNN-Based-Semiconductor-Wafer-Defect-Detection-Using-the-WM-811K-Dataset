@@ -79,9 +79,7 @@ def _extract_cnn_metrics(metrics_json: Path) -> dict:
         raise RuntimeError(f"train.py did not produce {metrics_json}")
     payload = json.loads(metrics_json.read_text(encoding="utf-8"))
     if "cnn" not in payload:
-        raise RuntimeError(
-            f"{metrics_json} has no 'cnn' entry (keys: {list(payload.keys())})"
-        )
+        raise RuntimeError(f"{metrics_json} has no 'cnn' entry (keys: {list(payload.keys())})")
     return payload["cnn"]
 
 
@@ -94,13 +92,20 @@ def run_one(condition: str, seed: int, epochs: int, batch_size: int, device: str
     cmd: List[str] = [
         sys.executable,
         str(REPO_ROOT / "train.py"),
-        "--model", "cnn",
-        "--epochs", str(epochs),
-        "--batch-size", str(batch_size),
-        "--device", device,
-        "--seed", str(seed),
-        "--config", "config.yaml",
-        "--config", str(overlay),
+        "--model",
+        "cnn",
+        "--epochs",
+        str(epochs),
+        "--batch-size",
+        str(batch_size),
+        "--device",
+        device,
+        "--seed",
+        str(seed),
+        "--config",
+        "config.yaml",
+        "--config",
+        str(overlay),
     ]
     if condition == "E_synthetic":
         cmd.append("--synthetic")
@@ -118,8 +123,12 @@ def run_one(condition: str, seed: int, epochs: int, batch_size: int, device: str
     t0 = time.time()
     with open(log_path, "w", encoding="utf-8") as logf:
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            bufsize=1, universal_newlines=True, cwd=str(REPO_ROOT),
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+            cwd=str(REPO_ROOT),
         )
         for line in proc.stdout:
             logf.write(line)
@@ -129,9 +138,7 @@ def run_one(condition: str, seed: int, epochs: int, batch_size: int, device: str
 
     elapsed = time.time() - t0
     if rc != 0:
-        raise RuntimeError(
-            f"{condition} seed={seed} failed with exit code {rc}; see {log_path}"
-        )
+        raise RuntimeError(f"{condition} seed={seed} failed with exit code {rc}; see {log_path}")
 
     cnn_metrics = _extract_cnn_metrics(METRICS_JSON)
     cnn_metrics["runner_wall_clock_sec"] = elapsed
@@ -145,6 +152,7 @@ def _mean_std(values: List[float]) -> tuple[float, float]:
     if not values:
         return float("nan"), float("nan")
     import statistics
+
     if len(values) == 1:
         return values[0], 0.0
     return statistics.mean(values), statistics.stdev(values)
@@ -158,7 +166,9 @@ def _rare_class_recall(run: dict, cls: str) -> float:
     return float(entry.get("recall", float("nan")))
 
 
-def _render_markdown(results: Dict[str, Dict[int, dict]], output: Path, conditions: List[str], seeds: List[int]) -> None:
+def _render_markdown(
+    results: Dict[str, Dict[int, dict]], output: Path, conditions: List[str], seeds: List[int]
+) -> None:
     lines: List[str] = []
     lines.append("# Rare-class Study on WM-811K\n")
     lines.append(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')} UTC\n")
@@ -252,9 +262,7 @@ def _render_markdown(results: Dict[str, Dict[int, dict]], output: Path, conditio
     )
 
     lines.append("\n## Per-seed detail\n")
-    lines.append(
-        "| Condition | Seed | Macro F1 | Weighted F1 | Accuracy | ECE | Epochs | Log |"
-    )
+    lines.append("| Condition | Seed | Macro F1 | Weighted F1 | Accuracy | ECE | Epochs | Log |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---|")
     for cond in conditions:
         for seed in seeds:
@@ -278,31 +286,33 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--seeds", default="0,1,2",
-                        help="Comma-separated seeds (default: 0,1,2)")
-    parser.add_argument("--conditions", default="all",
-                        help="Comma-separated conditions or 'all' (default: all)")
-    parser.add_argument("--output", type=Path,
-                        default=REPO_ROOT / "docs" / "rare_class_study.md")
-    parser.add_argument("--force", action="store_true",
-                        help="Re-run even if archive files exist")
+    parser.add_argument("--seeds", default="0,1,2", help="Comma-separated seeds (default: 0,1,2)")
+    parser.add_argument(
+        "--conditions", default="all", help="Comma-separated conditions or 'all' (default: all)"
+    )
+    parser.add_argument("--output", type=Path, default=REPO_ROOT / "docs" / "rare_class_study.md")
+    parser.add_argument("--force", action="store_true", help="Re-run even if archive files exist")
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S"
+    )
 
     seeds = [int(s) for s in args.seeds.split(",") if s]
-    conditions = (ALL_CONDITIONS
-                  if args.conditions == "all"
-                  else [c for c in args.conditions.split(",") if c])
+    conditions = (
+        ALL_CONDITIONS if args.conditions == "all" else [c for c in args.conditions.split(",") if c]
+    )
 
     for cond in conditions:
         if cond not in ALL_CONDITIONS:
             parser.error(f"Unknown condition: {cond!r}. Valid: {ALL_CONDITIONS}")
 
-    logger.info("Study design: %d conditions x %d seeds = %d runs",
-                len(conditions), len(seeds), len(conditions) * len(seeds))
+    logger.info(
+        "Study design: %d conditions x %d seeds = %d runs",
+        len(conditions),
+        len(seeds),
+        len(conditions) * len(seeds),
+    )
     logger.info("Conditions: %s", conditions)
     logger.info("Seeds: %s", seeds)
 
@@ -316,13 +326,15 @@ def main(argv: list[str] | None = None) -> int:
             for seed in seeds:
                 arc = _archive_path(cond, seed)
                 if arc.exists() and not args.force:
-                    logger.info("Skip %s seed=%d (archived at %s)",
-                                cond, seed, arc.relative_to(REPO_ROOT))
+                    logger.info(
+                        "Skip %s seed=%d (archived at %s)", cond, seed, arc.relative_to(REPO_ROOT)
+                    )
                     results[cond][seed] = json.loads(arc.read_text(encoding="utf-8"))
                     continue
                 try:
                     run_metrics = run_one(
-                        cond, seed,
+                        cond,
+                        seed,
                         epochs=args.epochs,
                         batch_size=args.batch_size,
                         device=args.device,
@@ -334,8 +346,10 @@ def main(argv: list[str] | None = None) -> int:
                 results[cond][seed] = run_metrics
                 logger.info(
                     "Run %s seed=%d OK — macro F1 %.4f, acc %.4f (%.1f min)",
-                    cond, seed,
-                    run_metrics["macro_f1"], run_metrics["accuracy"],
+                    cond,
+                    seed,
+                    run_metrics["macro_f1"],
+                    run_metrics["accuracy"],
                     run_metrics["runner_wall_clock_sec"] / 60.0,
                 )
 

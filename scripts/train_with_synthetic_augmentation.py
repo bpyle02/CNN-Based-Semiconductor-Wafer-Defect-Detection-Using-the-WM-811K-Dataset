@@ -20,99 +20,77 @@ Example usage:
 """
 
 import argparse
+import logging
 from pathlib import Path
 from typing import Optional, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-import matplotlib.pyplot as plt
 
-from src.data.dataset import load_dataset, KNOWN_CLASSES
-import logging
+from src.data.dataset import KNOWN_CLASSES, load_dataset
 
 logger = logging.getLogger(__name__)
 
-from src.data.preprocessing import (
-    preprocess_wafer_maps, WaferMapDataset, get_image_transforms, get_imagenet_normalize,
-    seed_worker,
-)
-from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
-from src.training.trainer import train_model
-from src.training.config import TrainConfig
 from src.analysis.evaluate import evaluate_model
 from src.analysis.visualize import plot_confusion_matrices, plot_training_curves
 from src.augmentation.synthetic import (
-    SyntheticDataAugmenter, balance_dataset_with_synthetic
+    SyntheticDataAugmenter,
+    balance_dataset_with_synthetic,
 )
+from src.data.preprocessing import (
+    WaferMapDataset,
+    get_image_transforms,
+    get_imagenet_normalize,
+    preprocess_wafer_maps,
+    seed_worker,
+)
+from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
+from src.training.config import TrainConfig
+from src.training.trainer import train_model
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Train with synthetic data augmentation"
+    parser = argparse.ArgumentParser(description="Train with synthetic data augmentation")
+    parser.add_argument(
+        "--model",
+        choices=["cnn", "resnet", "efficientnet", "all"],
+        default="cnn",
+        help="Model architecture (default: cnn)",
     )
     parser.add_argument(
-        '--model',
-        choices=['cnn', 'resnet', 'efficientnet', 'all'],
-        default='cnn',
-        help='Model architecture (default: cnn)'
+        "--epochs", type=int, default=5, help="Number of training epochs (default: 5)"
+    )
+    parser.add_argument("--batch-size", type=int, default=64, help="Batch size (default: 64)")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate (default: 1e-3)")
+    parser.add_argument(
+        "--augmentation",
+        choices=["none", "rule-based", "gan"],
+        default="rule-based",
+        help="Augmentation strategy (default: rule-based)",
     )
     parser.add_argument(
-        '--epochs',
-        type=int,
-        default=5,
-        help='Number of training epochs (default: 5)'
+        "--gan-epochs", type=int, default=5, help="GAN training epochs (default: 5)"
     )
     parser.add_argument(
-        '--batch-size',
-        type=int,
-        default=64,
-        help='Batch size (default: 64)'
-    )
-    parser.add_argument(
-        '--lr',
-        type=float,
-        default=1e-3,
-        help='Learning rate (default: 1e-3)'
-    )
-    parser.add_argument(
-        '--augmentation',
-        choices=['none', 'rule-based', 'gan'],
-        default='rule-based',
-        help='Augmentation strategy (default: rule-based)'
-    )
-    parser.add_argument(
-        '--gan-epochs',
-        type=int,
-        default=5,
-        help='GAN training epochs (default: 5)'
-    )
-    parser.add_argument(
-        '--target-samples-per-class',
+        "--target-samples-per-class",
         type=int,
         default=None,
-        help='Target samples per class. If None, uses max class count.'
+        help="Target samples per class. If None, uses max class count.",
     )
     parser.add_argument(
-        '--device',
-        choices=['cpu', 'cuda'],
-        default='cpu',
-        help='Device (default: cpu)'
+        "--device", choices=["cpu", "cuda"], default="cpu", help="Device (default: cpu)"
     )
+    parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
     parser.add_argument(
-        '--seed',
-        type=int,
-        default=42,
-        help='Random seed (default: 42)'
-    )
-    parser.add_argument(
-        '--output-dir',
+        "--output-dir",
         type=str,
-        default='./results_augmented',
-        help='Output directory for results (default: ./results_augmented)'
+        default="./results_augmented",
+        help="Output directory for results (default: ./results_augmented)",
     )
 
     return parser.parse_args()
@@ -134,7 +112,7 @@ def load_and_preprocess_data(
     df = load_dataset()
 
     # Filter to known classes
-    labeled_mask = df['failureClass'].isin(KNOWN_CLASSES)
+    labeled_mask = df["failureClass"].isin(KNOWN_CLASSES)
     df_filtered = df[labeled_mask].reset_index(drop=True)
 
     # Sample if needed
@@ -142,8 +120,8 @@ def load_and_preprocess_data(
         logger.info(f"Sampling {sample_size} examples for testing...")
         df_filtered = df_filtered.sample(n=sample_size, random_state=42)
 
-    wafer_maps = np.array(df_filtered['waferMap'].tolist())
-    labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered['failureClass']])
+    wafer_maps = np.array(df_filtered["waferMap"].tolist())
+    labels = np.array([KNOWN_CLASSES.index(c) for c in df_filtered["failureClass"]])
 
     logger.info(f"Loaded {len(wafer_maps)} samples")
     logger.info(f"Wafer shape: {wafer_maps[0].shape}")
@@ -162,10 +140,10 @@ def augment_data_if_needed(
     augmentation_type: str,
     gan_epochs: int,
     target_samples: Optional[int],
-    device: torch.device
+    device: torch.device,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Apply augmentation if requested."""
-    if augmentation_type == 'none':
+    if augmentation_type == "none":
         return maps, labels
 
     logger.info(f"\n=== Applying {augmentation_type} Augmentation ===")
@@ -173,28 +151,18 @@ def augment_data_if_needed(
     # Determine target
     if target_samples is None:
         from collections import Counter
+
         counts = Counter(labels)
         target_samples = max(counts.values())
 
-    if augmentation_type == 'gan':
+    if augmentation_type == "gan":
         # Train GAN
-        augmenter = SyntheticDataAugmenter(
-            generator_type='gan',
-            image_size=96,
-            device=device
-        )
+        augmenter = SyntheticDataAugmenter(generator_type="gan", image_size=96, device=device)
         logger.info("Training GAN on wafer maps...")
-        augmenter.train_generator(
-            maps,
-            epochs=gan_epochs,
-            batch_size=32,
-            verbose=True
-        )
+        augmenter.train_generator(maps, epochs=gan_epochs, batch_size=32, verbose=True)
     else:  # rule-based
         augmenter = SyntheticDataAugmenter(
-            generator_type='rule-based',
-            image_size=96,
-            device=device
+            generator_type="rule-based", image_size=96, device=device
         )
 
     # Augment
@@ -206,19 +174,14 @@ def augment_data_if_needed(
 
 
 def create_dataloaders(
-    maps: np.ndarray,
-    labels: np.ndarray,
-    batch_size: int,
-    model_type: str
+    maps: np.ndarray, labels: np.ndarray, batch_size: int, model_type: str
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """Create train/val/test dataloaders."""
     # Stratified split
     from sklearn.model_selection import train_test_split
 
     indices = np.arange(len(maps))
-    train_idx, temp_idx = train_test_split(
-        indices, test_size=0.3, stratify=labels, random_state=42
-    )
+    train_idx, temp_idx = train_test_split(indices, test_size=0.3, stratify=labels, random_state=42)
     val_idx, test_idx = train_test_split(
         temp_idx, test_size=0.5, stratify=labels[temp_idx], random_state=42
     )
@@ -232,30 +195,24 @@ def create_dataloaders(
     imagenet_norm = get_imagenet_normalize()
 
     # Determine if using pretrained model
-    use_pretrained = model_type in ['resnet', 'efficientnet']
+    use_pretrained = model_type in ["resnet", "efficientnet"]
 
     # Create datasets
-    train_dataset = WaferMapDataset(
-        list(train_maps),
-        train_labels,
-        transform=aug_transform
-    )
-    val_dataset = WaferMapDataset(
-        list(val_maps),
-        val_labels,
-        transform=None
-    )
-    test_dataset = WaferMapDataset(
-        list(test_maps),
-        test_labels,
-        transform=None
-    )
+    train_dataset = WaferMapDataset(list(train_maps), train_labels, transform=aug_transform)
+    val_dataset = WaferMapDataset(list(val_maps), val_labels, transform=None)
+    test_dataset = WaferMapDataset(list(test_maps), test_labels, transform=None)
 
     # Create loaders
     g = torch.Generator().manual_seed(42)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g
+    )
 
     logger.info(f"\nDataset split:")
     logger.info(f"  Train: {len(train_maps)} samples")
@@ -267,11 +224,11 @@ def create_dataloaders(
 
 def create_model(model_type: str, device: torch.device) -> nn.Module:
     """Create model."""
-    if model_type == 'cnn':
+    if model_type == "cnn":
         model = WaferCNN(num_classes=9)
-    elif model_type == 'resnet':
+    elif model_type == "resnet":
         model = get_resnet18(num_classes=9, freeze_earlier_layers=True)
-    elif model_type == 'efficientnet':
+    elif model_type == "efficientnet":
         model = get_efficientnet_b0(num_classes=9, freeze_earlier_layers=True)
     else:
         raise ValueError(f"Unknown model: {model_type}")
@@ -296,19 +253,16 @@ def main() -> None:
 
     # Show original distribution
     from collections import Counter
+
     counts = Counter(labels)
     logger.info("\n--- Original Class Distribution ---")
     for class_idx in sorted(counts.keys()):
         logger.info(f"  {KNOWN_CLASSES[class_idx]:12s}: {counts[class_idx]:5d}")
 
     # Augment if needed
-    if args.augmentation != 'none':
+    if args.augmentation != "none":
         maps, labels = augment_data_if_needed(
-            maps, labels,
-            args.augmentation,
-            args.gan_epochs,
-            args.target_samples_per_class,
-            device
+            maps, labels, args.augmentation, args.gan_epochs, args.target_samples_per_class, device
         )
 
     # Show augmented distribution
@@ -323,7 +277,7 @@ def main() -> None:
     )
 
     # Train models
-    models_to_train = ['cnn', 'resnet', 'efficientnet'] if args.model == 'all' else [args.model]
+    models_to_train = ["cnn", "resnet", "efficientnet"] if args.model == "all" else [args.model]
 
     results = {}
     for model_type in models_to_train:
@@ -338,23 +292,27 @@ def main() -> None:
             weight=torch.tensor(
                 [12.04, 34.46, 28.16, 27.68, 41.80, 40.02, 38.57, 35.78, 0.28],
                 dtype=torch.float32,
-                device=device
+                device=device,
             )
         )
         optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=args.lr if model_type == 'cnn' else 1e-4,
-            weight_decay=1e-4
+            model.parameters(), lr=args.lr if model_type == "cnn" else 1e-4, weight_decay=1e-4
         )
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='max', factor=0.5, patience=2, verbose=True
+            optimizer, mode="max", factor=0.5, patience=2, verbose=True
         )
 
         # Train
         trained_model, history = train_model(
-            model, train_loader, val_loader, criterion, optimizer,
-            epochs=args.epochs, scheduler=scheduler, device=device,
-            checkpoint_path=output_dir / f'{model_type}_best.pth'
+            model,
+            train_loader,
+            val_loader,
+            criterion,
+            optimizer,
+            epochs=args.epochs,
+            scheduler=scheduler,
+            device=device,
+            checkpoint_path=output_dir / f"{model_type}_best.pth",
         )
 
         # Evaluate
@@ -364,11 +322,11 @@ def main() -> None:
         )
 
         results[model_type] = {
-            'model': trained_model,
-            'history': history,
-            'metrics': metrics,
-            'predictions': test_preds,
-            'true_labels': test_labels,
+            "model": trained_model,
+            "history": history,
+            "metrics": metrics,
+            "predictions": test_preds,
+            "true_labels": test_labels,
         }
 
         logger.info(f"\n{model_type.upper()} Results:")
@@ -383,25 +341,24 @@ def main() -> None:
         for model_type, res in results.items():
             # Training curves
             plot_training_curves(
-                res['history'],
-                save_path=output_dir / f'{model_type}_training_curves.png'
+                res["history"], save_path=output_dir / f"{model_type}_training_curves.png"
             )
 
             # Confusion matrix
             plot_confusion_matrices(
-                res['predictions'],
-                res['true_labels'],
+                res["predictions"],
+                res["true_labels"],
                 KNOWN_CLASSES,
-                save_path=output_dir / f'{model_type}_confusion_matrix.png'
+                save_path=output_dir / f"{model_type}_confusion_matrix.png",
             )
 
     logger.info(f"\n✓ Training complete! Results saved to {output_dir}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     main()

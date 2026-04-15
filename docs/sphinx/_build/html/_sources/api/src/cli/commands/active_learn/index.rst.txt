@@ -1,0 +1,27 @@
+src.cli.commands.active_learn
+=============================
+
+.. py:module:: src.cli.commands.active_learn
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli active-learn`` — forwards to ``scripts/active_learn.py``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.active_learn.active_learn
+
+
+Module Contents
+---------------
+
+.. py:function:: active_learn(ctx: typer.Context) -> None
+
+   Active learning study. Flags forwarded to scripts/active_learn.py.
+
+

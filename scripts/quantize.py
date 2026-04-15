@@ -110,7 +110,8 @@ def _try_load_cached_tensors(
     if not image_keys or not label_keys:
         logger.warning(
             "Cache %s has keys %s; no recognised image/label arrays.",
-            cache_path, list(npz.files),
+            cache_path,
+            list(npz.files),
         )
         return None
     return npz[image_keys[0]], npz[label_keys[0]]
@@ -176,7 +177,9 @@ def load_calib_and_test(
     if n < num_calib + num_test:
         logger.warning(
             "Cache has only %d samples; requested %d calib + %d test.",
-            n, num_calib, num_test,
+            n,
+            num_calib,
+            num_test,
         )
     idx = rng.permutation(n)
     calib_idx = idx[:num_calib]
@@ -190,9 +193,7 @@ def load_calib_and_test(
     if lab_arr.dtype.kind in "USO":  # string / object-dtype → map to int
         order = class_order or sorted({str(v) for v in lab_arr})
         mapping = {v: i for i, v in enumerate(order)}
-        lab_arr = np.array(
-            [mapping.get(str(v), -1) for v in lab_arr], dtype=np.int64
-        )
+        lab_arr = np.array([mapping.get(str(v), -1) for v in lab_arr], dtype=np.int64)
     test_y = torch.as_tensor(lab_arr[test_idx], dtype=torch.long)
     return calib_x, test_x, test_y, None
 
@@ -205,6 +206,7 @@ def load_calib_and_test(
 def _pick_backend() -> str:
     """Pick a quantized backend available on this platform."""
     import torch.backends.quantized as q_backends
+
     supported = getattr(q_backends, "supported_engines", ["fbgemm"])
     for pref in ("fbgemm", "qnnpack", "x86"):
         if pref in supported:
@@ -223,7 +225,8 @@ class _QuantWrapper(nn.Module):
 
     def __init__(self, model: nn.Module) -> None:
         super().__init__()
-        from torch.ao.quantization import QuantStub, DeQuantStub
+        from torch.ao.quantization import DeQuantStub, QuantStub
+
         self.quant = QuantStub()
         self.model = model
         self.dequant = DeQuantStub()
@@ -385,9 +388,9 @@ def quantize_checkpoint(
 
     try:
         from torch.ao.quantization import (
+            convert,
             get_default_qconfig,
             prepare,
-            convert,
         )
 
         quantizable = copy.deepcopy(fp32).eval()
@@ -412,9 +415,7 @@ def quantize_checkpoint(
     # -- evaluate int8 --
     try:
         int8_latency = _mean_latency_ms(int8_model)
-        int8_acc = (
-            _accuracy(int8_model, test_x, test_y) if test_y is not None else None
-        )
+        int8_acc = _accuracy(int8_model, test_x, test_y) if test_y is not None else None
     except Exception as exc:
         logger.warning("INT8 eval failed for %s: %s", name, exc)
         result.error = f"int8 eval failed: {type(exc).__name__}: {exc}"
@@ -430,7 +431,9 @@ def quantize_checkpoint(
         scripted.save(str(out_path))
     except Exception as exc:
         # Fallback: just save the state dict.
-        logger.warning("torch.jit.script failed for %s: %s; falling back to state_dict save", name, exc)
+        logger.warning(
+            "torch.jit.script failed for %s: %s; falling back to state_dict save", name, exc
+        )
         try:
             torch.save(int8_model.state_dict(), out_path)
         except Exception as exc2:
@@ -444,18 +447,12 @@ def quantize_checkpoint(
     int8_size_mb = out_path.stat().st_size / (1024 * 1024)
     result.int8_path = str(out_path)
     result.int8_size_mb = int8_size_mb
-    result.size_ratio = (
-        result.fp32_size_mb / int8_size_mb if int8_size_mb > 0 else None
-    )
+    result.size_ratio = result.fp32_size_mb / int8_size_mb if int8_size_mb > 0 else None
     result.int8_latency_ms = int8_latency
-    result.latency_ratio = (
-        int8_latency / fp32_latency if fp32_latency > 0 else None
-    )
+    result.latency_ratio = int8_latency / fp32_latency if fp32_latency > 0 else None
     result.int8_accuracy = int8_acc
     result.accuracy_delta = (
-        (int8_acc - fp32_acc)
-        if (int8_acc is not None and fp32_acc is not None)
-        else None
+        (int8_acc - fp32_acc) if (int8_acc is not None and fp32_acc is not None) else None
     )
     result.ok = True
 
@@ -468,15 +465,17 @@ def quantize_checkpoint(
 
 
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument("--model", type=str, default=None)
     p.add_argument("--checkpoint", type=Path, default=None)
-    p.add_argument("--all", action="store_true",
-                   help="Quantize every *_best.pth under --checkpoints-dir.")
+    p.add_argument(
+        "--all", action="store_true", help="Quantize every *_best.pth under --checkpoints-dir."
+    )
     p.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
     p.add_argument("--results-dir", type=Path, default=REPO_ROOT / "results")
-    p.add_argument("--data-cache", type=Path,
-                   default=REPO_ROOT / "data" / "LSWMD_cache.npz")
+    p.add_argument("--data-cache", type=Path, default=REPO_ROOT / "data" / "LSWMD_cache.npz")
     p.add_argument("--num-calib", type=int, default=128)
     p.add_argument("--num-test", type=int, default=1024)
     p.add_argument("-v", "--verbose", action="store_true")

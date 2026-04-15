@@ -12,7 +12,7 @@ authors:
   - family-names: Rettura
     given-names: Brett
 repository-code: "https://github.com/bpyle02/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset"
-version: "0.1.0"
+version: "0.2.1"
 date-released: "2026-04-14"
 keywords:
   - wafer defect detection

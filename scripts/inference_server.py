@@ -44,13 +44,12 @@ from typing import Optional
 
 import uvicorn
 
-from src.inference.server import create_app, ModelType
+from src.inference.server import ModelType, create_app
 from src.model_registry import resolve_trusted_checkpoint_path
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -72,29 +71,24 @@ def main() -> int:
         "--host",
         type=str,
         default="127.0.0.1",
-        help="Host to bind to (default: 127.0.0.1, use 0.0.0.0 for external access)"
+        help="Host to bind to (default: 127.0.0.1, use 0.0.0.0 for external access)",
     )
 
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=8000,
-        help="Port to bind to (default: 8000)"
-    )
+    parser.add_argument("--port", type=int, default=8000, help="Port to bind to (default: 8000)")
 
     parser.add_argument(
         "--device",
         type=str,
         default="cpu",
         choices=["cpu", "cuda"],
-        help="Device to use for inference (default: cpu)"
+        help="Device to use for inference (default: cpu)",
     )
 
     parser.add_argument(
         "--model",
         type=str,
         default=None,
-        help="Path to model checkpoint to load on startup (.pth file)"
+        help="Path to model checkpoint to load on startup (.pth file)",
     )
 
     parser.add_argument(
@@ -102,7 +96,7 @@ def main() -> int:
         type=str,
         default=None,
         choices=["cnn", "resnet", "efficientnet"],
-        help="Model architecture type (required if --model is specified)"
+        help="Model architecture type (required if --model is specified)",
     )
 
     parser.add_argument(
@@ -110,20 +104,17 @@ def main() -> int:
         type=str,
         action="append",
         default=[],
-        help="Additional trusted checkpoint directory. Repeat to allow multiple roots."
+        help="Additional trusted checkpoint directory. Repeat to allow multiple roots.",
     )
 
     parser.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Number of worker processes (default: 1)"
+        "--workers", type=int, default=1, help="Number of worker processes (default: 1)"
     )
 
     parser.add_argument(
         "--reload",
         action="store_true",
-        help="Enable auto-reload on code changes (development only)"
+        help="Enable auto-reload on code changes (development only)",
     )
 
     parser.add_argument(
@@ -131,7 +122,7 @@ def main() -> int:
         type=str,
         default="info",
         choices=["debug", "info", "warning", "error"],
-        help="Logging level (default: info)"
+        help="Logging level (default: info)",
     )
 
     args = parser.parse_args()
@@ -153,6 +144,7 @@ def main() -> int:
     if args.device == "cuda":
         try:
             import torch
+
             if not torch.cuda.is_available():
                 logger.warning("CUDA not available, falling back to CPU")
                 args.device = "cpu"

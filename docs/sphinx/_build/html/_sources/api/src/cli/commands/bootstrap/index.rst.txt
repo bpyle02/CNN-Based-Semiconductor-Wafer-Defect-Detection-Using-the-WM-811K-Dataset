@@ -1,0 +1,27 @@
+src.cli.commands.bootstrap
+==========================
+
+.. py:module:: src.cli.commands.bootstrap
+
+.. autoapi-nested-parse::
+
+   ``wafer-cli bootstrap`` — forwards to ``scripts/bootstrap_ci.py``.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.cli.commands.bootstrap.bootstrap
+
+
+Module Contents
+---------------
+
+.. py:function:: bootstrap(ctx: typer.Context) -> None
+
+   Bootstrap CIs. Flags forwarded to scripts/bootstrap_ci.py.
+
+

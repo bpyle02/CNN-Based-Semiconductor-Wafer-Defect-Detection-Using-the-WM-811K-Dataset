@@ -50,16 +50,17 @@ class FPNBlock(nn.Module):
         self.out_channels = out_channels
 
         # Lateral 1x1 convolutions: project each stage to out_channels
-        self.lateral_convs = nn.ModuleList([
-            nn.Conv2d(in_ch, out_channels, kernel_size=1)
-            for in_ch in in_channels_list
-        ])
+        self.lateral_convs = nn.ModuleList(
+            [nn.Conv2d(in_ch, out_channels, kernel_size=1) for in_ch in in_channels_list]
+        )
 
         # Optional 3x3 smoothing convolutions after merging (standard FPN)
-        self.smooth_convs = nn.ModuleList([
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
-            for _ in in_channels_list
-        ])
+        self.smooth_convs = nn.ModuleList(
+            [
+                nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+                for _ in in_channels_list
+            ]
+        )
 
     def forward(self, features: List[torch.Tensor]) -> List[torch.Tensor]:
         """Build the feature pyramid from backbone feature maps.
@@ -77,10 +78,7 @@ class FPNBlock(nn.Module):
         num_levels = len(features)
 
         # Compute lateral projections
-        laterals = [
-            self.lateral_convs[i](features[i])
-            for i in range(num_levels)
-        ]
+        laterals = [self.lateral_convs[i](features[i]) for i in range(num_levels)]
 
         # Top-down pathway: upsample coarser level, add to finer lateral
         for i in range(num_levels - 2, -1, -1):
@@ -92,10 +90,7 @@ class FPNBlock(nn.Module):
             laterals[i] = laterals[i] + upsampled
 
         # 3x3 smoothing to reduce aliasing from upsampling
-        outputs = [
-            self.smooth_convs[i](laterals[i])
-            for i in range(num_levels)
-        ]
+        outputs = [self.smooth_convs[i](laterals[i]) for i in range(num_levels)]
 
         return outputs
 
@@ -236,10 +231,7 @@ class WaferCNNFPN(nn.Module):
         fpn_features = self.fpn(stage_features)
 
         # Global average pool each level, flatten, concatenate
-        pooled = [
-            torch.flatten(self.gap(feat), 1)
-            for feat in fpn_features
-        ]
+        pooled = [torch.flatten(self.gap(feat), 1) for feat in fpn_features]
         fused = torch.cat(pooled, dim=1)
 
         # Classify

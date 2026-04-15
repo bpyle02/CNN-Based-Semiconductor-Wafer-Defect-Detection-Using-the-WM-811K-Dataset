@@ -37,10 +37,11 @@ from sklearn.metrics import accuracy_score, f1_score
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from torch.utils.data import DataLoader  # noqa: E402
+
 from src.config import load_config  # noqa: E402
 from src.inference.calibration import TemperatureScaling  # noqa: E402
 from src.inference.tta import predict_with_tta  # noqa: E402
-from torch.utils.data import DataLoader  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ DISPLAY = {
 def _load_splits(config, data_path: Path, seed: int, batch_size: int, num_workers: int):
     """Reproduce train.py's deterministic split and return the test DataLoader."""
     import train as _train
+
     data = _train.load_and_preprocess_data(
         data_path,
         train_size=config.data.train_size,
@@ -68,6 +70,7 @@ def _load_splits(config, data_path: Path, seed: int, batch_size: int, num_worker
         synthetic=False,
     )
     from src.data.preprocessing import WaferMapDataset
+
     val_ds = WaferMapDataset(data["val_maps"], data["y_val"])
     test_ds = WaferMapDataset(data["test_maps"], data["y_test"])
     kwargs = dict(batch_size=batch_size, num_workers=num_workers, pin_memory=True)
@@ -90,8 +93,11 @@ def _discover(ckpt_dir: Path, requested: List[str] | None) -> List[Tuple[str, Pa
     return found
 
 
-def _build_and_load(model_name: str, ckpt: Path, config, num_classes: int, device: str) -> torch.nn.Module:
+def _build_and_load(
+    model_name: str, ckpt: Path, config, num_classes: int, device: str
+) -> torch.nn.Module:
     import train as _train
+
     model_cfg = getattr(config.model, model_name, None) or config.model
     model, _ = _train.build_model(model_name, model_cfg, num_classes, device)
     state = torch.load(ckpt, map_location=device, weights_only=False)
@@ -102,7 +108,9 @@ def _build_and_load(model_name: str, ckpt: Path, config, num_classes: int, devic
 
 
 @torch.no_grad()
-def _collect_logits(model: torch.nn.Module, loader: DataLoader, device: str) -> Tuple[np.ndarray, np.ndarray]:
+def _collect_logits(
+    model: torch.nn.Module, loader: DataLoader, device: str
+) -> Tuple[np.ndarray, np.ndarray]:
     """Collect raw logits (pre-softmax) over the loader."""
     logits_chunks, labels_chunks = [], []
     for imgs, labels in loader:
@@ -136,13 +144,16 @@ def _collect_probs(
             # Wrap model to apply temperature scaling to each view's logits
             # before softmax; TTA averages the scaled softmax outputs.
             if t != 1.0:
+
                 class _Scaled(torch.nn.Module):
                     def __init__(self, base, temp):
                         super().__init__()
                         self.base = base
                         self.temp = temp
+
                     def forward(self, x):
                         return self.base(x) / self.temp
+
                 probs = predict_with_tta(_Scaled(model, t), imgs)
             else:
                 probs = predict_with_tta(model, imgs)
@@ -179,16 +190,24 @@ def _fit_weights(val_probs: List[np.ndarray], y_val: np.ndarray) -> np.ndarray:
         avg = (w[:, None, None] * stacked).sum(axis=0)
         return -f1_score(y_val, avg.argmax(axis=1), average="macro", zero_division=0)
 
-    res = minimize(neg_f1, x0=np.ones(n) / n, method="Nelder-Mead",
-                   options={"xatol": 1e-4, "fatol": 1e-4, "maxiter": 200})
+    res = minimize(
+        neg_f1,
+        x0=np.ones(n) / n,
+        method="Nelder-Mead",
+        options={"xatol": 1e-4, "fatol": 1e-4, "maxiter": 200},
+    )
     w = np.clip(res.x, 0, None)
     return w / w.sum() if w.sum() > 0 else np.ones(n) / n
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--models", nargs="+", default=None,
-                        help="Subset of model names to include (default: all discovered).")
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        default=None,
+        help="Subset of model names to include (default: all discovered).",
+    )
     parser.add_argument("--checkpoints-dir", type=Path, default=REPO_ROOT / "checkpoints")
     parser.add_argument("--data-path", type=Path, default=REPO_ROOT / "data" / "LSWMD_new.pkl")
     parser.add_argument("--batch-size", type=int, default=128)
@@ -196,15 +215,22 @@ def main() -> int:
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "config.yaml")
-    parser.add_argument("--tta", action="store_true",
-                        help="Apply 8-view test-time augmentation before ensembling.")
-    parser.add_argument("--calibrate", action="store_true",
-                        help="Fit temperature scaling on the val split per model "
-                             "and apply to test logits before metrics.")
+    parser.add_argument(
+        "--tta", action="store_true", help="Apply 8-view test-time augmentation before ensembling."
+    )
+    parser.add_argument(
+        "--calibrate",
+        action="store_true",
+        help="Fit temperature scaling on the val split per model "
+        "and apply to test logits before metrics.",
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-                        datefmt="%Y-%m-%d %H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -235,22 +261,30 @@ def main() -> int:
             temperature = ts.fit(val_logits, y_val)
             temperatures[name] = temperature
             logger.info("  %-12s  calibrated T=%.4f", DISPLAY.get(name, name), temperature)
-            val_probs = torch.softmax(
-                torch.from_numpy(val_logits) / temperature, dim=1
-            ).numpy()
+            val_probs = torch.softmax(torch.from_numpy(val_logits) / temperature, dim=1).numpy()
         else:
             val_probs, y_val = _collect_probs(
-                model, val_loader, args.device,
-                use_tta=args.tta, temperature=1.0,
+                model,
+                val_loader,
+                args.device,
+                use_tta=args.tta,
+                temperature=1.0,
             )
 
         test_probs, y_test = _collect_probs(
-            model, test_loader, args.device,
-            use_tta=args.tta, temperature=temperature,
+            model,
+            test_loader,
+            args.device,
+            use_tta=args.tta,
+            temperature=temperature,
         )
         per_model[name] = _metrics(test_probs, y_test)
-        logger.info("  %-12s  acc=%.4f  macroF1=%.4f", DISPLAY.get(name, name),
-                    per_model[name]["accuracy"], per_model[name]["macro_f1"])
+        logger.info(
+            "  %-12s  acc=%.4f  macroF1=%.4f",
+            DISPLAY.get(name, name),
+            per_model[name]["accuracy"],
+            per_model[name]["macro_f1"],
+        )
         val_probs_all.append(val_probs)
         test_probs_all.append(test_probs)
         y_val_ref = y_val if y_val_ref is None else y_val_ref
@@ -261,7 +295,9 @@ def main() -> int:
 
     avg_probs = np.stack(test_probs_all, axis=0).mean(axis=0)
     vote_preds = np.stack([p.argmax(axis=1) for p in test_probs_all], axis=0)
-    vote_pred = np.array([np.bincount(vote_preds[:, i]).argmax() for i in range(vote_preds.shape[1])])
+    vote_pred = np.array(
+        [np.bincount(vote_preds[:, i]).argmax() for i in range(vote_preds.shape[1])]
+    )
     weights = _fit_weights(val_probs_all, y_val_ref)
     weighted_probs = (weights[:, None, None] * np.stack(test_probs_all, axis=0)).sum(axis=0)
 
@@ -270,28 +306,50 @@ def main() -> int:
         "voting": {
             "accuracy": float(accuracy_score(y_test_ref, vote_pred)),
             "macro_f1": float(f1_score(y_test_ref, vote_pred, average="macro", zero_division=0)),
-            "weighted_f1": float(f1_score(y_test_ref, vote_pred, average="weighted", zero_division=0)),
+            "weighted_f1": float(
+                f1_score(y_test_ref, vote_pred, average="weighted", zero_division=0)
+            ),
         },
-        "weighted": {**_metrics(weighted_probs, y_test_ref),
-                     "weights": {n: float(w) for (n, _), w in zip(found, weights)}},
+        "weighted": {
+            **_metrics(weighted_probs, y_test_ref),
+            "weights": {n: float(w) for (n, _), w in zip(found, weights)},
+        },
     }
 
-    results = {"per_model": per_model, "ensemble": ensemble, "num_models": len(found),
-               "model_names": [n for n, _ in found],
-               "tta": bool(args.tta), "calibrate": bool(args.calibrate),
-               "temperatures": temperatures}
+    results = {
+        "per_model": per_model,
+        "ensemble": ensemble,
+        "num_models": len(found),
+        "model_names": [n for n, _ in found],
+        "tta": bool(args.tta),
+        "calibrate": bool(args.calibrate),
+        "temperatures": temperatures,
+    }
     out_json = REPO_ROOT / "results" / "ensemble_metrics.json"
     out_json.parent.mkdir(exist_ok=True)
     out_json.write_text(json.dumps(results, indent=2))
     logger.info("Wrote %s", out_json)
 
-    lines = ["# Ensemble evaluation\n", "## Per-model (test split)\n",
-             "| Model | Accuracy | Macro F1 | Weighted F1 |", "|---|---|---|---|"]
+    lines = [
+        "# Ensemble evaluation\n",
+        "## Per-model (test split)\n",
+        "| Model | Accuracy | Macro F1 | Weighted F1 |",
+        "|---|---|---|---|",
+    ]
     for n, m in per_model.items():
-        lines.append(f"| {DISPLAY.get(n, n)} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | {m['weighted_f1']:.4f} |")
-    lines += ["", "## Ensemble aggregations\n", "| Method | Accuracy | Macro F1 | Weighted F1 |", "|---|---|---|---|"]
+        lines.append(
+            f"| {DISPLAY.get(n, n)} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | {m['weighted_f1']:.4f} |"
+        )
+    lines += [
+        "",
+        "## Ensemble aggregations\n",
+        "| Method | Accuracy | Macro F1 | Weighted F1 |",
+        "|---|---|---|---|",
+    ]
     for method, m in ensemble.items():
-        lines.append(f"| {method} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | {m['weighted_f1']:.4f} |")
+        lines.append(
+            f"| {method} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | {m['weighted_f1']:.4f} |"
+        )
     lines += ["", f"**Learned weights:** `{ensemble['weighted']['weights']}`", ""]
     out_md = REPO_ROOT / "docs" / "ensemble_results.md"
     out_md.write_text("\n".join(lines))

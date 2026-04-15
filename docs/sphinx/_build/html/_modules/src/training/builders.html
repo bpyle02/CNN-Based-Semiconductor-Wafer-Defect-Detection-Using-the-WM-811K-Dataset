@@ -1,0 +1,392 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.builders &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.training.builders</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.training.builders</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Factories for models, optimizers, and schedulers.</span>
+
+<span class="sd">Extracted from ``train.py`` so scripts and the training pipeline can share one</span>
+<span class="sd">canonical construction path.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferCNN</span><span class="p">,</span> <span class="n">WaferCNNFPN</span><span class="p">,</span> <span class="n">get_resnet18</span><span class="p">,</span> <span class="n">get_efficientnet_b0</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.models.vit</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_vit_small</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.models.swin</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_swin_tiny</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DEFAULT_SCHEDULER_CONFIG">
+<a class="viewcode-back" href="../../../api/src/training/builders/index.html#src.training.builders.DEFAULT_SCHEDULER_CONFIG">[docs]</a>
+<span class="n">DEFAULT_SCHEDULER_CONFIG</span> <span class="o">=</span> <span class="n">SimpleNamespace</span><span class="p">(</span>
+    <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;ReduceLROnPlateau&quot;</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">patience</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">min_lr</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_call_with_supported_kwargs</span><span class="p">(</span><span class="n">factory</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Call a factory while ignoring unsupported keyword arguments.&quot;&quot;&quot;</span>
+    <span class="n">supported</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">supported</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">factory</span><span class="p">(</span><span class="o">**</span><span class="n">filtered</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inject SE or CBAM attention blocks if configured.&quot;&quot;&quot;</span>
+    <span class="n">attention_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;attention_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_cfg</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">attention_type</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span>
+    <span class="n">reduction</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;attention_reduction&quot;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">attention_type</span> <span class="o">==</span> <span class="s2">&quot;se&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_se_to_model</span>
+        <span class="k">return</span> <span class="n">add_se_to_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">attention_type</span> <span class="o">==</span> <span class="s2">&quot;cbam&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.attention</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_cbam_to_model</span>
+        <span class="k">return</span> <span class="n">add_cbam_to_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown attention_type &#39;</span><span class="si">{</span><span class="n">attention_type</span><span class="si">}</span><span class="s2">&#39;, skipping&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<div class="viewcode-block" id="build_model">
+<a class="viewcode-back" href="../../../api/src/training/builders/index.html#src.training.builders.build_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_model</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">model_cfg</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a model using config-backed settings when supported.&quot;&quot;&quot;</span>
+    <span class="n">common_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;num_classes&quot;</span><span class="p">:</span> <span class="n">num_classes</span><span class="p">}</span>
+    <span class="n">dropout_rate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;dropout_rate&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">head_dropout</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;head_dropout&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">head_hidden_dim</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;head_hidden_dim&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">feature_channels</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;feature_channels&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">frozen_prefixes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;frozen_prefixes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;cnn&quot;</span><span class="p">:</span>
+        <span class="n">cnn_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+            <span class="s2">&quot;input_channels&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;input_channels&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;dropout_rate&quot;</span><span class="p">:</span> <span class="n">dropout_rate</span><span class="p">,</span>
+            <span class="s2">&quot;use_batch_norm&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;use_batch_norm&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">feature_channels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cnn_kwargs</span><span class="p">[</span><span class="s2">&quot;feature_channels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_channels</span>
+        <span class="k">if</span> <span class="n">model_cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;head_hidden_dim&quot;</span><span class="p">):</span>
+            <span class="n">cnn_kwargs</span><span class="p">[</span><span class="s2">&quot;head_hidden_dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">head_hidden_dim</span>
+        <span class="k">if</span> <span class="n">model_cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;head_dropout&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">head_dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cnn_kwargs</span><span class="p">[</span><span class="s2">&quot;head_dropout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">head_dropout</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span><span class="n">WaferCNN</span><span class="p">,</span> <span class="o">**</span><span class="n">cnn_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;Custom CNN&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;cnn_fpn&quot;</span><span class="p">:</span>
+        <span class="n">fpn_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+            <span class="s2">&quot;input_channels&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;input_channels&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;dropout_rate&quot;</span><span class="p">:</span> <span class="n">dropout_rate</span><span class="p">,</span>
+            <span class="s2">&quot;use_batch_norm&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;use_batch_norm&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s2">&quot;fpn_out_channels&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;fpn_out_channels&quot;</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">feature_channels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fpn_kwargs</span><span class="p">[</span><span class="s2">&quot;feature_channels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_channels</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span><span class="n">WaferCNNFPN</span><span class="p">,</span> <span class="o">**</span><span class="n">fpn_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;Custom CNN-FPN&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;resnet&quot;</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span>
+            <span class="n">get_resnet18</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+            <span class="n">pretrained</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="n">freeze_until</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;freeze_until&quot;</span><span class="p">,</span> <span class="s2">&quot;layer3&quot;</span><span class="p">),</span>
+            <span class="n">frozen_prefixes</span><span class="o">=</span><span class="n">frozen_prefixes</span><span class="p">,</span>
+            <span class="n">head_dropout</span><span class="o">=</span><span class="n">head_dropout</span> <span class="k">if</span> <span class="n">head_dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dropout_rate</span><span class="p">,</span>
+            <span class="n">head_hidden_dim</span><span class="o">=</span><span class="n">head_hidden_dim</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;ResNet-18&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;vit&quot;</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span>
+            <span class="n">get_vit_small</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+            <span class="n">image_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+            <span class="n">in_channels</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;input_channels&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout_rate</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;ViT-small&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;swin&quot;</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span>
+            <span class="n">get_swin_tiny</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;Swin-Tiny&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;ride&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.models.ride</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_ride_model</span>
+        <span class="n">ride_backbone</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;backbone&quot;</span><span class="p">,</span> <span class="s2">&quot;cnn&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_cfg</span> <span class="k">else</span> <span class="s2">&quot;cnn&quot;</span>
+        <span class="n">ride_num_experts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;num_experts&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_cfg</span> <span class="k">else</span> <span class="mi">3</span>
+        <span class="n">ride_reduction</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;reduction&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_cfg</span> <span class="k">else</span> <span class="mi">4</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">build_ride_model</span><span class="p">(</span>
+            <span class="n">backbone_name</span><span class="o">=</span><span class="n">ride_backbone</span><span class="p">,</span>
+            <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+            <span class="n">num_experts</span><span class="o">=</span><span class="n">ride_num_experts</span><span class="p">,</span>
+            <span class="n">reduction</span><span class="o">=</span><span class="n">ride_reduction</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;RIDE&quot;</span><span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">_call_with_supported_kwargs</span><span class="p">(</span>
+        <span class="n">get_efficientnet_b0</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">common_kwargs</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="n">freeze_until</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;freeze_until&quot;</span><span class="p">,</span> <span class="s2">&quot;features.6&quot;</span><span class="p">),</span>
+        <span class="n">frozen_prefixes</span><span class="o">=</span><span class="n">frozen_prefixes</span><span class="p">,</span>
+        <span class="n">head_dropout</span><span class="o">=</span><span class="n">head_dropout</span> <span class="k">if</span> <span class="n">head_dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dropout_rate</span><span class="p">,</span>
+        <span class="n">head_hidden_dim</span><span class="o">=</span><span class="n">head_hidden_dim</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_apply_attention</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_cfg</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_cfg</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;EfficientNet-B0&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_optimizer">
+<a class="viewcode-back" href="../../../api/src/training/builders/index.html#src.training.builders.build_optimizer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_optimizer</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">optimizer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">weight_decay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">momentum</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
+    <span class="n">nesterov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the configured optimizer.&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">optimizer_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">trainable_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">trainable_params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;adamw&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span><span class="p">(</span><span class="n">trainable_params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;sgd&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span>
+            <span class="n">trainable_params</span><span class="p">,</span>
+            <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span>
+            <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
+            <span class="n">momentum</span><span class="o">=</span><span class="n">momentum</span><span class="p">,</span>
+            <span class="n">nesterov</span><span class="o">=</span><span class="n">nesterov</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported optimizer: </span><span class="si">{</span><span class="n">optimizer_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_scheduler">
+<a class="viewcode-back" href="../../../api/src/training/builders/index.html#src.training.builders.build_scheduler">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_scheduler</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler_cfg</span><span class="p">,</span> <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">monitored_metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;val_macro_f1&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the configured scheduler, optionally with linear warmup.</span>
+
+<span class="sd">    For ReduceLROnPlateau, the mode is auto-derived from the monitored metric:</span>
+<span class="sd">    metrics containing &#39;loss&#39; use &#39;min&#39;, all others use &#39;max&#39;.  This prevents</span>
+<span class="sd">    the scheduler from reducing LR when accuracy *increases*.</span>
+
+<span class="sd">    When ``warmup_epochs &gt; 0``, a :class:`~torch.optim.lr_scheduler.LinearLR`</span>
+<span class="sd">    warmup phase is composed with the main scheduler via</span>
+<span class="sd">    :class:`~torch.optim.lr_scheduler.SequentialLR`.  Warmup is only applied to</span>
+<span class="sd">    StepLR and CosineAnnealingLR; ReduceLROnPlateau is adaptive by nature and</span>
+<span class="sd">    skips warmup (a log message is emitted).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warmup_epochs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scheduler_cfg</span><span class="p">,</span> <span class="s2">&quot;warmup_epochs&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">warmup_start_factor</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scheduler_cfg</span><span class="p">,</span> <span class="s2">&quot;warmup_start_factor&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="n">scheduler_type</span> <span class="o">=</span> <span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">scheduler_type</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;disabled&quot;</span><span class="p">}:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">scheduler_type</span> <span class="o">==</span> <span class="s2">&quot;reducelronplateau&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">warmup_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;warmup_epochs=</span><span class="si">%d</span><span class="s2"> ignored for ReduceLROnPlateau (adaptive scheduler)&quot;</span><span class="p">,</span>
+                <span class="n">warmup_epochs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;min&quot;</span> <span class="k">if</span> <span class="s2">&quot;loss&quot;</span> <span class="ow">in</span> <span class="n">monitored_metric</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;max&quot;</span>
+        <span class="k">return</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">(</span>
+            <span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">factor</span><span class="o">=</span><span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">factor</span><span class="p">,</span>
+            <span class="n">patience</span><span class="o">=</span><span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">patience</span><span class="p">,</span>
+            <span class="n">min_lr</span><span class="o">=</span><span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">min_lr</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Build the main (non-Plateau) scheduler</span>
+    <span class="n">main_sched</span><span class="p">:</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">LRScheduler</span>
+    <span class="k">if</span> <span class="n">scheduler_type</span> <span class="o">==</span> <span class="s2">&quot;steplr&quot;</span><span class="p">:</span>
+        <span class="n">main_sched</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">StepLR</span><span class="p">(</span>
+            <span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">step_size</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scheduler_cfg</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">,</span> <span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">patience</span><span class="p">)),</span>
+            <span class="n">gamma</span><span class="o">=</span><span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">factor</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">scheduler_type</span> <span class="o">==</span> <span class="s2">&quot;cosineannealinglr&quot;</span><span class="p">:</span>
+        <span class="n">main_sched</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span>
+            <span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">T_max</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scheduler_cfg</span><span class="p">,</span> <span class="s2">&quot;t_max&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">epochs</span><span class="p">),</span>
+            <span class="n">eta_min</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">scheduler_cfg</span><span class="p">,</span> <span class="s2">&quot;min_lr&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported scheduler type: </span><span class="si">{</span><span class="n">scheduler_cfg</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">warmup_epochs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">main_sched</span>
+
+    <span class="c1"># Compose warmup + main via SequentialLR</span>
+    <span class="n">warmup_sched</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">LinearLR</span><span class="p">(</span>
+        <span class="n">optimizer</span><span class="p">,</span>
+        <span class="n">start_factor</span><span class="o">=</span><span class="n">warmup_start_factor</span><span class="p">,</span>
+        <span class="n">total_iters</span><span class="o">=</span><span class="n">warmup_epochs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;LR warmup enabled: </span><span class="si">%d</span><span class="s2"> epochs, start_factor=</span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">warmup_epochs</span><span class="p">,</span>
+        <span class="n">warmup_start_factor</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">SequentialLR</span><span class="p">(</span>
+        <span class="n">optimizer</span><span class="p">,</span>
+        <span class="n">schedulers</span><span class="o">=</span><span class="p">[</span><span class="n">warmup_sched</span><span class="p">,</span> <span class="n">main_sched</span><span class="p">],</span>
+        <span class="n">milestones</span><span class="o">=</span><span class="p">[</span><span class="n">warmup_epochs</span><span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;build_model&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;build_optimizer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;build_scheduler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DEFAULT_SCHEDULER_CONFIG&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;_apply_attention&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;_call_with_supported_kwargs&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

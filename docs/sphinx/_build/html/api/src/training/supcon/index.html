@@ -1,0 +1,500 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.training.supcon &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.training.trainer" href="../trainer/index.html" />
+    <link rel="prev" title="src.training.simclr" href="../simclr/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.training</a></li>
+      <li class="breadcrumb-item active">src.training.supcon</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/training/supcon/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.training.supcon">
+<span id="src-training-supcon"></span><h1>src.training.supcon<a class="headerlink" href="#module-src.training.supcon" title="Link to this heading"></a></h1>
+<p>Supervised Contrastive Learning (SupCon) for wafer defect detection.</p>
+<p>Two-stage training: (1) pretrain backbone with SupConLoss to learn discriminative
+embeddings that pull same-class samples together and push different-class samples
+apart, then (2) fine-tune a linear classifier on the frozen backbone.</p>
+<p>Especially effective for imbalanced datasets like WM-811K (150:1 class ratio)
+because the contrastive objective treats every same-class pair equally regardless
+of class size.</p>
+<p>Also includes Parametric Contrastive Learning (PaCo) which extends SupCon with
+learnable class-specific prototype centers, giving rare classes more positive
+anchors and compensating for imbalance.</p>
+<p class="rubric">References</p>
+<p>[76] Khosla et al. (2020). “Supervised Contrastive Learning”. arXiv:2004.11362
+[37] Chen et al. (2020). “SimCLR: Contrastive Learning of Visual Representations”. arXiv:2002.05709
+[182] Cui et al. (2021). “PaCo: Parametric Contrastive Learning”. arXiv:2109.01903</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.supcon.logger" title="src.training.supcon.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.supcon.SupConLoss" title="src.training.supcon.SupConLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SupConLoss</span></code></a></p></td>
+<td><p>Supervised Contrastive Loss.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.supcon.PaCoLoss" title="src.training.supcon.PaCoLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PaCoLoss</span></code></a></p></td>
+<td><p>Parametric Contrastive Loss for long-tailed recognition.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.supcon.SupConProjectionHead" title="src.training.supcon.SupConProjectionHead"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SupConProjectionHead</span></code></a></p></td>
+<td><p>MLP projection head for supervised contrastive learning.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.supcon.SupConTrainer" title="src.training.supcon.SupConTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SupConTrainer</span></code></a></p></td>
+<td><p>Two-stage Supervised Contrastive Learning trainer.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.training.supcon.extract_backbone_features" title="src.training.supcon.extract_backbone_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_backbone_features</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Extract features from a backbone model (without the classification head).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.training.supcon.get_backbone_feature_dim" title="src.training.supcon.get_backbone_feature_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_backbone_feature_dim</span></code></a>(→ int)</p></td>
+<td><p>Infer the feature dimensionality produced by the backbone.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.training.supcon.logger">
+<span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.supcon.SupConLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">SupConLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Supervised Contrastive Loss.</p>
+<p>For each anchor, positives are same-class samples in the batch, negatives are
+different-class samples.  The loss maximises the log-ratio of positive-pair
+similarity to all-pair similarity:</p>
+<blockquote>
+<div><p>L = -1/(<a href="#id1"><span class="problematic" id="id2">|P(i)|</span></a>) * sum_{p in P(i)} log( exp(sim(i,p)/tau) / sum_{a!=i} exp(sim(i,a)/tau) )</p>
+</div></blockquote>
+<p>averaged over all anchors <em>i</em> in the batch.</p>
+<p>Reference: [76] Khosla et al. (2020). arXiv:2004.11362</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConLoss.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.07</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConLoss.temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConLoss.temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConLoss.base_temperature">
+<span class="sig-name descname"><span class="pre">base_temperature</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.07</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConLoss.base_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConLoss.base_temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.SupConLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConLoss.forward" title="Link to this definition"></a></dt>
+<dd><p>Compute supervised contrastive loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>features</strong> – (B, D) L2-normalized embedding vectors.</p></li>
+<li><p><strong>labels</strong> – (B,) integer class labels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Scalar loss value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">PaCoLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feat_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Parametric Contrastive Loss for long-tailed recognition.</p>
+<p>Extends SupConLoss with learnable class-specific prototype centers.
+Each class has a learnable center vector; these act as additional
+positives in the contrastive objective, ensuring rare classes always
+have sufficient positive pairs.</p>
+<p>Reference: [182] Cui et al. (2021). “PaCo”. arXiv:2109.01903</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.07</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss.temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss.temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss.base_temperature">
+<span class="sig-name descname"><span class="pre">base_temperature</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.07</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss.base_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss.base_temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss.centers">
+<span class="sig-name descname"><span class="pre">centers</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss.centers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss.centers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.PaCoLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#PaCoLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.PaCoLoss.forward" title="Link to this definition"></a></dt>
+<dd><p>Compute parametric contrastive loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>features</strong> – (B, D) L2-normalized embeddings.</p></li>
+<li><p><strong>labels</strong> – (B,) integer class labels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Scalar loss value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.supcon.SupConProjectionHead">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">SupConProjectionHead</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConProjectionHead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConProjectionHead" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>MLP projection head for supervised contrastive learning.</p>
+<p>Maps backbone features to a lower-dimensional space where the contrastive
+loss is applied.  The architecture follows the standard 2-layer MLP with
+ReLU activation and L2-normalised output.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConProjectionHead.projection">
+<span class="sig-name descname"><span class="pre">projection</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConProjectionHead.projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConProjectionHead.projection" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.SupConProjectionHead.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConProjectionHead.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConProjectionHead.forward" title="Link to this definition"></a></dt>
+<dd><p>Project and L2-normalise features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – (B, in_dim) backbone features.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(B, out_dim) L2-normalised embeddings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.supcon.extract_backbone_features">
+<span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">extract_backbone_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#extract_backbone_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.extract_backbone_features" title="Link to this definition"></a></dt>
+<dd><p>Extract features from a backbone model (without the classification head).</p>
+<dl class="simple">
+<dt>Supported model types:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;cnn&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;wafercnn&quot;</span></code>: Uses <code class="docutils literal notranslate"><span class="pre">model.features</span></code> + <code class="docutils literal notranslate"><span class="pre">model.avg_pool</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;resnet&quot;</span></code>: Forward through all layers except <code class="docutils literal notranslate"><span class="pre">model.fc</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;efficientnet&quot;</span></code>: Uses <code class="docutils literal notranslate"><span class="pre">model.features</span></code> + adaptive pool</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>: Detect automatically from model class / attributes</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The backbone model.</p></li>
+<li><p><strong>x</strong> – (B, C, H, W) input images.</p></li>
+<li><p><strong>model_type</strong> – Architecture hint.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(B, D) flattened feature tensor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.training.supcon.get_backbone_feature_dim">
+<span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">get_backbone_feature_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#get_backbone_feature_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.get_backbone_feature_dim" title="Link to this definition"></a></dt>
+<dd><p>Infer the feature dimensionality produced by the backbone.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The backbone model.</p></li>
+<li><p><strong>model_type</strong> – Architecture hint (<code class="docutils literal notranslate"><span class="pre">&quot;cnn&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;resnet&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;efficientnet&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Integer feature dimension.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.training.supcon.</span></span><span class="sig-name descname"><span class="pre">SupConTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection_head</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.training.supcon.SupConProjectionHead" title="src.training.supcon.SupConProjectionHead"><span class="pre">SupConProjectionHead</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer" title="Link to this definition"></a></dt>
+<dd><p>Two-stage Supervised Contrastive Learning trainer.</p>
+<p>Stage 1 (pretrain): Train backbone + projection head with <code class="docutils literal notranslate"><span class="pre">SupConLoss</span></code>.
+Stage 2 (finetune): Freeze backbone, train a linear classifier with CrossEntropy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>backbone</strong> – The base model (WaferCNN, ResNet-18, EfficientNet-B0, etc.).</p></li>
+<li><p><strong>num_classes</strong> – Number of output classes.</p></li>
+<li><p><strong>projection_head</strong> – Optional custom projection head.  When <code class="docutils literal notranslate"><span class="pre">None</span></code> a
+<code class="docutils literal notranslate"><span class="pre">SupConProjectionHead</span></code> is built automatically.</p></li>
+<li><p><strong>model_type</strong> – Architecture hint for feature extraction.</p></li>
+<li><p><strong>device</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;cuda&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;cpu&quot;</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.model_type">
+<span class="sig-name descname"><span class="pre">model_type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'auto'</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.model_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.model_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.backbone">
+<span class="sig-name descname"><span class="pre">backbone</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.backbone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.backbone" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.feature_dim">
+<span class="sig-name descname"><span class="pre">feature_dim</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.feature_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.feature_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.classifier">
+<span class="sig-name descname"><span class="pre">classifier</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.Module</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.classifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.pretrain">
+<span class="sig-name descname"><span class="pre">pretrain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.pretrain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.pretrain" title="Link to this definition"></a></dt>
+<dd><p>Stage 1: Pretrain backbone + projection head with SupConLoss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> – DataLoader yielding <code class="docutils literal notranslate"><span class="pre">(images,</span> <span class="pre">labels)</span></code> batches.</p></li>
+<li><p><strong>epochs</strong> – Number of pretraining epochs.</p></li>
+<li><p><strong>lr</strong> – Learning rate for SGD optimizer.</p></li>
+<li><p><strong>temperature</strong> – Temperature for SupConLoss.</p></li>
+<li><p><strong>weight_decay</strong> – L2 regularisation strength.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">&quot;loss&quot;</span></code> key mapping to per-epoch loss values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.pretrain_paco">
+<span class="sig-name descname"><span class="pre">pretrain_paco</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.pretrain_paco"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.pretrain_paco" title="Link to this definition"></a></dt>
+<dd><p>Stage 1 (PaCo variant): Pretrain backbone + projection head with PaCoLoss.</p>
+<p>Identical to <code class="docutils literal notranslate"><span class="pre">pretrain()</span></code> but uses Parametric Contrastive Loss with
+learnable class-specific prototype centers.  The centers are included
+in the optimizer so they are updated jointly with the backbone and
+projection head.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> – DataLoader yielding <code class="docutils literal notranslate"><span class="pre">(images,</span> <span class="pre">labels)</span></code> batches.</p></li>
+<li><p><strong>epochs</strong> – Number of pretraining epochs.</p></li>
+<li><p><strong>lr</strong> – Learning rate for SGD optimizer.</p></li>
+<li><p><strong>temperature</strong> – Temperature for PaCoLoss.</p></li>
+<li><p><strong>weight_decay</strong> – L2 regularisation strength.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">&quot;loss&quot;</span></code> key mapping to per-epoch loss values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.training.supcon.SupConTrainer.finetune">
+<span class="sig-name descname"><span class="pre">finetune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/src/training/supcon.html#SupConTrainer.finetune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.training.supcon.SupConTrainer.finetune" title="Link to this definition"></a></dt>
+<dd><p>Stage 2: Train a linear classifier on frozen backbone features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_loader</strong> – Training DataLoader.</p></li>
+<li><p><strong>val_loader</strong> – Validation DataLoader.</p></li>
+<li><p><strong>epochs</strong> – Number of fine-tuning epochs.</p></li>
+<li><p><strong>lr</strong> – Learning rate for the linear classifier.</p></li>
+<li><p><strong>weight_decay</strong> – L2 regularisation strength.</p></li>
+<li><p><strong>class_weights</strong> – Optional per-class weights for CrossEntropyLoss.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of <code class="docutils literal notranslate"><span class="pre">(full_model,</span> <span class="pre">history)</span></code> where <code class="docutils literal notranslate"><span class="pre">full_model</span></code> is an
+<code class="docutils literal notranslate"><span class="pre">nn.Sequential(backbone_features,</span> <span class="pre">classifier)</span></code> and <code class="docutils literal notranslate"><span class="pre">history</span></code>
+contains <code class="docutils literal notranslate"><span class="pre">&quot;train_loss&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;val_loss&quot;</span></code>, and <code class="docutils literal notranslate"><span class="pre">&quot;val_acc&quot;</span></code> lists.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../simclr/index.html" class="btn btn-neutral float-left" title="src.training.simclr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../trainer/index.html" class="btn btn-neutral float-right" title="src.training.trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

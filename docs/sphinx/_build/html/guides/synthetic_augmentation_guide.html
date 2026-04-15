@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synthetic Augmentation Guide &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Team README" href="team_readme.html" />
+    <link rel="prev" title="Inference Server README" href="inference_server_readme.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="env_doctor.html">Environment Doctor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federated_learning.html">Federated Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_server_architecture.html">Inference Server Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_server_readme.html">Inference Server README</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Synthetic Augmentation Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#synthetic-data-augmentation-guide">Synthetic Data Augmentation Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#usage-patterns">Usage Patterns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#performance-characteristics">Performance Characteristics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#integration-checklist">Integration Checklist</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-scripts">Example Scripts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#faq">FAQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#citation">Citation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="team_readme.html">Team README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uncertainty_quantification.html">Uncertainty Quantification</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Synthetic Augmentation Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/synthetic_augmentation_guide.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="synthetic-augmentation-guide">
+<h1>Synthetic Augmentation Guide<a class="headerlink" href="#synthetic-augmentation-guide" title="Link to this heading"></a></h1>
+<section id="synthetic-data-augmentation-guide">
+<h2>Synthetic Data Augmentation Guide<a class="headerlink" href="#synthetic-data-augmentation-guide" title="Link to this heading"></a></h2>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>The synthetic augmentation module provides two complementary approaches for generating synthetic wafer maps to address class imbalance:</p>
+<ol class="arabic simple">
+<li><p><strong>Rule-Based Generator</strong> (Fast, CPU-friendly, deterministic patterns)</p></li>
+<li><p><strong>GAN-Based Generator</strong> (Slower, GPU-recommended, realistic patterns)</p></li>
+</ol>
+</section>
+<section id="quick-start">
+<h3>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h3>
+<section id="rule-based-augmentation-recommended-for-cpu">
+<h4>Rule-Based Augmentation (Recommended for CPU)<a class="headerlink" href="#rule-based-augmentation-recommended-for-cpu" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferMapGenerator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Initialize generator</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="n">WaferMapGenerator</span><span class="p">(</span><span class="n">image_size</span><span class="o">=</span><span class="mi">96</span><span class="p">)</span>
+
+<span class="c1"># Generate samples for specific classes</span>
+<span class="n">center_wafer</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">donut_wafer</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="s1">&#39;Donut&#39;</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">none_wafer</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">center_wafer</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (96, 96)</span>
+</pre></div>
+</div>
+</section>
+<section id="gan-based-augmentation-better-quality-requires-training">
+<h4>GAN-Based Augmentation (Better quality, requires training)<a class="headerlink" href="#gan-based-augmentation-better-quality-requires-training" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyntheticDataAugmenter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Initialize augmenter with GAN</span>
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">SyntheticDataAugmenter</span><span class="p">(</span>
+    <span class="n">generator_type</span><span class="o">=</span><span class="s1">&#39;gan&#39;</span><span class="p">,</span>
+    <span class="n">image_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Train GAN on your wafer data</span>
+<span class="n">wafer_maps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)</span>  <span class="c1"># Your preprocessed wafers</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span>
+    <span class="n">wafer_maps</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate synthetic samples</span>
+<span class="n">synthetic_wafers</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">synthetic_wafers</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (50, 96, 96)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="api-reference">
+<h3>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h3>
+<section id="wafermapgenerator">
+<h4>WaferMapGenerator<a class="headerlink" href="#wafermapgenerator" title="Link to this heading"></a></h4>
+<p>Deterministic, rule-based generator using geometric patterns.</p>
+<section id="methods">
+<h5>Methods<a class="headerlink" href="#methods" title="Link to this heading"></a></h5>
+<section id="generate-sample-defect-class-intensity-none-noise-level-0-1-np-ndarray">
+<h6><code class="docutils literal notranslate"><span class="pre">generate_sample(defect_class,</span> <span class="pre">intensity=None,</span> <span class="pre">noise_level=0.1)</span> <span class="pre">-&gt;</span> <span class="pre">np.ndarray</span></code><a class="headerlink" href="#generate-sample-defect-class-intensity-none-noise-level-0-1-np-ndarray" title="Link to this heading"></a></h6>
+<p>Generate a synthetic wafer map for a specific defect class.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">defect_class</span></code> (str): One of <code class="docutils literal notranslate"><span class="pre">['Center',</span> <span class="pre">'Donut',</span> <span class="pre">'Edge-Loc',</span> <span class="pre">'Edge-Ring',</span> <span class="pre">'Loc',</span> <span class="pre">'Near-full',</span> <span class="pre">'Random',</span> <span class="pre">'Scratch',</span> <span class="pre">'none']</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">intensity</span></code> (float, optional): Defect intensity [0, 1]. If None, random.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">noise_level</span></code> (float): Gaussian noise std dev [0, 1]</p></li>
+</ul>
+<p><strong>Returns:</strong> Synthetic wafer map (96, 96) normalized to [0, 1]</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gen</span> <span class="o">=</span> <span class="n">WaferMapGenerator</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="simplewafergan">
+<h4>SimpleWaferGAN<a class="headerlink" href="#simplewafergan" title="Link to this heading"></a></h4>
+<p>Neural network-based GAN for realistic wafer generation.</p>
+<p><strong>Architecture:</strong></p>
+<ul class="simple">
+<li><p><strong>Generator</strong>: Latent vector (100D) → 96×96 wafer via transposed convolutions</p></li>
+<li><p><strong>Discriminator</strong>: 96×96 image → real/fake classification</p></li>
+<li><p><strong>Loss</strong>: Binary cross-entropy</p></li>
+</ul>
+<p><strong>Suitable for:</strong></p>
+<ul class="simple">
+<li><p>Learning actual defect patterns from real data</p></li>
+<li><p>Generating diverse, realistic wafers</p></li>
+<li><p>Transfer to other defect detection tasks</p></li>
+</ul>
+</section>
+<section id="syntheticdataaugmenter">
+<h4>SyntheticDataAugmenter<a class="headerlink" href="#syntheticdataaugmenter" title="Link to this heading"></a></h4>
+<p>High-level API for augmentation with both generators.</p>
+<section id="id1">
+<h5>Methods<a class="headerlink" href="#id1" title="Link to this heading"></a></h5>
+<section id="init-generator-type-rule-based-latent-dim-100-image-size-96-device-none">
+<h6><code class="docutils literal notranslate"><span class="pre">__init__(generator_type='rule-based',</span> <span class="pre">latent_dim=100,</span> <span class="pre">image_size=96,</span> <span class="pre">device=None)</span></code><a class="headerlink" href="#init-generator-type-rule-based-latent-dim-100-image-size-96-device-none" title="Link to this heading"></a></h6>
+<p>Initialize augmenter.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">generator_type</span></code> (str): ‘gan’ or ‘rule-based’</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">latent_dim</span></code> (int): GAN latent dimension (default 100)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">image_size</span></code> (int): Output size (default 96)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">device</span></code> (torch.device): CPU or CUDA. Auto-selects if None.</p></li>
+</ul>
+</section>
+<section id="train-generator-wafer-maps-epochs-10-batch-size-32-learning-rate-0-0002-beta1-0-5-verbose-true-dict">
+<h6><code class="docutils literal notranslate"><span class="pre">train_generator(wafer_maps,</span> <span class="pre">epochs=10,</span> <span class="pre">batch_size=32,</span> <span class="pre">learning_rate=0.0002,</span> <span class="pre">beta1=0.5,</span> <span class="pre">verbose=True)</span> <span class="pre">-&gt;</span> <span class="pre">dict</span></code><a class="headerlink" href="#train-generator-wafer-maps-epochs-10-batch-size-32-learning-rate-0-0002-beta1-0-5-verbose-true-dict" title="Link to this heading"></a></h6>
+<p>Train GAN on unlabeled or labeled wafers.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wafer_maps</span></code> (np.ndarray): Shape (N, H, W), normalized [0, 1]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">epochs</span></code> (int): Training epochs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code> (int): Batch size</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">learning_rate</span></code> (float): Adam learning rate</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beta1</span></code> (float): Adam beta1 parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">verbose</span></code> (bool): Show progress</p></li>
+</ul>
+<p><strong>Returns:</strong> Training history with ‘gen_loss’ and ‘disc_loss’</p>
+<p><strong>Raises:</strong> RuntimeError if generator_type != ‘gan’</p>
+<p><strong>Note:</strong> Only for GAN. Use for rule-based is no-op.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span> <span class="o">=</span> <span class="n">SyntheticDataAugmenter</span><span class="p">(</span><span class="s1">&#39;gan&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">))</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span>
+    <span class="n">wafer_maps</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.0002</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-samples-num-samples-class-label-none-np-ndarray">
+<h6><code class="docutils literal notranslate"><span class="pre">generate_samples(num_samples,</span> <span class="pre">class_label=None)</span> <span class="pre">-&gt;</span> <span class="pre">np.ndarray</span></code><a class="headerlink" href="#generate-samples-num-samples-class-label-none-np-ndarray" title="Link to this heading"></a></h6>
+<p>Generate synthetic wafer maps.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_samples</span></code> (int): Number of samples to generate</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">class_label</span></code> (str, optional): Class for rule-based. Ignored for GAN.</p></li>
+</ul>
+<p><strong>Returns:</strong> Synthetic maps (num_samples, H, W)</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Rule-based</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">class_label</span><span class="o">=</span><span class="s1">&#39;Center&#39;</span><span class="p">)</span>
+
+<span class="c1"># GAN (class_label ignored)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="augment-dataset-original-maps-original-labels-target-samples-per-class-class-names-none-tuple">
+<h6><code class="docutils literal notranslate"><span class="pre">augment_dataset(original_maps,</span> <span class="pre">original_labels,</span> <span class="pre">target_samples_per_class,</span> <span class="pre">class_names=None)</span> <span class="pre">-&gt;</span> <span class="pre">tuple</span></code><a class="headerlink" href="#augment-dataset-original-maps-original-labels-target-samples-per-class-class-names-none-tuple" title="Link to this heading"></a></h6>
+<p>Balance dataset by generating synthetic samples for underrepresented classes.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">original_maps</span></code> (np.ndarray): Shape (N, H, W)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">original_labels</span></code> (np.ndarray): Shape (N,), integer class indices</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_samples_per_class</span></code> (int): Target count per class</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">class_names</span></code> (list, optional): Class names for logging</p></li>
+</ul>
+<p><strong>Returns:</strong> Tuple of (augmented_maps, augmented_labels)</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmented_maps</span><span class="p">,</span> <span class="n">augmented_labels</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">augment_dataset</span><span class="p">(</span>
+    <span class="n">original_maps</span><span class="p">,</span>
+    <span class="n">original_labels</span><span class="p">,</span>
+    <span class="n">target_samples_per_class</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+    <span class="n">class_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="s1">&#39;Donut&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="visualize-generated-samples-class-names-none-num-samples-per-class-3-figsize-15-12-none">
+<h6><code class="docutils literal notranslate"><span class="pre">visualize_generated_samples(class_names=None,</span> <span class="pre">num_samples_per_class=3,</span> <span class="pre">figsize=(15,</span> <span class="pre">12))</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code><a class="headerlink" href="#visualize-generated-samples-class-names-none-num-samples-per-class-3-figsize-15-12-none" title="Link to this heading"></a></h6>
+<p>Generate and visualize samples in a grid.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">class_names</span></code> (list, optional): Class names</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_samples_per_class</span></code> (int): Samples per class (default 3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">figsize</span></code> (tuple): Figure size</p></li>
+</ul>
+<p><strong>Output:</strong> Saves <code class="docutils literal notranslate"><span class="pre">gan_generated_samples.png</span></code> or <code class="docutils literal notranslate"><span class="pre">rule_based_generated_samples.png</span></code></p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span><span class="o">.</span><span class="n">visualize_generated_samples</span><span class="p">(</span>
+    <span class="n">class_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="s1">&#39;Donut&#39;</span><span class="p">,</span> <span class="s1">&#39;Edge-Loc&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">num_samples_per_class</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="save-gan-path-none-and-load-gan-path-none">
+<h6><code class="docutils literal notranslate"><span class="pre">save_gan(path)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code> and <code class="docutils literal notranslate"><span class="pre">load_gan(path)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code><a class="headerlink" href="#save-gan-path-none-and-load-gan-path-none" title="Link to this heading"></a></h6>
+<p>Persist and restore trained GANs.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Save after training</span>
+<span class="n">augmenter</span><span class="o">.</span><span class="n">save_gan</span><span class="p">(</span><span class="s1">&#39;my_gan.pth&#39;</span><span class="p">)</span>
+
+<span class="c1"># Load in new session</span>
+<span class="n">augmenter</span><span class="o">.</span><span class="n">load_gan</span><span class="p">(</span><span class="s1">&#39;my_gan.pth&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="balance-dataset-with-synthetic">
+<h4>balance_dataset_with_synthetic()<a class="headerlink" href="#balance-dataset-with-synthetic" title="Link to this heading"></a></h4>
+<p>Helper function for one-shot dataset balancing.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">balance_dataset_with_synthetic</span><span class="p">(</span>
+    <span class="n">wafer_maps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">class_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">generator_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;rule-based&#39;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;oversample_to_max&#39;</span><span class="p">,</span>
+    <span class="n">oversample_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wafer_maps</span></code> (np.ndarray): Original maps (N, H, W)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">labels</span></code> (np.ndarray): Original labels (N,)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">class_names</span></code> (list, optional): For logging</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generator_type</span></code> (str): ‘gan’ or ‘rule-based’</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">strategy</span></code> (str):</p>
+<ul>
+<li><p>‘oversample_to_max’: Match majority class (default)</p></li>
+<li><p>‘oversample_to_mean’: Match mean class count</p></li>
+<li><p>‘oversample_to_custom’: Custom ratio (set via oversample_ratio)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oversample_ratio</span></code> (float): Target ratio relative to max [0, 1]</p></li>
+</ul>
+<p><strong>Returns:</strong> Tuple of (balanced_maps, balanced_labels)</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">balance_dataset_with_synthetic</span>
+
+<span class="n">augmented_maps</span><span class="p">,</span> <span class="n">augmented_labels</span> <span class="o">=</span> <span class="n">balance_dataset_with_synthetic</span><span class="p">(</span>
+    <span class="n">wafer_maps</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">,</span>
+    <span class="n">class_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="s1">&#39;Donut&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">],</span>
+    <span class="n">generator_type</span><span class="o">=</span><span class="s1">&#39;rule-based&#39;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;oversample_to_max&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="usage-patterns">
+<h3>Usage Patterns<a class="headerlink" href="#usage-patterns" title="Link to this heading"></a></h3>
+<section id="pattern-1-quick-balancing-rule-based">
+<h4>Pattern 1: Quick Balancing (Rule-Based)<a class="headerlink" href="#pattern-1-quick-balancing-rule-based" title="Link to this heading"></a></h4>
+<p>For fast CPU-based balancing without training:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">balance_dataset_with_synthetic</span>
+
+<span class="n">augmented_maps</span><span class="p">,</span> <span class="n">augmented_labels</span> <span class="o">=</span> <span class="n">balance_dataset_with_synthetic</span><span class="p">(</span>
+    <span class="n">original_maps</span><span class="p">,</span>
+    <span class="n">original_labels</span><span class="p">,</span>
+    <span class="n">generator_type</span><span class="o">=</span><span class="s1">&#39;rule-based&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Time:</strong> ~1-2 minutes for 100K samples (CPU)</p>
+</section>
+<section id="pattern-2-quality-augmentation-gan">
+<h4>Pattern 2: Quality Augmentation (GAN)<a class="headerlink" href="#pattern-2-quality-augmentation-gan" title="Link to this heading"></a></h4>
+<p>For best quality realistic samples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyntheticDataAugmenter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">SyntheticDataAugmenter</span><span class="p">(</span><span class="s1">&#39;gan&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">))</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span><span class="n">original_maps</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">augmented_maps</span><span class="p">,</span> <span class="n">augmented_labels</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">augment_dataset</span><span class="p">(</span>
+    <span class="n">original_maps</span><span class="p">,</span>
+    <span class="n">original_labels</span><span class="p">,</span>
+    <span class="n">target_samples_per_class</span><span class="o">=</span><span class="mi">5000</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Time:</strong> ~2-4 hours for 20 epochs on 100K samples (single GPU)</p>
+</section>
+<section id="pattern-3-integration-with-training-pipeline">
+<h4>Pattern 3: Integration with Training Pipeline<a class="headerlink" href="#pattern-3-integration-with-training-pipeline" title="Link to this heading"></a></h4>
+<p>In your training script:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">balance_dataset_with_synthetic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocess_wafer_maps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferCNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.training.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_model</span>
+
+<span class="c1"># Load and preprocess</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">()</span>
+<span class="n">raw_maps</span> <span class="o">=</span> <span class="n">extract_wafer_maps</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">preprocessed_maps</span> <span class="o">=</span> <span class="n">preprocess_wafer_maps</span><span class="p">(</span><span class="n">raw_maps</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="n">extract_labels</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># Augment BEFORE splitting</span>
+<span class="k">if</span> <span class="n">use_augmentation</span><span class="p">:</span>
+    <span class="n">preprocessed_maps</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">balance_dataset_with_synthetic</span><span class="p">(</span>
+        <span class="n">preprocessed_maps</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span>
+        <span class="n">generator_type</span><span class="o">=</span><span class="s1">&#39;rule-based&#39;</span>
+    <span class="p">)</span>
+
+<span class="c1"># Split and train normally</span>
+<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">WaferMapDataset</span><span class="p">(</span><span class="n">preprocessed_maps</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+<span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">WaferCNN</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">trained_model</span><span class="p">,</span> <span class="n">history</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="pattern-4-custom-class-balancing">
+<h4>Pattern 4: Custom Class Balancing<a class="headerlink" href="#pattern-4-custom-class-balancing" title="Link to this heading"></a></h4>
+<p>Target specific minority classes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.augmentation.synthetic</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaferMapGenerator</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="n">WaferMapGenerator</span><span class="p">()</span>
+<span class="n">custom_samples</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">custom_labels</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Generate 1000 samples each for rare classes</span>
+<span class="n">rare_classes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Edge-Ring&#39;</span><span class="p">,</span> <span class="s1">&#39;Scratch&#39;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="n">rare_classes</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+        <span class="n">custom_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="n">custom_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+
+<span class="c1"># Combine with original</span>
+<span class="n">all_maps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">original_maps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">custom_samples</span><span class="p">)])</span>
+<span class="n">all_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">original_labels</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">custom_labels</span><span class="p">)])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-characteristics">
+<h3>Performance Characteristics<a class="headerlink" href="#performance-characteristics" title="Link to this heading"></a></h3>
+<section id="rule-based-generator">
+<h4>Rule-Based Generator<a class="headerlink" href="#rule-based-generator" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Metric</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Speed (1000 samples)</p></td>
+<td><p>~2 seconds (CPU)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Memory</p></td>
+<td><p>&lt;100 MB</p></td>
+</tr>
+<tr class="row-even"><td><p>Quality</p></td>
+<td><p>Deterministic, geometrically correct</p></td>
+</tr>
+<tr class="row-odd"><td><p>Realism</p></td>
+<td><p>Good for simple defects, less for complex</p></td>
+</tr>
+<tr class="row-even"><td><p>Training</p></td>
+<td><p>None (instant)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Best for:</strong></p>
+<ul class="simple">
+<li><p>Rapid prototyping</p></li>
+<li><p>CPU-constrained environments</p></li>
+<li><p>Balanced classes after synthesis</p></li>
+</ul>
+</section>
+<section id="gan-based-generator">
+<h4>GAN-Based Generator<a class="headerlink" href="#gan-based-generator" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Metric</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Speed (1000 samples)</p></td>
+<td><p>~30-60 sec (GPU), ~5 min (CPU)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Memory</p></td>
+<td><p>~2-4 GB (training), ~200 MB (inference)</p></td>
+</tr>
+<tr class="row-even"><td><p>Quality</p></td>
+<td><p>Learned from data, highly realistic</p></td>
+</tr>
+<tr class="row-odd"><td><p>Realism</p></td>
+<td><p>Excellent, learns actual patterns</p></td>
+</tr>
+<tr class="row-even"><td><p>Training</p></td>
+<td><p>2-4 hours (100K samples, 1 GPU)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Best for:</strong></p>
+<ul class="simple">
+<li><p>Production systems</p></li>
+<li><p>High-quality synthetic data</p></li>
+<li><p>Transfer learning scenarios</p></li>
+<li><p>Research publications</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h3>
+<section id="issue-gan-training-diverges-d-loss-0">
+<h4>Issue: GAN training diverges (D_loss → 0)<a class="headerlink" href="#issue-gan-training-diverges-d-loss-0" title="Link to this heading"></a></h4>
+<p><strong>Solution:</strong> Reduce learning rate or add more data.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span>
+    <span class="n">maps</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>  <span class="c1"># Reduce 10x</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="issue-generated-samples-are-blurry-low-quality">
+<h4>Issue: Generated samples are blurry/low quality<a class="headerlink" href="#issue-generated-samples-are-blurry-low-quality" title="Link to this heading"></a></h4>
+<p><strong>Solution:</strong> Increase training epochs or use pre-trained checkpoint.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train longer</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span><span class="n">maps</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="c1"># Or load from checkpoint</span>
+<span class="n">augmenter</span><span class="o">.</span><span class="n">load_gan</span><span class="p">(</span><span class="s1">&#39;good_checkpoint.pth&#39;</span><span class="p">)</span>
+<span class="n">generated</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="issue-out-of-memory-with-gan-training">
+<h4>Issue: Out of memory with GAN training<a class="headerlink" href="#issue-out-of-memory-with-gan-training" title="Link to this heading"></a></h4>
+<p><strong>Solution:</strong> Reduce batch size or use gradient accumulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span><span class="o">.</span><span class="n">train_generator</span><span class="p">(</span>
+    <span class="n">maps</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>  <span class="c1"># Reduce from 32</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="issue-augmentation-creates-unrealistic-patterns">
+<h4>Issue: Augmentation creates unrealistic patterns<a class="headerlink" href="#issue-augmentation-creates-unrealistic-patterns" title="Link to this heading"></a></h4>
+<p><strong>Solution:</strong> Adjust noise level in rule-based generator.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gen</span> <span class="o">=</span> <span class="n">WaferMapGenerator</span><span class="p">()</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="integration-checklist">
+<h3>Integration Checklist<a class="headerlink" href="#integration-checklist" title="Link to this heading"></a></h3>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Import augmentation module: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">src.augmentation.synthetic</span> <span class="pre">import</span> <span class="pre">...</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Choose generator type: GAN (quality) or rule-based (speed)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Preprocess wafer maps to (96, 96) normalized [0, 1]</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Call <code class="docutils literal notranslate"><span class="pre">balance_dataset_with_synthetic()</span></code> or train GAN manually</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Verify augmented class distribution</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Visualize generated samples before training</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Train model on augmented dataset</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Compare metrics with/without augmentation</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Save trained GAN if planning reuse</p></li>
+</ul>
+</section>
+<section id="example-scripts">
+<h3>Example Scripts<a class="headerlink" href="#example-scripts" title="Link to this heading"></a></h3>
+<p>Three example scripts provided:</p>
+<ol class="arabic">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">synthetic_augment.py</span></code></strong> - Standalone demonstration</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>synthetic_augment.py<span class="w"> </span>--generator<span class="w"> </span>rule-based<span class="w"> </span>--visualize-only
+python<span class="w"> </span>synthetic_augment.py<span class="w"> </span>--generator<span class="w"> </span>gan<span class="w"> </span>--gan-epochs<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">train_with_synthetic_augmentation.py</span></code></strong> - Full training pipeline</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>train_with_synthetic_augmentation.py<span class="w"> </span>--model<span class="w"> </span>resnet<span class="w"> </span>--augmentation<span class="w"> </span>rule-based
+python<span class="w"> </span>train_with_synthetic_augmentation.py<span class="w"> </span>--model<span class="w"> </span>cnn<span class="w"> </span>--augmentation<span class="w"> </span>gan
+</pre></div>
+</div>
+</li>
+<li><p><strong>Jupyter Notebook</strong> - Interactive exploration (planned)</p></li>
+</ol>
+</section>
+<section id="references">
+<h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>GAN Architecture:</strong> Standard DCGAN design with transposed convolutions</p></li>
+<li><p><strong>Loss Function:</strong> Binary cross-entropy (BCE)</p></li>
+<li><p><strong>Optimization:</strong> Adam optimizer with β₁=0.5, β₂=0.999</p></li>
+<li><p><strong>Latent Dimension:</strong> 100D normal distribution</p></li>
+</ul>
+</section>
+<section id="faq">
+<h3>FAQ<a class="headerlink" href="#faq" title="Link to this heading"></a></h3>
+<p><strong>Q: Should I use rule-based or GAN?</strong>
+A: Start with rule-based (fast). If results aren’t satisfactory, try GAN (better quality).</p>
+<p><strong>Q: Can I use both generators together?</strong>
+A: Yes! Train GAN on real data, then mix generated outputs with rule-based samples.</p>
+<p><strong>Q: What happens if I augment too much?</strong>
+A: Risk of overfitting to synthetic patterns. Start conservatively (20-50% synthetic).</p>
+<p><strong>Q: Does augmentation guarantee better model performance?</strong>
+A: Usually yes for imbalanced datasets. Always validate on held-out test set.</p>
+<p><strong>Q: Can I save/load trained GANs?</strong>
+A: Yes! Use <code class="docutils literal notranslate"><span class="pre">save_gan()</span></code> and <code class="docutils literal notranslate"><span class="pre">load_gan()</span></code> for persistence.</p>
+</section>
+<section id="citation">
+<h3>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h3>
+<p>If using this module in research, cite as:</p>
+<div class="highlight-bibtex notranslate"><div class="highlight"><pre><span></span><span class="nc">@software</span><span class="p">{</span><span class="nl">wafer_augmentation_2024</span><span class="p">,</span>
+<span class="w">  </span><span class="na">title</span><span class="p">=</span><span class="s">{Synthetic Data Augmentation for Wafer Defect Detection}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">author</span><span class="p">=</span><span class="s">{Rettura, B. and Paul, A. and Pyle, B. and Rajan, A.}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">url</span><span class="p">=</span><span class="s">{https://github.com/your-repo/wafer-defect-detection}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="inference_server_readme.html" class="btn btn-neutral float-left" title="Inference Server README" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="team_readme.html" class="btn btn-neutral float-right" title="Team README" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

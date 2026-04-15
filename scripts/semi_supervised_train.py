@@ -165,9 +165,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_model(
-    model_name: str, num_classes: int, device: str
-) -> tuple[nn.Module, str]:
+def build_model(model_name: str, num_classes: int, device: str) -> tuple[nn.Module, str]:
     """Construct a model by name.
 
     Returns:
@@ -228,7 +226,9 @@ def main() -> int:
     logger.info("=" * 70)
     logger.info("Model:        %s", args.model)
     logger.info("Epochs:       %d", args.epochs)
-    logger.info("Batch size:   %d (labeled), %d (unlabeled)", args.batch_size, args.unlabeled_batch_size)
+    logger.info(
+        "Batch size:   %d (labeled), %d (unlabeled)", args.batch_size, args.unlabeled_batch_size
+    )
     logger.info("Threshold:    %.2f", args.threshold)
     logger.info("Lambda_u:     %.2f", args.lambda_u)
     logger.info("Device:       %s", args.device)
@@ -305,7 +305,9 @@ def main() -> int:
     weak_t = get_weak_transform()
     strong_t = get_strong_transform()
     unlabeled_dataset = UnlabeledWaferDataset(
-        unlabeled_maps, weak_transform=weak_t, strong_transform=strong_t,
+        unlabeled_maps,
+        weak_transform=weak_t,
+        strong_transform=strong_t,
     )
 
     g = torch.Generator()
@@ -346,7 +348,10 @@ def main() -> int:
 
     logger.info(
         "DataLoaders: labeled=%d batches, unlabeled=%d batches, val=%d batches, test=%d batches",
-        len(labeled_loader), len(unlabeled_loader), len(val_loader), len(test_loader),
+        len(labeled_loader),
+        len(unlabeled_loader),
+        len(val_loader),
+        len(test_loader),
     )
 
     # ------------------------------------------------------------------
@@ -384,7 +389,11 @@ def main() -> int:
     )
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", factor=0.5, patience=3, min_lr=1e-6,
+        optimizer,
+        mode="max",
+        factor=0.5,
+        patience=3,
+        min_lr=1e-6,
     )
 
     # ------------------------------------------------------------------

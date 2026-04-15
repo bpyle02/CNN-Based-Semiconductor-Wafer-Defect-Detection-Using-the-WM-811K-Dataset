@@ -1,0 +1,705 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.models.swin &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.models.vit" href="../vit/index.html" />
+    <link rel="prev" title="src.models.ride" href="../ride/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../training/index.html">src.training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../utils/index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.models</a></li>
+      <li class="breadcrumb-item active">src.models.swin</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/models/swin/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.models.swin">
+<span id="src-models-swin"></span><h1>src.models.swin<a class="headerlink" href="#module-src.models.swin" title="Link to this heading"></a></h1>
+<p>Swin Transformer architecture for wafer defect classification.</p>
+<p>Hierarchical vision transformer using shifted windows for efficient local attention.
+Designed for 96x96 wafer maps with Swin-Tiny scale (~28M params).</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[101] Liu et al. (2021). “Swin Transformer: Hierarchical Vision Transformer</dt><dd><p>using Shifted Windows”. arXiv:2103.14030</p>
+</dd>
+</dl>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.DropPath" title="src.models.swin.DropPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DropPath</span></code></a></p></td>
+<td><p>Drop path (stochastic depth) as a module wrapper.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.swin.PatchMerging" title="src.models.swin.PatchMerging"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PatchMerging</span></code></a></p></td>
+<td><p>Patch merging layer that reduces spatial resolution by 2x.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.WindowAttention" title="src.models.swin.WindowAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WindowAttention</span></code></a></p></td>
+<td><p>Window-based multi-head self-attention with relative position bias.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.swin.SwinTransformerBlock" title="src.models.swin.SwinTransformerBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SwinTransformerBlock</span></code></a></p></td>
+<td><p>Swin Transformer block with window attention and optional shifted window attention.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.SwinTransformerStage" title="src.models.swin.SwinTransformerStage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SwinTransformerStage</span></code></a></p></td>
+<td><p>A stage of Swin Transformer blocks followed by optional patch merging.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.swin.SwinTransformer" title="src.models.swin.SwinTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SwinTransformer</span></code></a></p></td>
+<td><p>Swin Transformer for image classification.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.drop_path" title="src.models.swin.drop_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_path</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Stochastic depth: randomly drop entire residual branch during training.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.swin.window_partition" title="src.models.swin.window_partition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">window_partition</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Partition feature map into non-overlapping windows.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.window_reverse" title="src.models.swin.window_reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">window_reverse</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Reverse window partition back to feature map.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.models.swin.get_swin_tiny" title="src.models.swin.get_swin_tiny"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_swin_tiny</span></code></a>(→ SwinTransformer)</p></td>
+<td><p>Create a Swin-Tiny model for 96x96 wafer maps.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.models.swin.get_swin_micro" title="src.models.swin.get_swin_micro"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_swin_micro</span></code></a>(→ SwinTransformer)</p></td>
+<td><p>Create a smaller Swin model for faster training.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.swin.drop_path">
+<span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">drop_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#drop_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.drop_path" title="Link to this definition"></a></dt>
+<dd><p>Stochastic depth: randomly drop entire residual branch during training.</p>
+<p>Per-sample binary mask applied to the batch dimension so that each sample
+independently survives or is zeroed out, then rescaled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input tensor of any shape (B, …).</p></li>
+<li><p><strong>drop_prob</strong> – Probability of dropping the path.</p></li>
+<li><p><strong>training</strong> – Whether model is in training mode.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of same shape, with paths randomly dropped during training.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.DropPath">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">DropPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#DropPath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.DropPath" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Drop path (stochastic depth) as a module wrapper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>drop_prob</strong> – Probability of dropping the path during training.</p>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.DropPath.drop_prob">
+<span class="sig-name descname"><span class="pre">drop_prob</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#DropPath.drop_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.DropPath.drop_prob" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.DropPath.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#DropPath.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.DropPath.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.swin.window_partition">
+<span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">window_partition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#window_partition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.window_partition" title="Link to this definition"></a></dt>
+<dd><p>Partition feature map into non-overlapping windows.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input tensor of shape (B, H, W, C).</p></li>
+<li><p><strong>window_size</strong> – Size of each square window.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Windows tensor of shape (B * num_windows, window_size, window_size, C).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.swin.window_reverse">
+<span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">window_reverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#window_reverse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.window_reverse" title="Link to this definition"></a></dt>
+<dd><p>Reverse window partition back to feature map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>windows</strong> – Windows tensor of shape (B * num_windows, window_size, window_size, C).</p></li>
+<li><p><strong>window_size</strong> – Size of each square window.</p></li>
+<li><p><strong>H</strong> – Height of the original feature map.</p></li>
+<li><p><strong>W</strong> – Width of the original feature map.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Feature map tensor of shape (B, H, W, C).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.PatchMerging">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">PatchMerging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#PatchMerging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.PatchMerging" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Patch merging layer that reduces spatial resolution by 2x.</p>
+<p>Concatenates 2x2 neighboring patches and projects to 2*dim, halving the
+spatial dimensions while doubling the channel dimension.</p>
+<p>Ref [101]: Section 3.1 – hierarchical feature maps via patch merging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dim</strong> – Number of input channels.</p>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.PatchMerging.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#PatchMerging.dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.PatchMerging.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.PatchMerging.reduction">
+<span class="sig-name descname"><span class="pre">reduction</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#PatchMerging.reduction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.PatchMerging.reduction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.PatchMerging.norm">
+<span class="sig-name descname"><span class="pre">norm</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#PatchMerging.norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.PatchMerging.norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.PatchMerging.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#PatchMerging.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.PatchMerging.forward" title="Link to this definition"></a></dt>
+<dd><p>Merge 2x2 patches and project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor of shape (B, H, W, C).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Merged tensor of shape (B, H//2, W//2, 2*C).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">WindowAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attention_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Window-based multi-head self-attention with relative position bias.</p>
+<p>Computes attention within local windows of size window_size x window_size.
+A learnable relative position bias table is indexed by the relative
+position between each pair of tokens in the window.</p>
+<p>Ref [101]: Section 3.2 – shifted window based self-attention.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dim</strong> – Number of input channels.</p></li>
+<li><p><strong>window_size</strong> – Size of the attention window.</p></li>
+<li><p><strong>num_heads</strong> – Number of attention heads.</p></li>
+<li><p><strong>attention_dropout</strong> – Dropout rate for attention weights.</p></li>
+<li><p><strong>proj_dropout</strong> – Dropout rate for the output projection.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.window_size">
+<span class="sig-name descname"><span class="pre">window_size</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.window_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.window_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.num_heads">
+<span class="sig-name descname"><span class="pre">num_heads</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.num_heads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.num_heads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.scale">
+<span class="sig-name descname"><span class="pre">scale</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.scale" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.relative_position_bias_table">
+<span class="sig-name descname"><span class="pre">relative_position_bias_table</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.relative_position_bias_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.relative_position_bias_table" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.qkv">
+<span class="sig-name descname"><span class="pre">qkv</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.qkv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.qkv" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.attn_drop">
+<span class="sig-name descname"><span class="pre">attn_drop</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.attn_drop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.attn_drop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.proj">
+<span class="sig-name descname"><span class="pre">proj</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.proj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.proj" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.proj_drop">
+<span class="sig-name descname"><span class="pre">proj_drop</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.proj_drop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.proj_drop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.WindowAttention.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#WindowAttention.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.WindowAttention.forward" title="Link to this definition"></a></dt>
+<dd><p>Compute window attention with relative position bias.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input tensor of shape (num_windows * B, N, C) where N = window_size^2.</p></li>
+<li><p><strong>mask</strong> – Optional attention mask of shape (num_windows, N, N) for shifted
+window attention. Values of -100.0 block attention; 0.0 allows it.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output tensor of shape (num_windows * B, N, C).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">SwinTransformerBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlp_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attention_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_path_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Swin Transformer block with window attention and optional shifted window attention.</p>
+<p>Alternates between regular and shifted window partitioning. Even-indexed blocks
+use regular windows; odd-indexed blocks shift by window_size // 2.</p>
+<p>Ref [101]: Section 3.2 – successive blocks alternate between W-MSA and SW-MSA.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dim</strong> – Number of input channels.</p></li>
+<li><p><strong>num_heads</strong> – Number of attention heads.</p></li>
+<li><p><strong>window_size</strong> – Window size for local attention.</p></li>
+<li><p><strong>shift_size</strong> – Shift amount for shifted window attention (0 = regular).</p></li>
+<li><p><strong>mlp_ratio</strong> – Ratio of MLP hidden dim to embedding dim.</p></li>
+<li><p><strong>dropout</strong> – Dropout rate for MLP.</p></li>
+<li><p><strong>attention_dropout</strong> – Dropout rate for attention weights.</p></li>
+<li><p><strong>drop_path_rate</strong> – Stochastic depth rate.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.num_heads">
+<span class="sig-name descname"><span class="pre">num_heads</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.num_heads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.num_heads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.window_size">
+<span class="sig-name descname"><span class="pre">window_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.window_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.window_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.shift_size">
+<span class="sig-name descname"><span class="pre">shift_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.shift_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.shift_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.mlp_ratio">
+<span class="sig-name descname"><span class="pre">mlp_ratio</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4.0</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.mlp_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.mlp_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.norm1">
+<span class="sig-name descname"><span class="pre">norm1</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.norm1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.norm1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.attn">
+<span class="sig-name descname"><span class="pre">attn</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.attn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.drop_path">
+<span class="sig-name descname"><span class="pre">drop_path</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.drop_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.drop_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.norm2">
+<span class="sig-name descname"><span class="pre">norm2</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.norm2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.norm2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.mlp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerBlock.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerBlock.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerBlock.forward" title="Link to this definition"></a></dt>
+<dd><p>Apply Swin Transformer block.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor of shape (B, H, W, C).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output tensor of shape (B, H, W, C).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">SwinTransformerStage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlp_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attention_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_path_rates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>A stage of Swin Transformer blocks followed by optional patch merging.</p>
+<p>Each stage contains a sequence of Swin blocks that alternate between
+regular and shifted window attention. After the blocks, an optional
+patch merging layer halves the spatial resolution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dim</strong> – Number of input channels.</p></li>
+<li><p><strong>depth</strong> – Number of Swin Transformer blocks in this stage.</p></li>
+<li><p><strong>num_heads</strong> – Number of attention heads.</p></li>
+<li><p><strong>window_size</strong> – Window size for local attention.</p></li>
+<li><p><strong>mlp_ratio</strong> – Ratio of MLP hidden dim to embedding dim.</p></li>
+<li><p><strong>dropout</strong> – Dropout rate.</p></li>
+<li><p><strong>attention_dropout</strong> – Attention dropout rate.</p></li>
+<li><p><strong>drop_path_rates</strong> – Stochastic depth rates for each block in this stage.</p></li>
+<li><p><strong>downsample</strong> – Whether to apply patch merging after this stage.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage.dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage.depth">
+<span class="sig-name descname"><span class="pre">depth</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage.depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage.depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage.blocks">
+<span class="sig-name descname"><span class="pre">blocks</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage.blocks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage.blocks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage.downsample">
+<span class="sig-name descname"><span class="pre">downsample</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage.downsample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage.downsample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformerStage.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformerStage.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformerStage.forward" title="Link to this definition"></a></dt>
+<dd><p>Apply stage blocks and optional downsampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor of shape (B, H, W, C).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(B, H//2, W//2, 2*C).
+Otherwise: (B, H, W, C).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output tensor. If downsample</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">SwinTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">96</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embed_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">96</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(2,</span> <span class="pre">2,</span> <span class="pre">6,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(3,</span> <span class="pre">6,</span> <span class="pre">12,</span> <span class="pre">24)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlp_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attention_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Swin Transformer for image classification.</p>
+<p>Hierarchical architecture with shifted windows for efficient local attention.
+Designed for 96x96 wafer maps.</p>
+<dl class="simple">
+<dt>Architecture for 96x96 input (Swin-Tiny defaults):</dt><dd><ul class="simple">
+<li><p>Patch embed: 96x96 -&gt; 24x24 patches of dim 96</p></li>
+<li><p>Stage 1: 2 blocks at 24x24, dim=96, heads=3, window=6</p></li>
+<li><p>Merge: 24x24 -&gt; 12x12, dim=192</p></li>
+<li><p>Stage 2: 2 blocks at 12x12, dim=192, heads=6, window=6</p></li>
+<li><p>Merge: 12x12 -&gt; 6x6, dim=384</p></li>
+<li><p>Stage 3: 6 blocks at 6x6, dim=384, heads=12, window=6</p></li>
+<li><p>Merge: 6x6 -&gt; 3x3, dim=768</p></li>
+<li><p>Stage 4: 2 blocks at 3x3, dim=768, heads=24, window=3</p></li>
+<li><p>Global avg pool -&gt; classifier</p></li>
+</ul>
+</dd>
+</dl>
+<p>Reference: [101] Liu et al. (2021). arXiv:2103.14030</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_size</strong> – Input image size (assumed square).</p></li>
+<li><p><strong>patch_size</strong> – Patch size for initial embedding.</p></li>
+<li><p><strong>in_channels</strong> – Number of input channels.</p></li>
+<li><p><strong>num_classes</strong> – Number of output classes.</p></li>
+<li><p><strong>embed_dim</strong> – Base embedding dimension (doubled at each stage).</p></li>
+<li><p><strong>depths</strong> – Number of Swin blocks per stage.</p></li>
+<li><p><strong>num_heads</strong> – Number of attention heads per stage.</p></li>
+<li><p><strong>window_size</strong> – Window size for local attention.</p></li>
+<li><p><strong>mlp_ratio</strong> – Ratio of MLP hidden dim to embedding dim.</p></li>
+<li><p><strong>dropout</strong> – Dropout rate.</p></li>
+<li><p><strong>attention_dropout</strong> – Attention dropout rate.</p></li>
+<li><p><strong>drop_path</strong> – Maximum stochastic depth rate (linearly increases across blocks).</p></li>
+</ul>
+</dd>
+</dl>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.num_classes">
+<span class="sig-name descname"><span class="pre">num_classes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.num_classes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.num_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.num_stages">
+<span class="sig-name descname"><span class="pre">num_stages</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.num_stages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.num_stages" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.embed_dim">
+<span class="sig-name descname"><span class="pre">embed_dim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">96</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.embed_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.embed_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.patch_embed">
+<span class="sig-name descname"><span class="pre">patch_embed</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.patch_embed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.patch_embed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.patch_norm">
+<span class="sig-name descname"><span class="pre">patch_norm</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.patch_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.patch_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.pos_drop">
+<span class="sig-name descname"><span class="pre">pos_drop</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.pos_drop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.pos_drop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.stages">
+<span class="sig-name descname"><span class="pre">stages</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.stages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.stages" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.norm">
+<span class="sig-name descname"><span class="pre">norm</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.head">
+<span class="sig-name descname"><span class="pre">head</span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.head"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.models.swin.SwinTransformer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#SwinTransformer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.SwinTransformer.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Input tensor of shape (B, C, H, W).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Logits of shape (B, num_classes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.swin.get_swin_tiny">
+<span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">get_swin_tiny</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.swin.SwinTransformer" title="src.models.swin.SwinTransformer"><span class="pre">SwinTransformer</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#get_swin_tiny"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.get_swin_tiny" title="Link to this definition"></a></dt>
+<dd><p>Create a Swin-Tiny model for 96x96 wafer maps.</p>
+<p>Configuration: embed_dim=96, depths=(2,2,6,2), heads=(3,6,12,24), ~28M params.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_classes</strong> – Number of output classes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized SwinTransformer model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.models.swin.get_swin_micro">
+<span class="sig-prename descclassname"><span class="pre">src.models.swin.</span></span><span class="sig-name descname"><span class="pre">get_swin_micro</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.models.swin.SwinTransformer" title="src.models.swin.SwinTransformer"><span class="pre">SwinTransformer</span></a></span></span><a class="reference internal" href="../../../../_modules/src/models/swin.html#get_swin_micro"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.models.swin.get_swin_micro" title="Link to this definition"></a></dt>
+<dd><p>Create a smaller Swin model for faster training.</p>
+<p>Configuration: embed_dim=48, depths=(2,2,2,2), ~3.5M params.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_classes</strong> – Number of output classes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized SwinTransformer model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ride/index.html" class="btn btn-neutral float-left" title="src.models.ride" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../vit/index.html" class="btn btn-neutral float-right" title="src.models.vit" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

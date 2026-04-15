@@ -24,26 +24,26 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import precision_recall_fscore_support
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.data.dataset import load_dataset, KNOWN_CLASSES
+from src.analysis.evaluate import evaluate_model
+from src.augmentation.synthetic import balance_dataset_with_synthetic
+from src.data.dataset import KNOWN_CLASSES, load_dataset
 from src.data.preprocessing import (
     WaferMapDataset,
     get_image_transforms,
     get_imagenet_normalize,
     seed_worker,
 )
-from src.augmentation.synthetic import balance_dataset_with_synthetic
-from src.training.trainer import train_model
-from src.training.losses import build_classification_loss
-from src.analysis.evaluate import evaluate_model
 from src.models.cnn import WaferCNN
-from src.models.pretrained import get_resnet18, get_efficientnet_b0
+from src.models.pretrained import get_efficientnet_b0, get_resnet18
+from src.training.losses import build_classification_loss
+from src.training.trainer import train_model
 
 logger = logging.getLogger(__name__)
 
@@ -141,9 +141,13 @@ def build_model(model_name: str, num_classes: int, device: str) -> nn.Module:
     if model_name == "cnn":
         return WaferCNN(num_classes=num_classes, input_channels=3).to(device)
     if model_name == "resnet":
-        return get_resnet18(num_classes=num_classes, pretrained=True, freeze_until="layer3").to(device)
+        return get_resnet18(num_classes=num_classes, pretrained=True, freeze_until="layer3").to(
+            device
+        )
     if model_name == "efficientnet":
-        return get_efficientnet_b0(num_classes=num_classes, pretrained=True, freeze_until="features.6").to(device)
+        return get_efficientnet_b0(
+            num_classes=num_classes, pretrained=True, freeze_until="features.6"
+        ).to(device)
     raise ValueError(f"Unsupported model: {model_name}")
 
 
@@ -365,11 +369,21 @@ def run_two_stage(args: argparse.Namespace) -> dict:
     )
 
     balanced_train_loader, val_loader = make_loaders(
-        balanced_maps, balanced_labels, val_maps, y_val,
-        train_tf, val_tf, args.batch_size, args.seed,
+        balanced_maps,
+        balanced_labels,
+        val_maps,
+        y_val,
+        train_tf,
+        val_tf,
+        args.batch_size,
+        args.seed,
     )
 
-    logger.info("Stage 1 config: lr=%.1e, epochs=%d, loss=FocalLoss(gamma=2)", pretrain_lr, args.pretrain_epochs)
+    logger.info(
+        "Stage 1 config: lr=%.1e, epochs=%d, loss=FocalLoss(gamma=2)",
+        pretrain_lr,
+        args.pretrain_epochs,
+    )
 
     t0 = time.time()
     model, stage1_history = train_model(
@@ -397,7 +411,13 @@ def run_two_stage(args: argparse.Namespace) -> dict:
 
     # Evaluate Stage 1
     stage1_metrics = evaluate_and_collect(
-        model, test_maps, y_test, val_tf, args.batch_size, args.seed, device,
+        model,
+        test_maps,
+        y_test,
+        val_tf,
+        args.batch_size,
+        args.seed,
+        device,
         stage_name=f"Stage1-{args.model}",
     )
     stage1_metrics["time_sec"] = stage1_time
@@ -412,7 +432,12 @@ def run_two_stage(args: argparse.Namespace) -> dict:
 
     trainable_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total_count = sum(p.numel() for p in model.parameters())
-    logger.info("Trainable params: %d / %d (%.1f%%)", trainable_count, total_count, 100.0 * trainable_count / total_count)
+    logger.info(
+        "Trainable params: %d / %d (%.1f%%)",
+        trainable_count,
+        total_count,
+        100.0 * trainable_count / total_count,
+    )
 
     # Class weights from real (imbalanced) training distribution
     real_weights = compute_class_weights(y_train, num_classes).to(device)
@@ -440,11 +465,21 @@ def run_two_stage(args: argparse.Namespace) -> dict:
     )
 
     real_train_loader, val_loader2 = make_loaders(
-        train_maps, y_train, val_maps, y_val,
-        train_tf, val_tf, args.batch_size, args.seed,
+        train_maps,
+        y_train,
+        val_maps,
+        y_val,
+        train_tf,
+        val_tf,
+        args.batch_size,
+        args.seed,
     )
 
-    logger.info("Stage 2 config: lr=%.1e, epochs=%d, loss=CrossEntropy+weights, scheduler=CosineAnnealing", finetune_lr, args.finetune_epochs)
+    logger.info(
+        "Stage 2 config: lr=%.1e, epochs=%d, loss=CrossEntropy+weights, scheduler=CosineAnnealing",
+        finetune_lr,
+        args.finetune_epochs,
+    )
 
     t0 = time.time()
     model, stage2_history = train_model(
@@ -470,7 +505,13 @@ def run_two_stage(args: argparse.Namespace) -> dict:
 
     # Evaluate Stage 2
     stage2_metrics = evaluate_and_collect(
-        model, test_maps, y_test, val_tf, args.batch_size, args.seed, device,
+        model,
+        test_maps,
+        y_test,
+        val_tf,
+        args.batch_size,
+        args.seed,
+        device,
         stage_name=f"Stage2-{args.model}",
     )
     stage2_metrics["time_sec"] = stage2_time

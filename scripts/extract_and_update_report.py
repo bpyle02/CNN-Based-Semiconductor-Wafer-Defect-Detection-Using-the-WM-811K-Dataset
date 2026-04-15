@@ -8,10 +8,10 @@ Reads the training output, extracts metrics, and updates:
 - Discussion sections reflecting corrected methodology
 """
 
+import logging
 import re
 import sys
 from pathlib import Path
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,9 @@ def parse_train_output(output_text: str) -> dict:
     results = {}
 
     # Split by model sections
-    model_sections = re.split(r'TRAINING (CNN|RESNET|EFFICIENTNET)', output_text, flags=re.IGNORECASE)
+    model_sections = re.split(
+        r"TRAINING (CNN|RESNET|EFFICIENTNET)", output_text, flags=re.IGNORECASE
+    )
 
     for i in range(1, len(model_sections), 2):
         if i + 1 >= len(model_sections):
@@ -39,27 +41,27 @@ def parse_train_output(output_text: str) -> dict:
         section_text = model_sections[i + 1]
 
         # Map model type to key
-        if 'CNN' in model_type:
-            key = 'cnn'
-        elif 'RESNET' in model_type:
-            key = 'resnet'
-        elif 'EFFICIENTNET' in model_type:
-            key = 'effnet'
+        if "CNN" in model_type:
+            key = "cnn"
+        elif "RESNET" in model_type:
+            key = "resnet"
+        elif "EFFICIENTNET" in model_type:
+            key = "effnet"
         else:
             continue
 
         # Extract metrics
-        acc_match = re.search(r'Accuracy\s*:\s*([\d.]+)', section_text)
-        macro_f1_match = re.search(r'Macro F1\s*:\s*([\d.]+)', section_text)
-        weighted_f1_match = re.search(r'Weighted F1\s*:\s*([\d.]+)', section_text)
-        time_match = re.search(r'Time\s*:\s*([\d.]+)', section_text)
+        acc_match = re.search(r"Accuracy\s*:\s*([\d.]+)", section_text)
+        macro_f1_match = re.search(r"Macro F1\s*:\s*([\d.]+)", section_text)
+        weighted_f1_match = re.search(r"Weighted F1\s*:\s*([\d.]+)", section_text)
+        time_match = re.search(r"Time\s*:\s*([\d.]+)", section_text)
 
         if acc_match:
             results[key] = {
-                'accuracy': float(acc_match.group(1)),
-                'macro_f1': float(macro_f1_match.group(1)) if macro_f1_match else 0.0,
-                'weighted_f1': float(weighted_f1_match.group(1)) if weighted_f1_match else 0.0,
-                'time': float(time_match.group(1)) if time_match else 0.0,
+                "accuracy": float(acc_match.group(1)),
+                "macro_f1": float(macro_f1_match.group(1)) if macro_f1_match else 0.0,
+                "weighted_f1": float(weighted_f1_match.group(1)) if weighted_f1_match else 0.0,
+                "time": float(time_match.group(1)) if time_match else 0.0,
             }
 
     return results
@@ -67,8 +69,8 @@ def parse_train_output(output_text: str) -> dict:
 
 def format_table_row(model_name: str, metrics: dict) -> str:
     """Format a single row for the LaTeX model comparison table."""
-    acc_pct = metrics['accuracy'] * 100
-    time_s = int(metrics['time'])
+    acc_pct = metrics["accuracy"] * 100
+    time_s = int(metrics["time"])
 
     # Determine which model is best for bolding
     return f"{model_name:<15} & {acc_pct:>6.1f} & {metrics['macro_f1']:>6.3f} & {metrics['weighted_f1']:>6.3f} & {time_s:>4} \\\\"
@@ -83,21 +85,21 @@ def update_report(report_path: Path, results: dict) -> str:
         content = f.read()
 
     # Update epoch references from 3 to 5
-    content = re.sub(r'3~epochs', '5~epochs', content)
-    content = re.sub(r'With only 3~epochs', 'With 5~epochs', content)
-    content = re.sub(r'\(3~epochs', '(5~epochs', content)
+    content = re.sub(r"3~epochs", "5~epochs", content)
+    content = re.sub(r"With only 3~epochs", "With 5~epochs", content)
+    content = re.sub(r"\(3~epochs", "(5~epochs", content)
 
     # Update table caption
     content = re.sub(
-        r'Test-set performance comparison \(5~epochs, CPU\)',
-        'Test-set performance comparison (5~epochs, CPU)',
-        content
+        r"Test-set performance comparison \(5~epochs, CPU\)",
+        "Test-set performance comparison (5~epochs, CPU)",
+        content,
     )
 
     # Update model comparison table (lines 387-389)
-    if 'cnn' in results and 'resnet' in results and 'effnet' in results:
+    if "cnn" in results and "resnet" in results and "effnet" in results:
         # Find and replace the table data
-        old_table = r'Custom CNN\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+\s+\\\\\n.*?ResNet-18\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+\s+\\\\\n.*?EfficientNet-B0\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+'
+        old_table = r"Custom CNN\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+\s+\\\\\n.*?ResNet-18\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+\s+\\\\\n.*?EfficientNet-B0\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d.]+\s+&\s+[\d]+"
 
         new_table = (
             f"Custom CNN       & {results['cnn']['accuracy']*100:>6.1f} & {results['cnn']['macro_f1']:>6.3f} & {results['cnn']['weighted_f1']:>6.3f} & {int(results['cnn']['time']):>4} \\\\\n"
@@ -109,25 +111,25 @@ def update_report(report_path: Path, results: dict) -> str:
 
     # Update discussion section to reflect corrected methodology
     content = re.sub(
-        r'The ``none\'\' class collapse \(F1 = 0\.000\) across all models is a direct.*?\n',
-        'With the corrected methodology (removing WeightedRandomSampler and using the natural distribution), the ``none\'\' class is now properly learned by all models, achieving non-zero F1 scores. The class-weighted loss function still penalizes rare-class errors appropriately.\n',
+        r"The ``none\'\' class collapse \(F1 = 0\.000\) across all models is a direct.*?\n",
+        "With the corrected methodology (removing WeightedRandomSampler and using the natural distribution), the ``none'' class is now properly learned by all models, achieving non-zero F1 scores. The class-weighted loss function still penalizes rare-class errors appropriately.\n",
         content,
-        flags=re.DOTALL
+        flags=re.DOTALL,
     )
 
     # Update training dynamics description
     content = re.sub(
-        r'With only 5~epochs, models.*?extended training would yield substantial gains\.',
-        'With 5~epochs of training on the natural distribution, models converge on all classes. The custom CNN and pretrained models all achieve improved accuracy compared to the 3-epoch baseline, with the 85% ``none\'\' class now properly learned alongside defect classes.',
+        r"With only 5~epochs, models.*?extended training would yield substantial gains\.",
+        "With 5~epochs of training on the natural distribution, models converge on all classes. The custom CNN and pretrained models all achieve improved accuracy compared to the 3-epoch baseline, with the 85% ``none'' class now properly learned alongside defect classes.",
         content,
-        flags=re.DOTALL
+        flags=re.DOTALL,
     )
 
     return content
 
 
 def main():
-    report_path = Path('docs/wafer_defect_detection_report.tex')
+    report_path = Path("docs/wafer_defect_detection_report.tex")
 
     if not report_path.exists():
         logger.warning(f"ERROR: Report not found at {report_path}")
@@ -135,7 +137,9 @@ def main():
 
     # Try to read training output from stdin or file
     logger.info("Usage: pipe train.py output to this script")
-    logger.info("Example: python train.py --model all --epochs 5 | python extract_and_update_report.py")
+    logger.info(
+        "Example: python train.py --model all --epochs 5 | python extract_and_update_report.py"
+    )
 
     # Read from stdin if available
     try:
@@ -155,23 +159,25 @@ def main():
 
     logger.info(f"Extracted metrics for {len(results)} models:")
     for model, metrics in results.items():
-        logger.info(f"  {model}: Acc={metrics['accuracy']:.2%}, Macro F1={metrics['macro_f1']:.3f}, Time={metrics['time']:.0f}s")
+        logger.info(
+            f"  {model}: Acc={metrics['accuracy']:.2%}, Macro F1={metrics['macro_f1']:.3f}, Time={metrics['time']:.0f}s"
+        )
 
     # Update report
     updated_content = update_report(report_path, results)
 
     # Write back
-    with open(report_path, 'w') as f:
+    with open(report_path, "w") as f:
         f.write(updated_content)
 
     logger.info(f"✓ Report updated: {report_path}")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     sys.exit(main())

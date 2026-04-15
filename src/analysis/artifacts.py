@@ -137,10 +137,14 @@ def build_experiment_manifest(
     """Build a reproducible, JSON-serializable experiment manifest."""
     project_root = project_root.resolve()
     submission_dir = submission_dir.resolve()
-    records_list = [enrich_artifact_record(project_root, submission_dir, record) for record in records]
+    records_list = [
+        enrich_artifact_record(project_root, submission_dir, record) for record in records
+    ]
 
     config_meta = hash_path(config_path) if config_path is not None else {"present": False}
-    checkpoint_meta = hash_path(checkpoint_path) if checkpoint_path is not None else {"present": False}
+    checkpoint_meta = (
+        hash_path(checkpoint_path) if checkpoint_path is not None else {"present": False}
+    )
 
     git_commit = _run_git(["rev-parse", "HEAD"], cwd=project_root)
     git_branch = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=project_root)

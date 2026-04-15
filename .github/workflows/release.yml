@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      publish_pypi:
+        description: "Publish wheel+sdist to PyPI (disabled by default)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build artifacts and publish GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history for tag-to-version check)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build click tomli
+
+      - name: Verify pyproject version matches tag
+        run: |
+          python scripts/bump_version.py --check
+
+      - name: Build sdist and wheel
+        run: |
+          python -m build --sdist --wheel --outdir dist/
+
+      - name: Extract release notes for this tag
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "Extracting CHANGELOG section for version ${VERSION}"
+          # awk program: print lines between the "## [VERSION]" heading
+          # (exclusive) and the next "## [" heading (exclusive).
+          awk -v ver="${VERSION}" '
+            BEGIN { found=0 }
+            /^## \[/ {
+              if (found) { exit }
+              if ($0 ~ "^## \\[" ver "\\]") { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "_No CHANGELOG entry found for ${TAG}; see commits for details._" \
+              > release_notes.md
+          fi
+          echo "notes_path=release_notes.md" >> "${GITHUB_OUTPUT}"
+
+      - name: Zip Sphinx HTML docs (if present)
+        id: docs
+        run: |
+          if [ -d docs/sphinx/_build/html ]; then
+            (cd docs/sphinx/_build && zip -r "${GITHUB_WORKSPACE}/dist/sphinx-html-${GITHUB_REF_NAME}.zip" html)
+            echo "has_docs=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_docs=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Collect paper-figure PDFs (if present)
+        id: figures
+        run: |
+          mkdir -p dist/paper
+          if compgen -G "results/paper/*.pdf" > /dev/null; then
+            cp results/paper/*.pdf dist/paper/ || true
+            echo "has_figures=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_figures=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/paper/*.pdf
+            dist/sphinx-html-*.zip
+
+      - name: Upload build artifacts to workflow run
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ github.ref_name }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/paper/*.pdf
+            dist/sphinx-html-*.zip
+          if-no-files-found: warn
+
+  # --------------------------------------------------------------------------
+  # Optional follow-up: PyPI publish. Manual dispatch only; upload step is
+  # intentionally left commented-out until trusted-publisher / token is
+  # provisioned. Flip `publish_pypi=true` from the Actions UI to dry-run.
+  # --------------------------------------------------------------------------
+  pypi-publish:
+    name: Publish to PyPI (manual, disabled)
+    needs: release
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_pypi == 'true' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ github.ref_name }}
+          path: dist/
+
+      # - name: Publish to PyPI via trusted publisher
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: dist/
+      #     skip-existing: true
+
+      - name: Publish placeholder
+        run: |
+          echo "PyPI upload is intentionally disabled."
+          echo "Uncomment the pypa/gh-action-pypi-publish step once the"
+          echo "project has a PyPI trusted publisher configured."

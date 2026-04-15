@@ -14,20 +14,21 @@ References:
     [188] Ma et al. (2022). "ABC: Asymmetric Balanced Calibration". arXiv:2203.14395
 """
 
-from typing import List, Tuple, Dict, Any
+import logging
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.optimize import minimize_scalar
-from torch.utils.data import DataLoader
 from sklearn.metrics import (
     accuracy_score,
-    f1_score,
     classification_report,
+    f1_score,
     precision_recall_fscore_support,
 )
-import logging
+from torch.utils.data import DataLoader
 
 from src.inference.uncertainty import TemperatureScaler
 
@@ -194,8 +195,8 @@ def evaluate_model(
 
     # Compute metrics
     acc = accuracy_score(all_labels, all_preds)
-    macro_f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
-    weighted_f1 = f1_score(all_labels, all_preds, average='weighted', zero_division=0)
+    macro_f1 = f1_score(all_labels, all_preds, average="macro", zero_division=0)
+    weighted_f1 = f1_score(all_labels, all_preds, average="weighted", zero_division=0)
     calibration = compute_calibration_metrics(all_probabilities, all_labels)
 
     # Print results
@@ -209,18 +210,21 @@ def evaluate_model(
     logger.info(f"  Brier score : {calibration['brier_score']:.4f}")
     logger.info(f"  NLL         : {calibration['negative_log_likelihood']:.4f}")
     logger.info(f"{'='*60}")
-    logger.info(classification_report(
-        all_labels, all_preds,
-        labels=list(range(len(class_names))),
-        target_names=class_names,
-        digits=4,
-        zero_division=0
-    ))
+    logger.info(
+        classification_report(
+            all_labels,
+            all_preds,
+            labels=list(range(len(class_names))),
+            target_names=class_names,
+            digits=4,
+            zero_division=0,
+        )
+    )
 
     metrics = {
-        'accuracy': acc,
-        'macro_f1': macro_f1,
-        'weighted_f1': weighted_f1,
+        "accuracy": acc,
+        "macro_f1": macro_f1,
+        "weighted_f1": weighted_f1,
         **calibration,
     }
 
@@ -308,18 +312,20 @@ def calibrate_and_evaluate(
     val_logits, val_labels = _collect_logits_and_labels(model, val_loader, device)
     scaler = TemperatureScaler()
     temperature = scaler.fit(val_logits, val_labels)
-    logger.info(
-        f"Temperature scaling fitted on validation set: T = {temperature:.4f}"
-    )
+    logger.info(f"Temperature scaling fitted on validation set: T = {temperature:.4f}")
 
     # 2. Collect test logits
     test_logits, test_labels = _collect_logits_and_labels(model, test_loader, device)
 
     # 3. Raw (uncalibrated) metrics
-    raw_preds, labels_np, raw_metrics = _metrics_from_logits(test_logits, test_labels, temperature=1.0)
+    raw_preds, labels_np, raw_metrics = _metrics_from_logits(
+        test_logits, test_labels, temperature=1.0
+    )
 
     # 4. Calibrated metrics
-    cal_preds, _, cal_metrics = _metrics_from_logits(test_logits, test_labels, temperature=temperature)
+    cal_preds, _, cal_metrics = _metrics_from_logits(
+        test_logits, test_labels, temperature=temperature
+    )
 
     # 5. Build combined dict
     combined: Dict[str, Any] = {}
@@ -338,7 +344,14 @@ def calibrate_and_evaluate(
     logger.info(f"{'='*60}")
     logger.info(f"  {'Metric':<20} {'Raw':>10} {'Calibrated':>12}")
     logger.info(f"  {'-'*44}")
-    for key in ("accuracy", "macro_f1", "weighted_f1", "ece", "brier_score", "negative_log_likelihood"):
+    for key in (
+        "accuracy",
+        "macro_f1",
+        "weighted_f1",
+        "ece",
+        "brier_score",
+        "negative_log_likelihood",
+    ):
         raw_val = raw_metrics.get(key, 0.0)
         cal_val = cal_metrics.get(key, 0.0)
         logger.info(f"  {key:<20} {raw_val:>10.4f} {cal_val:>12.4f}")
@@ -415,9 +428,7 @@ class AsymmetricCalibrator:
                 """Negative log-likelihood at temperature ``temp``."""
                 scaled = cls_logits / max(temp, 1e-4)
                 log_probs = F.log_softmax(scaled, dim=1)
-                return -log_probs[
-                    torch.arange(cls_labels.size(0)), cls_labels
-                ].mean().item()
+                return -log_probs[torch.arange(cls_labels.size(0)), cls_labels].mean().item()
 
             result = minimize_scalar(
                 nll_for_class,
@@ -512,13 +523,18 @@ def calibrate_and_evaluate_asymmetric(
     # Log comparison
     ece_delta = raw_metrics.get("ece", 0.0) - cal_metrics.get("ece", 0.0)
     logger.info("\n%s", "=" * 60)
-    logger.info(
-        "  %s -- Asymmetric Calibrated Evaluation", model_name
-    )
+    logger.info("  %s -- Asymmetric Calibrated Evaluation", model_name)
     logger.info("%s", "=" * 60)
     logger.info("  %-20s %10s %12s", "Metric", "Raw", "Asymmetric")
     logger.info("  %s", "-" * 44)
-    for key in ("accuracy", "macro_f1", "weighted_f1", "ece", "brier_score", "negative_log_likelihood"):
+    for key in (
+        "accuracy",
+        "macro_f1",
+        "weighted_f1",
+        "ece",
+        "brier_score",
+        "negative_log_likelihood",
+    ):
         raw_val = raw_metrics.get(key, 0.0)
         cal_val = cal_metrics.get(key, 0.0)
         logger.info("  %-20s %10.4f %12.4f", key, raw_val, cal_val)
@@ -549,9 +565,7 @@ def get_per_class_f1(labels: np.ndarray, preds: np.ndarray) -> np.ndarray:
     Returns:
         Array of F1 scores (one per class)
     """
-    _, _, f1s, _ = precision_recall_fscore_support(
-        labels, preds, average=None, zero_division=0
-    )
+    _, _, f1s, _ = precision_recall_fscore_support(labels, preds, average=None, zero_division=0)
     return f1s
 
 

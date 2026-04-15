@@ -67,8 +67,12 @@ def _run(cmd: List[str], log_path: Path) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "w", encoding="utf-8") as logf:
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            bufsize=1, universal_newlines=True, cwd=str(REPO_ROOT),
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+            cwd=str(REPO_ROOT),
         )
         for line in proc.stdout:
             logf.write(line)
@@ -81,17 +85,24 @@ def _run(cmd: List[str], log_path: Path) -> None:
 
 def pretrain(pretrain_epochs: int, batch_size: int, device: str) -> Path:
     if SIMCLR_CKPT.exists():
-        logger.info("SimCLR checkpoint already at %s — skipping pretrain",
-                    SIMCLR_CKPT.relative_to(REPO_ROOT))
+        logger.info(
+            "SimCLR checkpoint already at %s — skipping pretrain",
+            SIMCLR_CKPT.relative_to(REPO_ROOT),
+        )
         return SIMCLR_CKPT
 
     log_path = ARCHIVE_DIR / f"{CONDITION}_pretrain.log"
     cmd = [
-        sys.executable, str(REPO_ROOT / "scripts" / "simclr_pretrain.py"),
-        "--epochs", str(pretrain_epochs),
-        "--batch-size", str(batch_size),
-        "--device", device,
-        "--output-path", str(SIMCLR_CKPT),
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "simclr_pretrain.py"),
+        "--epochs",
+        str(pretrain_epochs),
+        "--batch-size",
+        str(batch_size),
+        "--device",
+        device,
+        "--output-path",
+        str(SIMCLR_CKPT),
     ]
     t0 = time.time()
     _run(cmd, log_path)
@@ -99,23 +110,31 @@ def pretrain(pretrain_epochs: int, batch_size: int, device: str) -> Path:
     return SIMCLR_CKPT
 
 
-def finetune(seed: int, epochs: int, batch_size: int, device: str,
-             pretrained: Path) -> dict:
+def finetune(seed: int, epochs: int, batch_size: int, device: str, pretrained: Path) -> dict:
     """Fine-tune CNN from the SimCLR-pretrained backbone for one seed."""
     if METRICS_JSON.exists():
         METRICS_JSON.unlink()
 
     log_path = ARCHIVE_DIR / f"{CONDITION}_seed{seed}.log"
     cmd = [
-        sys.executable, str(REPO_ROOT / "train.py"),
-        "--model", "cnn",
-        "--epochs", str(epochs),
-        "--batch-size", str(batch_size),
-        "--device", device,
-        "--seed", str(seed),
-        "--config", "config.yaml",
-        "--config", str(REPO_ROOT / "configs" / "rare_class" / "A_baseline.yaml"),
-        "--pretrained-checkpoint", str(pretrained),
+        sys.executable,
+        str(REPO_ROOT / "train.py"),
+        "--model",
+        "cnn",
+        "--epochs",
+        str(epochs),
+        "--batch-size",
+        str(batch_size),
+        "--device",
+        device,
+        "--seed",
+        str(seed),
+        "--config",
+        "config.yaml",
+        "--config",
+        str(REPO_ROOT / "configs" / "rare_class" / "A_baseline.yaml"),
+        "--pretrained-checkpoint",
+        str(pretrained),
     ]
     t0 = time.time()
     _run(cmd, log_path)
@@ -138,13 +157,12 @@ def append_to_study(runs: Dict[int, dict]) -> None:
         return
 
     import statistics
+
     runs_list = list(runs.values())
     macro_mean = statistics.mean(r["macro_f1"] for r in runs_list)
-    macro_std = (statistics.stdev(r["macro_f1"] for r in runs_list)
-                 if len(runs_list) > 1 else 0.0)
+    macro_std = statistics.stdev(r["macro_f1"] for r in runs_list) if len(runs_list) > 1 else 0.0
     acc_mean = statistics.mean(r["accuracy"] for r in runs_list)
-    acc_std = (statistics.stdev(r["accuracy"] for r in runs_list)
-               if len(runs_list) > 1 else 0.0)
+    acc_std = statistics.stdev(r["accuracy"] for r in runs_list) if len(runs_list) > 1 else 0.0
 
     section = ["\n## Bonus: F_simclr — SimCLR pretraining + CE fine-tune\n"]
     section.append(
@@ -214,17 +232,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S"
+    )
 
     _require_core_study()
 
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     seeds = [int(s) for s in args.seeds.split(",") if s]
 
-    logger.info("SimCLR bonus: pretrain %d epochs, fine-tune %d epochs x %d seeds",
-                args.pretrain_epochs, args.finetune_epochs, len(seeds))
+    logger.info(
+        "SimCLR bonus: pretrain %d epochs, fine-tune %d epochs x %d seeds",
+        args.pretrain_epochs,
+        args.finetune_epochs,
+        len(seeds),
+    )
 
     try:
         backbone = pretrain(args.pretrain_epochs, args.batch_size, args.device)
@@ -241,15 +263,13 @@ def main(argv: list[str] | None = None) -> int:
             results[seed] = json.loads(arc.read_text(encoding="utf-8"))
             continue
         try:
-            metrics = finetune(seed, args.finetune_epochs, args.batch_size,
-                               args.device, backbone)
+            metrics = finetune(seed, args.finetune_epochs, args.batch_size, args.device, backbone)
         except Exception as exc:
             logger.error("F_simclr seed=%d failed: %s", seed, exc)
             continue
         arc.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
         results[seed] = metrics
-        logger.info("F_simclr seed=%d OK — macro F1 %.4f",
-                    seed, metrics["macro_f1"])
+        logger.info("F_simclr seed=%d OK — macro F1 %.4f", seed, metrics["macro_f1"])
 
     append_to_study(results)
     return 0

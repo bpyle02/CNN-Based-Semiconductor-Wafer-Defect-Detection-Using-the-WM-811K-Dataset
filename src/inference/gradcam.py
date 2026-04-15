@@ -13,12 +13,13 @@ References:
     [27] Shrikumar et al. (2017). "DeepLIFT". arXiv:1704.02685
 """
 
-from typing import Tuple, Optional, List
+import logging
+from typing import List, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 from skimage.transform import resize as skimage_resize
-import numpy as np
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -57,21 +58,11 @@ class GradCAM:
         self.hooks.append(target_layer.register_forward_hook(self._forward_hook))
         self.hooks.append(target_layer.register_full_backward_hook(self._backward_hook))
 
-    def _forward_hook(
-        self,
-        module: nn.Module,
-        input: Tuple,
-        output: torch.Tensor
-    ) -> None:
+    def _forward_hook(self, module: nn.Module, input: Tuple, output: torch.Tensor) -> None:
         """Store activations during forward pass."""
         self.activations = output.clone().detach()
 
-    def _backward_hook(
-        self,
-        module: nn.Module,
-        grad_input: Tuple,
-        grad_output: Tuple
-    ) -> None:
+    def _backward_hook(self, module: nn.Module, grad_input: Tuple, grad_output: Tuple) -> None:
         """Store gradients during backward pass."""
         self.gradients = grad_output[0].clone().detach()
 

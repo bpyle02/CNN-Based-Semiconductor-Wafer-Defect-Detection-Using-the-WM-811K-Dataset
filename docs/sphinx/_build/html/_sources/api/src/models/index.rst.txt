@@ -1,0 +1,45 @@
+src.models
+==========
+
+.. py:module:: src.models
+
+.. autoapi-nested-parse::
+
+   Deep learning model architectures for wafer defect classification.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /api/src/models/attention/index
+   /api/src/models/cnn/index
+   /api/src/models/ensemble/index
+   /api/src/models/fpn/index
+   /api/src/models/pretrained/index
+   /api/src/models/ride/index
+   /api/src/models/swin/index
+   /api/src/models/vit/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.models.get_resnet18
+   src.models.get_efficientnet_b0
+
+
+Package Contents
+----------------
+
+.. py:data:: get_resnet18
+   :type:  Any
+
+.. py:data:: get_efficientnet_b0
+   :type:  Any
+

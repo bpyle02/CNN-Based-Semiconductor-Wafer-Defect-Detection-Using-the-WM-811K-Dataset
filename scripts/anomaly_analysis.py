@@ -10,27 +10,31 @@ Usage:
 """
 
 import argparse
-import sys
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Subset
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader, Subset
 
 logger = logging.getLogger(__name__)
 
 METHOD_CHOICES = ["isolation_forest", "ocsvm", "autoencoder", "mahalanobis"]
-METHOD_MAP = {"ocsvm": "one_class_svm", "isolation_forest": "isolation_forest",
-              "autoencoder": "autoencoder", "mahalanobis": "mahalanobis"}
+METHOD_MAP = {
+    "ocsvm": "one_class_svm",
+    "isolation_forest": "isolation_forest",
+    "autoencoder": "autoencoder",
+    "mahalanobis": "mahalanobis",
+}
 
 
 def load_model(model_type: str, checkpoint_path: str, device: str) -> torch.nn.Module:
     """Load a model from checkpoint."""
-    from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+    from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
 
     if model_type == "cnn":
         model = WaferCNN(num_classes=9)
@@ -42,15 +46,18 @@ def load_model(model_type: str, checkpoint_path: str, device: str) -> torch.nn.M
         raise ValueError(f"Unknown model type: {model_type}")
 
     state = torch.load(checkpoint_path, map_location=device, weights_only=True)
-    model.load_state_dict(state if not isinstance(state, dict) or "model_state_dict" not in state
-                          else state["model_state_dict"])
+    model.load_state_dict(
+        state
+        if not isinstance(state, dict) or "model_state_dict" not in state
+        else state["model_state_dict"]
+    )
     model.to(device).eval()
     return model
 
 
 def prepare_data(data_path: str = None, batch_size: int = 64):
     """Load dataset and split into normal-train, normal-test, anomaly-test loaders."""
-    from src.data.dataset import load_dataset, KNOWN_CLASSES
+    from src.data.dataset import KNOWN_CLASSES, load_dataset
     from src.data.preprocessing import WaferMapDataset, get_image_transforms
 
     df = load_dataset(Path(data_path) if data_path else None)
@@ -63,6 +70,7 @@ def prepare_data(data_path: str = None, batch_size: int = 64):
     none_idx = le.transform(["none"])[0]
 
     from sklearn.model_selection import train_test_split
+
     idx_train, idx_test = train_test_split(
         np.arange(len(labels)), test_size=0.15, stratify=labels, random_state=42
     )
@@ -76,9 +84,15 @@ def prepare_data(data_path: str = None, batch_size: int = 64):
     transform = get_image_transforms(augment=False)
     full_ds = WaferMapDataset(maps, labels, transform=transform)
 
-    normal_train_loader = DataLoader(Subset(full_ds, normal_train_idx), batch_size=batch_size, shuffle=False)
-    normal_test_loader = DataLoader(Subset(full_ds, normal_test_idx), batch_size=batch_size, shuffle=False)
-    anomaly_test_loader = DataLoader(Subset(full_ds, anomaly_test_idx), batch_size=batch_size, shuffle=False)
+    normal_train_loader = DataLoader(
+        Subset(full_ds, normal_train_idx), batch_size=batch_size, shuffle=False
+    )
+    normal_test_loader = DataLoader(
+        Subset(full_ds, normal_test_idx), batch_size=batch_size, shuffle=False
+    )
+    anomaly_test_loader = DataLoader(
+        Subset(full_ds, anomaly_test_idx), batch_size=batch_size, shuffle=False
+    )
 
     return normal_train_loader, normal_test_loader, anomaly_test_loader
 
@@ -89,8 +103,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Anomaly detection on wafer defect models")
     parser.add_argument("--checkpoint", required=True, help="Path to model checkpoint")
     parser.add_argument("--model-type", required=True, choices=["cnn", "resnet", "efficientnet"])
-    parser.add_argument("--method", default="isolation_forest", choices=METHOD_CHOICES,
-                        help="Anomaly detection method (default: isolation_forest)")
+    parser.add_argument(
+        "--method",
+        default="isolation_forest",
+        choices=METHOD_CHOICES,
+        help="Anomaly detection method (default: isolation_forest)",
+    )
     parser.add_argument("--data-path", default=None, help="Path to LSWMD_new.pkl")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
@@ -109,9 +127,11 @@ def main() -> int:
     normal_train_loader, normal_test_loader, anomaly_test_loader = prepare_data(
         args.data_path, args.batch_size
     )
-    logger.info(f"Normal train batches: {len(normal_train_loader)}, "
-                f"Normal test batches: {len(normal_test_loader)}, "
-                f"Anomaly test batches: {len(anomaly_test_loader)}")
+    logger.info(
+        f"Normal train batches: {len(normal_train_loader)}, "
+        f"Normal test batches: {len(normal_test_loader)}, "
+        f"Anomaly test batches: {len(anomaly_test_loader)}"
+    )
 
     internal_method = METHOD_MAP[args.method]
     logger.info(f"Fitting anomaly detector (method={internal_method})...")

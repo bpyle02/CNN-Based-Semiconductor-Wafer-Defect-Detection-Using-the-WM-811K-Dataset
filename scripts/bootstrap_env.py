@@ -94,7 +94,7 @@ def main() -> int:
             "Installing CUDA 11.8 PyTorch wheels",
         )
 
-    editable_target = f'.[{args.extras}]' if args.extras else "."
+    editable_target = f".[{args.extras}]" if args.extras else "."
     run_command(
         [sys.executable, "-m", "pip", "install", "-e", editable_target],
         f"Installing editable package {editable_target}",

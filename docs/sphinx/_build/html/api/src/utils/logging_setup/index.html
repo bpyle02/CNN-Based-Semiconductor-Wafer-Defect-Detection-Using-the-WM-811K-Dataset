@@ -1,0 +1,236 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.utils.logging_setup &mdash; Wafer Defect Detection v0.2.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=938c9ccc"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="src.utils.reproducibility" href="../reproducibility/index.html" />
+    <link rel="prev" title="src.utils" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Wafer Defect Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Project README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html#cnn-based-semiconductor-wafer-defect-detection-wm-811k">CNN-Based Semiconductor Wafer Defect Detection — WM-811K</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Artifacts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../model_card.html">Model Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_card.html">Data Card</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../related_work.html">Related Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#id1">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">src</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../../analysis/index.html">src.analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../augmentation/index.html">src.augmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../cli/index.html">src.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../config/index.html">src.config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../data/index.html">src.data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../detection/index.html">src.detection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../exceptions/index.html">src.exceptions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../federated/index.html">src.federated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../inference/index.html">src.inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../mlops/index.html">src.mlops</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../model_registry/index.html">src.model_registry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../models/index.html">src.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../training/index.html">src.training</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html">src.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Wafer Defect Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">src</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">src.utils</a></li>
+      <li class="breadcrumb-item active">src.utils.logging_setup</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/api/src/utils/logging_setup/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.utils.logging_setup">
+<span id="src-utils-logging-setup"></span><h1>src.utils.logging_setup<a class="headerlink" href="#module-src.utils.logging_setup" title="Link to this heading"></a></h1>
+<p>Structured logging setup with per-run correlation IDs.</p>
+<p>Provides <a class="reference internal" href="#src.utils.logging_setup.setup_logging" title="src.utils.logging_setup.setup_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_logging()</span></code></a> and <a class="reference internal" href="#src.utils.logging_setup.get_run_id" title="src.utils.logging_setup.get_run_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_run_id()</span></code></a>. Every log record
+carries a <code class="docutils literal notranslate"><span class="pre">run_id</span></code> attribute (injected via a <code class="xref py py-class docutils literal notranslate"><span class="pre">logging.Filter</span></code>)
+so downstream aggregators can correlate lines belonging to the same
+training / evaluation run.</p>
+<p>Two output formats are supported:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">json_format=False</span></code> (default) — a human-readable line
+<code class="docutils literal notranslate"><span class="pre">&quot;&lt;ts&gt;</span> <span class="pre">[&lt;name&gt;]</span> <span class="pre">&lt;LEVEL&gt;</span> <span class="pre">(run=&lt;run_id&gt;):</span> <span class="pre">&lt;message&gt;&quot;</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">json_format=True</span></code> — one JSON object per line with keys
+<code class="docutils literal notranslate"><span class="pre">timestamp</span></code>, <code class="docutils literal notranslate"><span class="pre">level</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">run_id</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code>.</p></li>
+</ul>
+<p>The function is idempotent: repeated calls reset the root logger’s
+handlers before installing new ones so tests and re-entrant callers do
+not accumulate duplicates.</p>
+<dl class="simple">
+<dt>Environment overrides:</dt><dd><p>WAFER_RUN_ID     — use as run_id when <code class="docutils literal notranslate"><span class="pre">run_id</span></code> argument is None.
+WAFER_LOG_LEVEL  — overrides <code class="docutils literal notranslate"><span class="pre">level</span></code> argument when set.
+WAFER_LOG_FORMAT — <code class="docutils literal notranslate"><span class="pre">json</span></code> or <code class="docutils literal notranslate"><span class="pre">human</span></code> (default human).</p>
+</dd>
+</dl>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.utils.logging_setup.DEFAULT_FORMAT" title="src.utils.logging_setup.DEFAULT_FORMAT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_FORMAT</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#src.utils.logging_setup.setup_logging" title="src.utils.logging_setup.setup_logging"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup_logging</span></code></a>(→ str)</p></td>
+<td><p>Configure the root logger and return the resolved <code class="docutils literal notranslate"><span class="pre">run_id</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#src.utils.logging_setup.get_run_id" title="src.utils.logging_setup.get_run_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_run_id</span></code></a>(→ str)</p></td>
+<td><p>Return the current run_id, generating one if none has been set.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="src.utils.logging_setup.DEFAULT_FORMAT">
+<span class="sig-prename descclassname"><span class="pre">src.utils.logging_setup.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_FORMAT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'%(asctime)s</span> <span class="pre">[%(name)s]</span> <span class="pre">%(levelname)s:</span> <span class="pre">%(message)s'</span></span><a class="reference internal" href="../../../../_modules/src/utils/logging_setup.html#DEFAULT_FORMAT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.logging_setup.DEFAULT_FORMAT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.logging_setup.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">src.utils.logging_setup.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'INFO'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">sys.stdout</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/src/utils/logging_setup.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.logging_setup.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Configure the root logger and return the resolved <code class="docutils literal notranslate"><span class="pre">run_id</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> – Logging level name (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;INFO&quot;</span></code>). Env var <code class="docutils literal notranslate"><span class="pre">WAFER_LOG_LEVEL</span></code>
+overrides when set.</p></li>
+<li><p><strong>run_id</strong> – Explicit run identifier. If <code class="docutils literal notranslate"><span class="pre">None</span></code> uses <code class="docutils literal notranslate"><span class="pre">WAFER_RUN_ID</span></code> from
+the environment, or generates a short uuid4 hex.</p></li>
+<li><p><strong>json_format</strong> – Emit JSON lines instead of human-readable lines. Env var
+<code class="docutils literal notranslate"><span class="pre">WAFER_LOG_FORMAT=json</span></code> forces JSON when the argument is False.</p></li>
+<li><p><strong>stream</strong> – Output stream for the attached <code class="xref py py-class docutils literal notranslate"><span class="pre">logging.StreamHandler</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The resolved <code class="docutils literal notranslate"><span class="pre">run_id</span></code> (also stored module-locally for
+<a class="reference internal" href="#src.utils.logging_setup.get_run_id" title="src.utils.logging_setup.get_run_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_run_id()</span></code></a>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.logging_setup.get_run_id">
+<span class="sig-prename descclassname"><span class="pre">src.utils.logging_setup.</span></span><span class="sig-name descname"><span class="pre">get_run_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/src/utils/logging_setup.html#get_run_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.logging_setup.get_run_id" title="Link to this definition"></a></dt>
+<dd><p>Return the current run_id, generating one if none has been set.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="src.utils" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../reproducibility/index.html" class="btn btn-neutral float-right" title="src.utils.reproducibility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, AI 570 Team 4.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+src.utils.logging_setup
+=======================
+
+.. py:module:: src.utils.logging_setup
+
+.. autoapi-nested-parse::
+
+   Structured logging setup with per-run correlation IDs.
+
+   Provides :func:`setup_logging` and :func:`get_run_id`. Every log record
+   carries a ``run_id`` attribute (injected via a :class:`logging.Filter`)
+   so downstream aggregators can correlate lines belonging to the same
+   training / evaluation run.
+
+   Two output formats are supported:
+
+   * ``json_format=False`` (default) — a human-readable line
+     ``"<ts> [<name>] <LEVEL> (run=<run_id>): <message>"``.
+   * ``json_format=True`` — one JSON object per line with keys
+     ``timestamp``, ``level``, ``name``, ``run_id``, ``message``.
+
+   The function is idempotent: repeated calls reset the root logger's
+   handlers before installing new ones so tests and re-entrant callers do
+   not accumulate duplicates.
+
+   Environment overrides:
+       WAFER_RUN_ID     — use as run_id when ``run_id`` argument is None.
+       WAFER_LOG_LEVEL  — overrides ``level`` argument when set.
+       WAFER_LOG_FORMAT — ``json`` or ``human`` (default human).
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.utils.logging_setup.DEFAULT_FORMAT
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.utils.logging_setup.setup_logging
+   src.utils.logging_setup.get_run_id
+
+
+Module Contents
+---------------
+
+.. py:data:: DEFAULT_FORMAT
+   :value: '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+
+
+.. py:function:: setup_logging(level: str = 'INFO', *, run_id: Optional[str] = None, json_format: bool = False, stream=sys.stdout) -> str
+
+   Configure the root logger and return the resolved ``run_id``.
+
+   :param level: Logging level name (e.g. ``"INFO"``). Env var ``WAFER_LOG_LEVEL``
+                 overrides when set.
+   :param run_id: Explicit run identifier. If ``None`` uses ``WAFER_RUN_ID`` from
+                  the environment, or generates a short uuid4 hex.
+   :param json_format: Emit JSON lines instead of human-readable lines. Env var
+                       ``WAFER_LOG_FORMAT=json`` forces JSON when the argument is False.
+   :param stream: Output stream for the attached :class:`logging.StreamHandler`.
+
+   :returns: The resolved ``run_id`` (also stored module-locally for
+             :func:`get_run_id`).
+   :rtype: str
+
+
+.. py:function:: get_run_id() -> str
+
+   Return the current run_id, generating one if none has been set.
+
+

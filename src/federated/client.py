@@ -17,17 +17,16 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from src.federated.fed_avg import FedAveragingClient
-from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
 from src.data.preprocessing import seed_worker
+from src.federated.fed_avg import FedAveragingClient
 from src.model_registry import save_checkpoint_with_hash, verify_checkpoint
-
+from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +79,9 @@ class ClientManager:
 
         self.round_num = 0
         self.metadata = {
-            'client_id': client_id,
-            'total_samples': self.client.num_samples,
-            'rounds_completed': 0,
+            "client_id": client_id,
+            "total_samples": self.client.num_samples,
+            "rounds_completed": 0,
         }
 
     def receive_global_model(self, global_weights: Dict[str, torch.Tensor]) -> None:
@@ -92,9 +91,7 @@ class ClientManager:
             global_weights: Model state_dict from server
         """
         self.client.set_weights(global_weights)
-        logger.info(
-            f"Client {self.client_id}: Received global model for round {self.round_num}"
-        )
+        logger.info(f"Client {self.client_id}: Received global model for round {self.round_num}")
 
     def train_local(self, learning_rate: float) -> Dict[str, Any]:
         """Perform local SGD training.
@@ -113,11 +110,11 @@ class ClientManager:
         loss, acc = self.client.train_local(learning_rate)
 
         metrics = {
-            'client_id': self.client_id,
-            'round': self.round_num,
-            'local_loss': loss,
-            'local_acc': acc,
-            'num_samples': self.client.num_samples,
+            "client_id": self.client_id,
+            "round": self.round_num,
+            "local_loss": loss,
+            "local_acc": acc,
+            "num_samples": self.client.num_samples,
         }
 
         logger.info(
@@ -126,7 +123,7 @@ class ClientManager:
         )
 
         self.round_num += 1
-        self.metadata['rounds_completed'] = self.round_num
+        self.metadata["rounds_completed"] = self.round_num
 
         return metrics
 
@@ -148,11 +145,11 @@ class ClientManager:
         """
         path = self.checkpoint_dir / f"client_{self.client_id}_round_{self.round_num}.pth"
         checkpoint = {
-            'model': self.client.model.state_dict(),
-            'round': self.round_num,
-            'loss_history': self.client.local_loss_history,
-            'acc_history': self.client.local_acc_history,
-            'metadata': self.metadata,
+            "model": self.client.model.state_dict(),
+            "round": self.round_num,
+            "loss_history": self.client.local_loss_history,
+            "acc_history": self.client.local_acc_history,
+            "metadata": self.metadata,
         }
         file_hash = save_checkpoint_with_hash(checkpoint, path)
         logger.info(
@@ -174,10 +171,12 @@ class ClientManager:
                 f"FAILED for {path}. File may be corrupted or tampered with."
             )
 
-        checkpoint = torch.load(path, map_location="cpu", weights_only=False)  # composite checkpoint
-        self.client.model.load_state_dict(checkpoint['model'])
-        self.round_num = checkpoint['round']
-        self.metadata = checkpoint['metadata']
+        checkpoint = torch.load(
+            path, map_location="cpu", weights_only=False
+        )  # composite checkpoint
+        self.client.model.load_state_dict(checkpoint["model"])
+        self.round_num = checkpoint["round"]
+        self.metadata = checkpoint["metadata"]
         logger.info(f"Client {self.client_id}: Checkpoint loaded from {path}")
 
     def get_metadata(self) -> Dict[str, Any]:
@@ -188,9 +187,9 @@ class ClientManager:
         """
         return {
             **self.metadata,
-            'current_round': self.round_num,
-            'loss_history': self.client.local_loss_history,
-            'acc_history': self.client.local_acc_history,
+            "current_round": self.round_num,
+            "loss_history": self.client.local_loss_history,
+            "acc_history": self.client.local_acc_history,
         }
 
 
@@ -224,9 +223,12 @@ def simulate_client_training(
     y = torch.randint(0, 9, (10,))
     dataset = torch.utils.data.TensorDataset(X, y)
     g = torch.Generator().manual_seed(42)
-    loader = DataLoader(dataset, batch_size=5, shuffle=True, worker_init_fn=seed_worker, generator=g)
+    loader = DataLoader(
+        dataset, batch_size=5, shuffle=True, worker_init_fn=seed_worker, generator=g
+    )
 
     # Create model
+    model: nn.Module
     if model_type == "cnn":
         model = WaferCNN(num_classes=9)
     elif model_type == "resnet":
@@ -249,10 +251,12 @@ def simulate_client_training(
         device=device,
     )
 
-    # Simulate rounds
-    history = {
-        'client_id': client_id,
-        'rounds': [],
+    # Simulate rounds. Use a typed list for the per-round metrics so mypy
+    # can verify the indexing/append calls below.
+    rounds: List[Dict[str, Any]] = []
+    history: Dict[str, Any] = {
+        "client_id": client_id,
+        "rounds": rounds,
     }
 
     for round_num in range(num_rounds):
@@ -262,7 +266,7 @@ def simulate_client_training(
 
         # Local training
         metrics = manager.train_local(learning_rate)
-        history['rounds'].append(metrics)
+        rounds.append(metrics)
 
         # Upload model (in real system, would send to server)
         weights = manager.upload_model()
@@ -272,17 +276,15 @@ def simulate_client_training(
     manager.save_checkpoint()
 
     logger.info(f"Client {client_id} simulation complete!")
-    logger.info(f"Final loss: {history['rounds'][-1]['local_loss']:.4f}")
-    logger.info(f"Final accuracy: {history['rounds'][-1]['local_acc']:.4f}")
+    logger.info(f"Final loss: {rounds[-1]['local_loss']:.4f}")
+    logger.info(f"Final accuracy: {rounds[-1]['local_acc']:.4f}")
 
     return history
 
 
 def main() -> None:
     """CLI entry point for client simulation."""
-    parser = argparse.ArgumentParser(
-        description="Federated Learning Client (Simulation)"
-    )
+    parser = argparse.ArgumentParser(description="Federated Learning Client (Simulation)")
     parser.add_argument(
         "--client-id",
         type=int,
@@ -337,7 +339,7 @@ def main() -> None:
     )
 
     if args.output:
-        with open(args.output, 'w') as f:
+        with open(args.output, "w") as f:
             json.dump(history, f, indent=2)
         logger.info(f"History saved to {args.output}")
 

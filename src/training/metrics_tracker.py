@@ -7,12 +7,12 @@ learning metrics (loss, accuracy, learning rate).
 """
 
 import json
-import math
-from typing import Dict, List, Optional, Tuple, Any
-
-import numpy as np
-import matplotlib.pyplot as plt
 import logging
+import math
+from typing import Any, Dict, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +73,7 @@ class MetricsTracker:
         self.metrics[metric_name].append(float(value))
         self.steps[metric_name].append(step)
 
-    def get_moving_average(
-        self, metric_name: str, window: Optional[int] = None
-    ) -> List[float]:
+    def get_moving_average(self, metric_name: str, window: Optional[int] = None) -> List[float]:
         """
         Compute moving average of a metric.
 
@@ -109,9 +107,7 @@ class MetricsTracker:
             result.append(sum(window_vals) / len(window_vals))
         return result
 
-    def get_trend(
-        self, metric_name: str, lookback: int = 10
-    ) -> str:
+    def get_trend(self, metric_name: str, lookback: int = 10) -> str:
         """
         Detect trend direction using linear regression slope on recent values.
 
@@ -164,9 +160,7 @@ class MetricsTracker:
         else:
             return "improving" if normalized_slope > 0 else "degrading"
 
-    def get_best(
-        self, metric_name: str, mode: str = "max"
-    ) -> Tuple[float, int]:
+    def get_best(self, metric_name: str, mode: str = "max") -> Tuple[float, int]:
         """
         Return the best value and its step for a metric.
 
@@ -247,7 +241,9 @@ class MetricsTracker:
             ma = self.get_moving_average(name)
             is_loss = "loss" in name.lower()
             mode = "min" if is_loss else "max"
-            best_val, best_step = self.get_best(name, mode=mode) if self.metrics[name] else (None, None)
+            best_val, best_step = (
+                self.get_best(name, mode=mode) if self.metrics[name] else (None, None)
+            )
 
             data["metrics"][name] = {
                 "values": self.metrics[name],
@@ -298,25 +294,31 @@ class MetricsTracker:
             _, ax = plt.subplots(figsize=(8, 5))
 
         # Raw values as transparent line
-        ax.plot(steps, values, '-', alpha=0.35, color='#1f77b4', linewidth=1.0, label='Raw')
+        ax.plot(steps, values, "-", alpha=0.35, color="#1f77b4", linewidth=1.0, label="Raw")
 
         # Moving average as bold line
         if show_ma and len(values) > 1:
             ma = self.get_moving_average(metric_name)
-            ax.plot(steps, ma, '-', color='#1f77b4', linewidth=2.0,
-                    label=f'MA({self.window_size})')
+            ax.plot(steps, ma, "-", color="#1f77b4", linewidth=2.0, label=f"MA({self.window_size})")
 
         # Best point marker
         if show_best:
             is_loss = "loss" in metric_name.lower()
             mode = "min" if is_loss else "max"
             best_val, best_step = self.get_best(metric_name, mode=mode)
-            ax.plot(best_step, best_val, '*', color='#d62728', markersize=14,
-                    label=f'Best: {best_val:.4f}', zorder=5)
+            ax.plot(
+                best_step,
+                best_val,
+                "*",
+                color="#d62728",
+                markersize=14,
+                label=f"Best: {best_val:.4f}",
+                zorder=5,
+            )
 
-        ax.set_xlabel('Step')
+        ax.set_xlabel("Step")
         ax.set_ylabel(metric_name)
-        ax.set_title(metric_name, fontweight='bold')
+        ax.set_title(metric_name, fontweight="bold")
         ax.legend(fontsize=9)
         ax.grid(True, alpha=0.3)
 
@@ -339,7 +341,7 @@ class MetricsTracker:
         rows = math.ceil(n / cols)
 
         fig, axes = plt.subplots(rows, cols, figsize=figsize, squeeze=False)
-        fig.suptitle('Training Metrics', fontsize=16, fontweight='bold')
+        fig.suptitle("Training Metrics", fontsize=16, fontweight="bold")
 
         for idx, name in enumerate(metric_names):
             row, col = divmod(idx, cols)

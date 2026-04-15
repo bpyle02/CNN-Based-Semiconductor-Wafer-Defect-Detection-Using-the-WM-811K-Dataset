@@ -80,8 +80,11 @@ def _train_model(
     model = WaferCNN(num_classes=num_classes).to(device)
     g = torch.Generator().manual_seed(42)
     loader = DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True,
-        worker_init_fn=seed_worker, generator=g,
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+        worker_init_fn=seed_worker,
+        generator=g,
     )
     opt = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss()
@@ -101,20 +104,29 @@ def _train_model(
             total += yb.size(0)
         logger.info(
             "  epoch %d/%d loss=%.4f acc=%.4f",
-            ep + 1, epochs, loss_sum / total, correct / total,
+            ep + 1,
+            epochs,
+            loss_sum / total,
+            correct / total,
         )
     return model
 
 
 @torch.no_grad()
 def _predict_probs(
-    model: nn.Module, ds: WaferMapDataset, device: str, batch_size: int = 128,
+    model: nn.Module,
+    ds: WaferMapDataset,
+    device: str,
+    batch_size: int = 128,
 ) -> np.ndarray:
     model.eval()
     g = torch.Generator().manual_seed(42)
     loader = DataLoader(
-        ds, batch_size=batch_size, shuffle=False,
-        worker_init_fn=seed_worker, generator=g,
+        ds,
+        batch_size=batch_size,
+        shuffle=False,
+        worker_init_fn=seed_worker,
+        generator=g,
     )
     all_probs: List[np.ndarray] = []
     for xb, _ in loader:
@@ -137,8 +149,7 @@ def compute_cv_probabilities(
     kf = KFold(n_splits=folds, shuffle=True, random_state=42)
     transform = get_image_transforms()
     for fold_idx, (tr_idx, va_idx) in enumerate(kf.split(maps), 1):
-        logger.info("Fold %d/%d: train=%d val=%d",
-                    fold_idx, folds, len(tr_idx), len(va_idx))
+        logger.info("Fold %d/%d: train=%d val=%d", fold_idx, folds, len(tr_idx), len(va_idx))
         tr_ds = WaferMapDataset(maps[tr_idx], labels[tr_idx], transform=transform)
         va_ds = WaferMapDataset(maps[va_idx], labels[va_idx], transform=None)
         model = _train_model(tr_ds, num_classes, epochs, device)
@@ -189,12 +200,14 @@ def flag_candidates(
 
     candidates: List[NoiseCandidate] = []
     for idx in np.where(disagree)[0]:
-        candidates.append(NoiseCandidate(
-            sample_idx=int(idx),
-            true_label=class_names[int(labels[idx])],
-            predicted_label=class_names[int(pred_idx[idx])],
-            confidence=float(pred_conf[idx]),
-        ))
+        candidates.append(
+            NoiseCandidate(
+                sample_idx=int(idx),
+                true_label=class_names[int(labels[idx])],
+                predicted_label=class_names[int(pred_idx[idx])],
+                confidence=float(pred_conf[idx]),
+            )
+        )
     candidates.sort(key=lambda c: c.confidence, reverse=True)
     return candidates, per_class
 
@@ -209,10 +222,12 @@ def write_report(
 ) -> None:
     lines: List[str] = []
     lines.append("# Label Noise Analysis\n")
-    method = ("K-fold cross-validated predictions (unbiased)."
-              if used_cv else
-              "Self-predictions (subject to self-confidence bias; "
-              "over-estimates confidence on training samples).")
+    method = (
+        "K-fold cross-validated predictions (unbiased)."
+        if used_cv
+        else "Self-predictions (subject to self-confidence bias; "
+        "over-estimates confidence on training samples)."
+    )
     lines.append(f"**Method:** {method}\n")
     lines.append(
         "We flag training samples where the model predicts a class OTHER "
@@ -247,24 +262,38 @@ def write_report(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Confident-learning-style noise estimation")
-    parser.add_argument("--folds", type=int, default=0,
-                        help="Number of CV folds (0 = self-prediction)")
-    parser.add_argument("--epochs", type=int, default=3,
-                        help="Training epochs per fold / self-train")
-    parser.add_argument("--threshold", type=float, default=0.8,
-                        help="Confidence threshold for flagging disagreements")
-    parser.add_argument("--use-checkpoint", type=Path, default=None,
-                        help="Reuse existing CNN checkpoint instead of training")
-    parser.add_argument("--quick", action="store_true",
-                        help="Quick demo: 1 epoch, tiny subsample, self-predict")
-    parser.add_argument("--subsample", type=int, default=0,
-                        help="Subsample train set to N examples (0 = all)")
+    parser.add_argument(
+        "--folds", type=int, default=0, help="Number of CV folds (0 = self-prediction)"
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=3, help="Training epochs per fold / self-train"
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.8,
+        help="Confidence threshold for flagging disagreements",
+    )
+    parser.add_argument(
+        "--use-checkpoint",
+        type=Path,
+        default=None,
+        help="Reuse existing CNN checkpoint instead of training",
+    )
+    parser.add_argument(
+        "--quick", action="store_true", help="Quick demo: 1 epoch, tiny subsample, self-predict"
+    )
+    parser.add_argument(
+        "--subsample", type=int, default=0, help="Subsample train set to N examples (0 = all)"
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--data-path", type=Path, default=None)
-    parser.add_argument("--out-json", type=Path,
-                        default=REPO_ROOT / "results" / "label_noise_candidates.json")
-    parser.add_argument("--out-md", type=Path,
-                        default=REPO_ROOT / "docs" / "label_noise_analysis.md")
+    parser.add_argument(
+        "--out-json", type=Path, default=REPO_ROOT / "results" / "label_noise_candidates.json"
+    )
+    parser.add_argument(
+        "--out-md", type=Path, default=REPO_ROOT / "docs" / "label_noise_analysis.md"
+    )
     args = parser.parse_args()
 
     if args.quick:
@@ -288,15 +317,16 @@ def main() -> int:
 
     # Use train split (same 80/20 convention as active_learn.py)
     train_idx, _ = train_test_split(
-        np.arange(len(labels)), test_size=0.20,
-        stratify=labels, random_state=42,
+        np.arange(len(labels)),
+        test_size=0.20,
+        stratify=labels,
+        random_state=42,
     )
     train_labels = labels[train_idx]
     train_maps_raw = [maps_raw[i] for i in train_idx]
 
     if args.subsample > 0 and args.subsample < len(train_labels):
-        logger.info("Subsampling train set: %d -> %d",
-                    len(train_labels), args.subsample)
+        logger.info("Subsampling train set: %d -> %d", len(train_labels), args.subsample)
         sub = np.random.choice(len(train_labels), args.subsample, replace=False)
         train_labels = train_labels[sub]
         train_maps_raw = [train_maps_raw[i] for i in sub]
@@ -309,28 +339,39 @@ def main() -> int:
     if args.folds >= 2:
         logger.info("Computing cross-validated probabilities (%d folds)", args.folds)
         probs = compute_cv_probabilities(
-            maps, train_labels, num_classes,
-            folds=args.folds, epochs=args.epochs, device=args.device,
+            maps,
+            train_labels,
+            num_classes,
+            folds=args.folds,
+            epochs=args.epochs,
+            device=args.device,
         )
         used_cv = True
     else:
         logger.info("Computing self-predictions (biased; see docs)")
         probs = self_probabilities(
-            maps, train_labels, num_classes,
-            epochs=args.epochs, device=args.device,
+            maps,
+            train_labels,
+            num_classes,
+            epochs=args.epochs,
+            device=args.device,
             checkpoint=args.use_checkpoint,
         )
         used_cv = False
 
     candidates, per_class = flag_candidates(
-        probs, train_labels, class_names, args.threshold,
+        probs,
+        train_labels,
+        class_names,
+        args.threshold,
     )
     # Rewrite sample_idx to refer back to the original DataFrame index
     for c in candidates:
         c.sample_idx = int(train_idx[c.sample_idx])
 
     class_totals = np.array(
-        [(train_labels == i).sum() for i in range(num_classes)], dtype=np.int64,
+        [(train_labels == i).sum() for i in range(num_classes)],
+        dtype=np.int64,
     )
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
@@ -355,12 +396,14 @@ def main() -> int:
     args.out_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     logger.info("Wrote %s", args.out_json)
 
-    write_report(candidates, per_class, class_names, class_totals,
-                 used_cv, args.out_md)
+    write_report(candidates, per_class, class_names, class_totals, used_cv, args.out_md)
     logger.info("Wrote %s", args.out_md)
-    logger.info("Flagged %d / %d samples (%.2f%%)",
-                len(candidates), len(train_labels),
-                100.0 * len(candidates) / max(1, len(train_labels)))
+    logger.info(
+        "Flagged %d / %d samples (%.2f%%)",
+        len(candidates),
+        len(train_labels),
+        100.0 * len(candidates) / max(1, len(train_labels)),
+    )
     return 0
 
 

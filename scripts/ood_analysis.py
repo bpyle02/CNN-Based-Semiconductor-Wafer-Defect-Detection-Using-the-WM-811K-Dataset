@@ -25,15 +25,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 
 
 def load_model(model_type: str, checkpoint_path: str, device: str) -> torch.nn.Module:
     """Load a model from checkpoint."""
-    from src.models import WaferCNN, get_resnet18, get_efficientnet_b0
+    from src.models import WaferCNN, get_efficientnet_b0, get_resnet18
 
     if model_type == "cnn":
         model = WaferCNN(num_classes=9)
@@ -77,9 +77,10 @@ def prepare_data(data_path: str = None, batch_size: int = 64, seed: int = 42):
     Returns:
         (val_loader, id_test_loader, ood_test_loader)
     """
-    from src.data.dataset import load_dataset, KNOWN_CLASSES
-    from src.data.preprocessing import WaferMapDataset, get_image_transforms
     from sklearn.model_selection import train_test_split
+
+    from src.data.dataset import KNOWN_CLASSES, load_dataset
+    from src.data.preprocessing import WaferMapDataset, get_image_transforms
 
     df = load_dataset(Path(data_path) if data_path else None)
 
@@ -166,9 +167,7 @@ def main() -> int:
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--target-fpr", type=float, default=0.05)
-    parser.add_argument(
-        "--output", default="results/ood_metrics.json", help="Output JSON path"
-    )
+    parser.add_argument("--output", default="results/ood_metrics.json", help="Output JSON path")
     args = parser.parse_args()
 
     from src.inference.ood import OODDetector
@@ -222,8 +221,10 @@ def main() -> int:
         "empirical_fpr": empirical_fpr,
         "empirical_tpr": empirical_tpr,
         "energy_stats": {
-            "id_mean": float(id_e.mean()), "id_std": float(id_e.std()),
-            "ood_mean": float(ood_e.mean()), "ood_std": float(ood_e.std()),
+            "id_mean": float(id_e.mean()),
+            "id_std": float(id_e.std()),
+            "ood_mean": float(ood_e.mean()),
+            "ood_std": float(ood_e.std()),
         },
     }
 

@@ -1,0 +1,47 @@
+src.inference.visualize
+=======================
+
+.. py:module:: src.inference.visualize
+
+.. autoapi-nested-parse::
+
+   GradCAM visualization utilities.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.visualize.logger
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   src.inference.visualize.plot_gradcam_grid
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:function:: plot_gradcam_grid(model: torch.nn.Module, test_dataset: torch.utils.data.Dataset[Any], target_layer: torch.nn.Module, class_names: List[str], num_samples: int = 9, figsize: Tuple[int, int] = (20, 10), device: str = 'cpu') -> None
+
+   Visualize GradCAM for multiple test samples (one per class).
+
+   Creates a grid with original image and GradCAM heatmap overlay for each class.
+
+   :param model: Trained model
+   :param test_dataset: Test dataset object with __getitem__ returning (img, label)
+   :param target_layer: Layer to visualize
+   :param class_names: List of class names
+   :param num_samples: Number of samples to visualize (min 1, max len(class_names))
+   :param figsize: Figure size (width, height)
+   :param device: Device to run on
+
+

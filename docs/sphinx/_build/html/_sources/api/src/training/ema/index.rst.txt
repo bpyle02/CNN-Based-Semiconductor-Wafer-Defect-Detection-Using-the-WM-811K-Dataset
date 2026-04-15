@@ -1,0 +1,100 @@
+src.training.ema
+================
+
+.. py:module:: src.training.ema
+
+.. autoapi-nested-parse::
+
+   Exponential Moving Average (EMA) of model parameters.
+
+   Maintains a shadow copy of model weights that is updated as an
+   exponential moving average of the training weights after each
+   optimizer step.  The EMA model typically generalizes better than
+   the final training checkpoint because it smooths over the noisy
+   trajectory of SGD / Adam.
+
+       shadow = decay * shadow + (1 - decay) * current
+
+   Reference:
+       Polyak & Juditsky (1992). "Acceleration of Stochastic Approximation
+       by Averaging". SIAM Journal on Control and Optimization.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.training.ema.EMAModel
+
+
+Module Contents
+---------------
+
+.. py:class:: EMAModel(model: torch.nn.Module, decay: float = 0.999)
+
+   Exponential Moving Average of model parameters.
+
+   Maintains a shadow copy of model weights updated as:
+       shadow = decay * shadow + (1 - decay) * current
+
+   The EMA model typically generalizes better than the final checkpoint.
+
+   :param model: The source model whose parameters will be tracked.
+   :param decay: Smoothing factor in [0, 1). Higher values produce smoother
+                 averages (0.999 is typical for medium-length training runs).
+
+   Example::
+
+       ema = EMAModel(model, decay=0.999)
+       for batch in train_loader:
+           loss = criterion(model(batch), targets)
+           loss.backward()
+           optimizer.step()
+           ema.update(model)
+
+       # For evaluation:
+       ema.apply_shadow(model)
+       val_metrics = evaluate(model, val_loader)
+       ema.restore(model)  # return model to training weights
+
+
+   .. py:attribute:: decay
+      :value: 0.999
+
+
+
+   .. py:attribute:: shadow
+      :type:  Dict[str, torch.Tensor]
+
+
+   .. py:attribute:: backup
+      :type:  Dict[str, torch.Tensor]
+
+
+   .. py:method:: update(model: torch.nn.Module) -> None
+
+      Update shadow weights with current model weights.
+
+      Should be called once after each ``optimizer.step()``.
+
+
+
+   .. py:method:: apply_shadow(model: torch.nn.Module) -> None
+
+      Replace model weights with shadow weights (for evaluation).
+
+      The original weights are saved internally so they can be restored
+      afterwards with :meth:`restore`.
+
+
+
+   .. py:method:: restore(model: torch.nn.Module) -> None
+
+      Restore model weights from backup (after evaluation).
+
+      Must be preceded by a call to :meth:`apply_shadow`.
+
+
+

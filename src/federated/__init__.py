@@ -3,7 +3,7 @@
 from src.federated.aggregation import ByzantineRobustAggregator, Krum, MultiKrum
 
 __all__ = [
-    'ByzantineRobustAggregator',
-    'Krum',
-    'MultiKrum',
+    "ByzantineRobustAggregator",
+    "Krum",
+    "MultiKrum",
 ]

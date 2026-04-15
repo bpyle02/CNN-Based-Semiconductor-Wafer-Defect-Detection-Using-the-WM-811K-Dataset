@@ -11,16 +11,16 @@ Usage:
 """
 
 import argparse
-import sys
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def build_paired_loader(data_path: str = None, batch_size: int = 64):
     augmentation in the dataset transform so that each call to __getitem__
     produces a different augmented view. The trainer handles splitting.
     """
-    from src.data.dataset import load_dataset, KNOWN_CLASSES
+    from src.data.dataset import KNOWN_CLASSES, load_dataset
     from src.data.preprocessing import WaferMapDataset, get_image_transforms
 
     df = load_dataset(Path(data_path) if data_path else None)
@@ -59,17 +59,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="SimCLR self-supervised pretraining")
     parser.add_argument("--data-path", default=None, help="Path to LSWMD_new.pkl")
     parser.add_argument("--epochs", type=int, default=10, help="Pretraining epochs (default: 10)")
-    parser.add_argument("--batch-size", type=int, default=64, help="Per-view batch size (default: 64)")
+    parser.add_argument(
+        "--batch-size", type=int, default=64, help="Per-view batch size (default: 64)"
+    )
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate (default: 3e-4)")
     parser.add_argument("--temperature", type=float, default=0.07, help="NT-Xent temperature")
-    parser.add_argument("--output-path", default="checkpoints/simclr_backbone.pth",
-                        help="Where to save backbone weights")
+    parser.add_argument(
+        "--output-path",
+        default="checkpoints/simclr_backbone.pth",
+        help="Where to save backbone weights",
+    )
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
     args = parser.parse_args()
 
     try:
-        from src.training.simclr import SimCLREncoder, SimCLRPretrainer
         from src.models import WaferCNN
+        from src.training.simclr import SimCLREncoder, SimCLRPretrainer
     except ImportError as exc:
         logger.error(f"Missing dependency: {exc}. Install project requirements first.")
         return 1

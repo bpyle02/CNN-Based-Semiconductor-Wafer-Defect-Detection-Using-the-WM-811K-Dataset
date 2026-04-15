@@ -24,11 +24,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-
 # Per-metric absolute drop tolerances. A drop GREATER than this fails.
 DEFAULT_TOLERANCES: Dict[str, float] = {
-    "accuracy": 0.02,        # 2 percentage points
-    "macro_f1": 0.03,        # 3 percentage points (rare-class noise)
+    "accuracy": 0.02,  # 2 percentage points
+    "macro_f1": 0.03,  # 3 percentage points (rare-class noise)
     "weighted_f1": 0.02,
 }
 
@@ -56,9 +55,7 @@ def _compare_model(
             continue
         b = float(baseline[metric])
         if metric not in current:
-            failures.append(
-                f"{model_name}.{metric}: baseline={b:.4f}, current is MISSING"
-            )
+            failures.append(f"{model_name}.{metric}: baseline={b:.4f}, current is MISSING")
             continue
         c = float(current[metric])
         drop = b - c

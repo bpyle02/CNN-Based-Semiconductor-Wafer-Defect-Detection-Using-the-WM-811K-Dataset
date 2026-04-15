@@ -1,0 +1,128 @@
+src.inference.gradcam
+=====================
+
+.. py:module:: src.inference.gradcam
+
+.. autoapi-nested-parse::
+
+   Gradient-weighted Class Activation Mapping (GradCAM) for interpretability.
+
+   Based on: Selvaraju et al., "Grad-CAM: Visual Explanations from Deep Networks
+   via Gradient-based Localization" (ICCV 2017).
+
+   Highlights spatial regions most important for model predictions, providing
+   visual interpretability for black-box neural networks.
+
+   .. rubric:: References
+
+   [25] Selvaraju et al. (2017). "Grad-CAM". arXiv:1610.02391
+   [26] Ribeiro et al. (2016). "LIME". arXiv:1602.04938
+   [27] Shrikumar et al. (2017). "DeepLIFT". arXiv:1704.02685
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   src.inference.gradcam.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   src.inference.gradcam.GradCAM
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: GradCAM(model: torch.nn.Module, target_layer: torch.nn.Module)
+
+   Gradient-weighted Class Activation Mapping for neural networks.
+
+   Computes activation maps that highlight regions most important for
+   predicting a given class. Uses forward and backward hooks to capture
+   activations and gradients at a target layer.
+
+   .. attribute:: model
+
+      PyTorch model
+
+   .. attribute:: target_layer
+
+      Layer to compute CAM for
+
+   .. attribute:: gradients
+
+      Stored gradients from backward hook
+
+   .. attribute:: activations
+
+      Stored activations from forward hook
+
+   .. attribute:: hooks
+
+      List of hook handles (for cleanup)
+
+   Initialize GradCAM.
+
+   :param model: Trained PyTorch model
+   :param target_layer: Target layer to visualize (usually last conv layer)
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: target_layer
+
+
+   .. py:attribute:: gradients
+      :value: None
+
+
+
+   .. py:attribute:: activations
+      :value: None
+
+
+
+   .. py:attribute:: hooks
+      :type:  List
+      :value: []
+
+
+
+   .. py:method:: generate(input_tensor: torch.Tensor, target_class: Optional[int] = None, device: str = 'cpu') -> Tuple[numpy.ndarray, int]
+
+      Generate Grad-CAM heatmap for an input.
+
+      Algorithm:
+          1. Forward pass to get output
+          2. Backward pass from target class logit
+          3. Compute average gradient across spatial dims: (C, H, W) -> (C, 1, 1)
+          4. Weight activations by gradients
+          5. Sum weighted activations
+          6. ReLU to keep only positive contributions
+          7. Normalize to [0, 1]
+          8. Upsample to input size
+
+      :param input_tensor: Input image (1, C, H, W)
+      :param target_class: Class to visualize. If None, uses argmax of output.
+      :param device: Device to run on
+
+      :returns: Tuple of (heatmap [H, W] normalized to [0, 1], predicted_class)
+
+
+
+   .. py:method:: remove_hooks() -> None
+
+      Remove all registered hooks for cleanup.
+
+
+
