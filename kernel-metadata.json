@@ -1,7 +1,7 @@
 {
-  "id": "brandonpyle/wm811k-wafer-defect-quickstart",
+  "id": "disqqq/wafer-quickstart",
   "id_no": null,
-  "title": "WM-811K Wafer Defect Quickstart",
+  "title": "wafer quickstart",
   "code_file": "docs/kaggle_quickstart.ipynb",
   "language": "python",
   "kernel_type": "notebook",

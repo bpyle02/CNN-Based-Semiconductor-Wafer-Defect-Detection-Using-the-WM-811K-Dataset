@@ -6,42 +6,22 @@ Delete this file once everything is checked off.
 
 ---
 
-## 0. Publish the Kaggle notebook as a Kernel (one-time, ~2 minutes)
+## 0. Kaggle kernel (DONE 2026-04-14)
 
-**Why:** makes the "Open in Kaggle" badge in the README functional. Currently the badge points at `kaggle.com/code/brandonpyle/wm811k-wafer-defect-quickstart` which 404s until you publish. After this step, anyone who clicks the badge lands on a published kernel they can Copy & Edit with GPU P100, Internet, and the WM-811K dataset all pre-attached — no manual setup.
+**Status:** published at https://www.kaggle.com/code/disqqq/wafer-quickstart
+(owner: ddisqq; dataset: `brandonpyle/wm-811k-wafer-map`; GPU P100 + Internet on).
 
-**Prerequisite:** install and authenticate the Kaggle CLI once:
+The "Open in Kaggle" badge on the README points at this URL. Teammates click
+the badge → **Copy & Edit** → **Run All**, and the whole pipeline runs with
+no manual configuration.
+
+**Re-publishing after notebook changes:** use the helper script (hides the
+KAGGLE_API_TOKEN env-var requirement for KGAT_ tokens):
 ```bash
-pip install kaggle
-# Download kaggle.json from https://www.kaggle.com/settings/account ("Create API Token")
-# Save it to ~/.kaggle/kaggle.json (macOS/Linux) or %USERPROFILE%\.kaggle\kaggle.json (Windows)
-chmod 600 ~/.kaggle/kaggle.json
+python scripts/kaggle_push.py
 ```
-
-**Publish:**
-```bash
-cd /path/to/CNN-Based-Semiconductor-Wafer-Defect-Detection-Using-the-WM-811K-Dataset
-kaggle kernels push -p .
-```
-
-The `kernel-metadata.json` at the repo root tells the Kaggle CLI to:
-- use `docs/kaggle_quickstart.ipynb` as the code file
-- enable GPU P100 and Internet
-- attach `brandonpyle/wm-811k-wafer-map` as the input dataset
-- publish at `kaggle.com/code/brandonpyle/wm811k-wafer-defect-quickstart`
-- keep it public
-
-**Re-publish after notebook changes:**
-```bash
-kaggle kernels push -p .
-```
-Same command — it creates a new version and keeps the URL stable, so the README badge keeps working.
-
-**Verify it worked:**
-```bash
-gh browse  # or just open https://www.kaggle.com/code/brandonpyle/wm811k-wafer-defect-quickstart
-```
-The kernel page should show GPU P100 / Internet On / dataset attached in the right sidebar. Click **Copy & Edit → Run All** to confirm it trains end-to-end for an uninvolved user.
+Same command after any edit to `docs/kaggle_quickstart.ipynb` or
+`kernel-metadata.json`. URL stays stable across versions.
 
 ---
 
