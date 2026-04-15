@@ -99,24 +99,47 @@ def build_cache(
     size: int = 96,
     workers: int = 1,
 ) -> Path:
-    """Build the pre-resized tensor cache.
+    """Build the pre-resized tensor cache with a disk-backed memmap.
+
+    This implementation is designed for Colab T4's 13.6 GB RAM budget.
+    Instead of allocating the 3.19 GB output array in RAM, it opens a
+    memory-mapped .npy file on disk and writes each resized wafer
+    directly to that file. The OS handles paging so peak resident
+    memory stays around 1-1.5 GB regardless of the output size.
+
+    Output layout is a "sidecar" pair next to the .npz target:
+        {output}.maps.npy     the memmap-backed image tensor
+        {output}               a small .npz with labels, classes, and a
+                              pointer to the memmap file
+
+    At load time (in train.py), the maps are opened with
+    ``np.load(maps_npy, mmap_mode='r')`` so training also benefits —
+    only the current-batch slice gets paged in.
 
     Args:
         input_path: raw LSWMD_new.pkl
-        output_path: destination .npz
+        output_path: destination .npz (sidecar metadata + labels)
         size: target HxW (square)
-        workers: process count. **Default 1 (single-process, memory-safe).**
-            Set > 1 only on hosts with >=16 GB RAM — multiprocessing.Pool
-            fork copies the parent RSS and will OOM Colab T4.
+        workers: process count. Default 1 (single-process, memory-safe).
+            > 1 is NOT supported with the memmap path; the disk writes
+            aren't multiprocess-safe without locks and the speedup is
+            marginal anyway (resize is already bottlenecked by variable
+            source shapes, not worker count).
 
     Returns:
-        The output_path on success.
+        The output_path (the small .npz) on success. The .maps.npy
+        companion lives next to it.
     """
     input_path = Path(input_path)
     output_path = Path(output_path)
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input dataset not found: {input_path}")
+    if workers > 1:
+        logger.warning(
+            "workers>1 requested but the memmap build path is single-process. "
+            "Proceeding with workers=1."
+        )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -129,63 +152,52 @@ def build_cache(
     logger.info("Labeled samples: %d", n)
 
     wafer_maps = df["waferMap"].tolist()
-    # Copy the labels OUT of the DataFrame so we can drop df entirely.
     labels_str = df["failureClass"].to_numpy().copy()
 
-    # Critical for Colab memory: drop the DataFrame (and its variable-shape
-    # numpy object column) so subsequent allocations have real RAM to use.
+    # Drop the full DataFrame + the pre-filter mask + the unlabeled-row
+    # backings. Without this, the 811K-row df (with variable-shape numpy
+    # object column) stays resident through the entire resize — ~3 GB
+    # that we can't afford on Colab.
     del df, mask
     gc.collect()
 
+    # Open the output memmap file BEFORE the resize loop. The file is
+    # sized to final dimensions upfront; pages are populated as we write.
+    # Critical: this moves the 3.19 GB output OUT of RAM.
+    from numpy.lib.format import open_memmap
+
+    maps_npy = output_path.with_suffix(".maps.npy")
     logger.info(
-        "Pre-allocating output array: (%d, %d, %d) float16 = %.2f GB",
-        n, size, size, n * size * size * 2 / 1e9
+        "Opening memmap at %s ((%d, %d, %d) float16 = %.2f GB, disk-backed)",
+        maps_npy, n, size, size, n * size * size * 2 / 1e9
     )
-    maps = np.empty((n, size, size), dtype=np.float16)
+    maps = open_memmap(maps_npy, mode="w+", dtype=np.float16, shape=(n, size, size))
 
-    t0 = time.time()
-    if workers <= 1:
-        logger.info(
-            "Resizing %d maps to %dx%d (single-process, memory-frugal) ...",
-            n, size, size
-        )
-        _resize_inplace(wafer_maps, maps, size)
-    else:
-        logger.info(
-            "Resizing %d maps to %dx%d using %d worker process(es). "
-            "Note: pool forking doubles RSS; only use on hosts with "
-            ">=16 GB RAM.",
-            n, size, size, workers
-        )
-        with Pool(workers) as pool:
-            for i, resized in enumerate(
-                pool.imap(_resize_one,
-                          ((wm, size) for wm in wafer_maps),
-                          chunksize=200)
-            ):
-                maps[i] = resized
-
-    elapsed = time.time() - t0
     logger.info(
-        "Resize complete in %.1fs (%.0f maps/s). Shape: %s, dtype: %s, "
-        "uncompressed size: %.2f GB",
-        elapsed, n / max(elapsed, 1e-6),
-        maps.shape, maps.dtype, maps.nbytes / 1e9
+        "Resizing %d maps to %dx%d (single-process, disk-backed memmap) ...",
+        n, size, size
     )
+    _resize_inplace(wafer_maps, maps, size)
 
-    # Release the source list now that everything is in `maps`.
+    maps.flush()
+    del maps
     del wafer_maps
     gc.collect()
 
-    logger.info("Saving to %s ...", output_path)
+    logger.info("Writing sidecar metadata to %s ...", output_path)
     np.savez(
         output_path,
-        maps=maps,
         labels=labels_str,
         classes=np.array(KNOWN_CLASSES),
         target_size=np.array([size, size], dtype=np.int32),
+        maps_npy_name=np.array(maps_npy.name),  # filename only, relative to output dir
+        n_samples=np.array(n, dtype=np.int64),
     )
-    logger.info("Done. Cache file: %.2f GB", output_path.stat().st_size / 1e9)
+    logger.info(
+        "Done. Sidecar: %.2f MB, memmap: %.2f GB",
+        output_path.stat().st_size / 1e6,
+        maps_npy.stat().st_size / 1e9,
+    )
     return output_path
 
 

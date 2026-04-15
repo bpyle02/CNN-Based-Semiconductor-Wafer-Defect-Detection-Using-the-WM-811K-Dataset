@@ -120,16 +120,36 @@ def load_and_preprocess_data(
     # missing — that process exits cleanly and releases RAM before
     # train.py starts.
     cache_path = Path(dataset_path).parent / "LSWMD_cache.npz"
+    maps_npy_path = cache_path.with_suffix(".maps.npy")
     if cache_path.exists():
         logger.info(f"Using pre-resized cache: {cache_path}")
         cache = np.load(cache_path, allow_pickle=True)
-        cached_maps = cache["maps"]                 # (N, H, W) float16 in [0, 1]
-        cached_labels_str = cache["labels"]         # (N,) str
+        cached_labels_str = cache["labels"]
+
+        # Two cache layouts supported:
+        #   1. Current: sidecar .npz (this file) + .maps.npy (memmap). RAM-lean.
+        #   2. Legacy:  single .npz whose "maps" key holds the full array.
+        #      Still readable but loads the whole 3.2 GB array into RAM.
+        if maps_npy_path.exists():
+            logger.info(f"Memory-mapping {maps_npy_path} (mmap_mode='r')")
+            cached_maps = np.load(maps_npy_path, mmap_mode="r")
+        elif "maps" in cache.files:
+            logger.info("Legacy cache layout: loading full maps array into RAM")
+            cached_maps = cache["maps"]
+        else:
+            raise RuntimeError(
+                f"{cache_path} has no 'maps' key and {maps_npy_path} is missing. "
+                "Regenerate the cache with scripts/precompute_tensors.py."
+            )
+
         le = LabelEncoder().fit(np.array(KNOWN_CLASSES))
         labels = le.transform(cached_labels_str)
         # Hand wafer_maps as an object array so the existing downstream code
         # path (index + object-array assignment) works unchanged. The per-item
         # shape is already target_size, so WaferMapDataset takes its fast path.
+        # With the memmap layout, each wafer_maps[i] is a memmap slice — the
+        # backing data only pages into RAM when the DataLoader actually reads
+        # it per-batch, which keeps training-time RSS bounded.
         wafer_maps = np.empty(len(cached_maps), dtype=object)
         for i in range(len(cached_maps)):
             wafer_maps[i] = cached_maps[i]
