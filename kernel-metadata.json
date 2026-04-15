@@ -9,6 +9,7 @@
   "enable_gpu": "true",
   "enable_tpu": "false",
   "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
   "dataset_sources": ["brandonpyle/wm-811k-wafer-map"],
   "competition_sources": [],
   "kernel_sources": [],
