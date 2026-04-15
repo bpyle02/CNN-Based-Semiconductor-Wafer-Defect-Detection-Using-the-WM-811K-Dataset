@@ -163,3 +163,4 @@ references/*.pdf
 
 # Dataset general files
 docs/General/Dataset/
+docs/sphinx/_build/
