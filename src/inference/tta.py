@@ -37,6 +37,89 @@ from torchvision import transforms
 logger = logging.getLogger(__name__)
 
 
+def _default_tta_ops() -> List:
+    """Return the 8 default TTA transformations as callables on (B,C,H,W).
+
+    Views: identity, hflip, vflip, rot90, rot180, rot270,
+    hflip+rot90, vflip+rot90.  All are zero-copy views over torch tensors.
+    """
+    def identity(x: torch.Tensor) -> torch.Tensor:
+        return x
+
+    def hflip(x: torch.Tensor) -> torch.Tensor:
+        return torch.flip(x, dims=[-1])
+
+    def vflip(x: torch.Tensor) -> torch.Tensor:
+        return torch.flip(x, dims=[-2])
+
+    def rot90_op(x: torch.Tensor) -> torch.Tensor:
+        return torch.rot90(x, k=1, dims=[-2, -1])
+
+    def rot180_op(x: torch.Tensor) -> torch.Tensor:
+        return torch.rot90(x, k=2, dims=[-2, -1])
+
+    def rot270_op(x: torch.Tensor) -> torch.Tensor:
+        return torch.rot90(x, k=3, dims=[-2, -1])
+
+    def hflip_rot90(x: torch.Tensor) -> torch.Tensor:
+        return torch.rot90(torch.flip(x, dims=[-1]), k=1, dims=[-2, -1])
+
+    def vflip_rot90(x: torch.Tensor) -> torch.Tensor:
+        return torch.rot90(torch.flip(x, dims=[-2]), k=1, dims=[-2, -1])
+
+    return [identity, hflip, vflip, rot90_op, rot180_op, rot270_op,
+            hflip_rot90, vflip_rot90]
+
+
+def predict_with_tta(
+    model: nn.Module,
+    x: torch.Tensor,
+    augmentations: Optional[List] = None,
+) -> torch.Tensor:
+    """Return averaged softmax probabilities across TTA augmentations.
+
+    Default augmentations (8 total):
+      - identity
+      - hflip
+      - vflip
+      - rot90, rot180, rot270
+      - hflip + rot90
+      - vflip + rot90
+
+    Args:
+        model: PyTorch classifier returning logits of shape ``(B, num_classes)``.
+        x: Input batch tensor with shape ``(B, C, H, W)``.
+        augmentations: Optional list of callables ``(B,C,H,W) -> (B,C,H,W)``.
+            Defaults to the 8-view zero-copy rotation/flip set.
+
+    Returns:
+        Averaged softmax probabilities of shape ``(B, num_classes)``.
+
+    Notes:
+        Softmax outputs for classification are rotation/flip invariant in
+        label space, so no inverse transform is needed before averaging.
+    """
+    if augmentations is None:
+        augmentations = _default_tta_ops()
+
+    was_training = model.training
+    model.eval()
+    probs_sum: Optional[torch.Tensor] = None
+
+    with torch.no_grad():
+        for aug in augmentations:
+            aug_x = aug(x)
+            logits = model(aug_x)
+            probs = torch.softmax(logits, dim=1)
+            probs_sum = probs if probs_sum is None else probs_sum + probs
+
+    if was_training:
+        model.train()
+
+    assert probs_sum is not None
+    return probs_sum / float(len(augmentations))
+
+
 class TestTimeAugmentation:
     """Test-time augmentation: average predictions over augmented views.
 

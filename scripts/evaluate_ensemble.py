@@ -38,6 +38,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.config import load_config  # noqa: E402
+from src.inference.calibration import TemperatureScaling  # noqa: E402
+from src.inference.tta import predict_with_tta  # noqa: E402
 from torch.utils.data import DataLoader  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -100,12 +102,56 @@ def _build_and_load(model_name: str, ckpt: Path, config, num_classes: int, devic
 
 
 @torch.no_grad()
-def _collect_probs(model: torch.nn.Module, loader: DataLoader, device: str) -> Tuple[np.ndarray, np.ndarray]:
-    probs_chunks, labels_chunks = [], []
+def _collect_logits(model: torch.nn.Module, loader: DataLoader, device: str) -> Tuple[np.ndarray, np.ndarray]:
+    """Collect raw logits (pre-softmax) over the loader."""
+    logits_chunks, labels_chunks = [], []
     for imgs, labels in loader:
         imgs = imgs.to(device, non_blocking=True)
-        logits = model(imgs)
-        probs = torch.softmax(logits, dim=1).cpu().numpy()
+        logits = model(imgs).cpu().numpy()
+        logits_chunks.append(logits)
+        labels_chunks.append(labels.numpy())
+    return np.concatenate(logits_chunks), np.concatenate(labels_chunks)
+
+
+@torch.no_grad()
+def _collect_probs(
+    model: torch.nn.Module,
+    loader: DataLoader,
+    device: str,
+    *,
+    use_tta: bool = False,
+    temperature: float = 1.0,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Collect softmax probabilities.
+
+    Pipeline order when combined: raw logits -> temp-scale -> softmax -> TTA average.
+    TTA is applied on the augmented inputs; each view's logits are temperature-scaled
+    before softmax, then averaged.
+    """
+    probs_chunks, labels_chunks = [], []
+    t = float(temperature) if temperature and temperature > 0 else 1.0
+    for imgs, labels in loader:
+        imgs = imgs.to(device, non_blocking=True)
+        if use_tta:
+            # Wrap model to apply temperature scaling to each view's logits
+            # before softmax; TTA averages the scaled softmax outputs.
+            if t != 1.0:
+                class _Scaled(torch.nn.Module):
+                    def __init__(self, base, temp):
+                        super().__init__()
+                        self.base = base
+                        self.temp = temp
+                    def forward(self, x):
+                        return self.base(x) / self.temp
+                probs = predict_with_tta(_Scaled(model, t), imgs)
+            else:
+                probs = predict_with_tta(model, imgs)
+            probs = probs.cpu().numpy()
+        else:
+            logits = model(imgs)
+            if t != 1.0:
+                logits = logits / t
+            probs = torch.softmax(logits, dim=1).cpu().numpy()
         probs_chunks.append(probs)
         labels_chunks.append(labels.numpy())
     return np.concatenate(probs_chunks), np.concatenate(labels_chunks)
@@ -150,6 +196,11 @@ def main() -> int:
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "config.yaml")
+    parser.add_argument("--tta", action="store_true",
+                        help="Apply 8-view test-time augmentation before ensembling.")
+    parser.add_argument("--calibrate", action="store_true",
+                        help="Fit temperature scaling on the val split per model "
+                             "and apply to test logits before metrics.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
@@ -171,11 +222,32 @@ def main() -> int:
 
     per_model = {}
     val_probs_all, test_probs_all, y_val_ref, y_test_ref = [], [], None, None
+    temperatures: Dict[str, float] = {}
     for name, ckpt in found:
         logger.info("Loading %s from %s", name, ckpt)
         model = _build_and_load(name, ckpt, config, num_classes, args.device)
-        val_probs, y_val = _collect_probs(model, val_loader, args.device)
-        test_probs, y_test = _collect_probs(model, test_loader, args.device)
+
+        temperature = 1.0
+        if args.calibrate:
+            # Fit T on raw val logits, then use it downstream.
+            val_logits, y_val = _collect_logits(model, val_loader, args.device)
+            ts = TemperatureScaling()
+            temperature = ts.fit(val_logits, y_val)
+            temperatures[name] = temperature
+            logger.info("  %-12s  calibrated T=%.4f", DISPLAY.get(name, name), temperature)
+            val_probs = torch.softmax(
+                torch.from_numpy(val_logits) / temperature, dim=1
+            ).numpy()
+        else:
+            val_probs, y_val = _collect_probs(
+                model, val_loader, args.device,
+                use_tta=args.tta, temperature=1.0,
+            )
+
+        test_probs, y_test = _collect_probs(
+            model, test_loader, args.device,
+            use_tta=args.tta, temperature=temperature,
+        )
         per_model[name] = _metrics(test_probs, y_test)
         logger.info("  %-12s  acc=%.4f  macroF1=%.4f", DISPLAY.get(name, name),
                     per_model[name]["accuracy"], per_model[name]["macro_f1"])
@@ -205,7 +277,9 @@ def main() -> int:
     }
 
     results = {"per_model": per_model, "ensemble": ensemble, "num_models": len(found),
-               "model_names": [n for n, _ in found]}
+               "model_names": [n for n, _ in found],
+               "tta": bool(args.tta), "calibrate": bool(args.calibrate),
+               "temperatures": temperatures}
     out_json = REPO_ROOT / "results" / "ensemble_metrics.json"
     out_json.parent.mkdir(exist_ok=True)
     out_json.write_text(json.dumps(results, indent=2))
