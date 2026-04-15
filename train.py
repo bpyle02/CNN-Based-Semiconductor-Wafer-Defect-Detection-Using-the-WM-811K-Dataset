@@ -670,7 +670,7 @@ class TrainingPipeline:
         # GPU doesn't stall between epochs waiting for DataLoader warmup.
         if num_workers > 0:
             loader_kwargs["persistent_workers"] = True
-            loader_kwargs["prefetch_factor"] = 2
+            loader_kwargs["prefetch_factor"] = 4
 
         # Class-balanced sampling: CLI flag or config
         use_balanced = args.balanced_sampling or bool(
