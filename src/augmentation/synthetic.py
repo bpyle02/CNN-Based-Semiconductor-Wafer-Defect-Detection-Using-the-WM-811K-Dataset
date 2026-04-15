@@ -74,14 +74,18 @@ def balance_dataset_with_synthetic(
     labels: np.ndarray,
     target_per_class: Optional[int] = None,
     size: int = 96,
+    max_target_per_class: int = 10000,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Balance a dataset by generating synthetic samples for underrepresented classes.
 
     Args:
         wafer_maps: Array of preprocessed (H, W) wafer maps
         labels: 1D array of integer class labels
-        target_per_class: Target count per class (None = match max class)
+        target_per_class: Target count per class (None = min(max_class, max_target_per_class))
         size: Size of generated maps
+        max_target_per_class: Safety cap when target_per_class is None. Keeps memory
+            bounded when the majority class dwarfs rare ones (WM-811K "none" has ~147k;
+            matching it across 9 classes would allocate ~40 GB).
 
     Returns:
         Tuple of (augmented_maps, augmented_labels)
@@ -89,21 +93,33 @@ def balance_dataset_with_synthetic(
     from collections import Counter
     counts = Counter(labels)
     if target_per_class is None:
-        target_per_class = max(counts.values())
+        target_per_class = min(max(counts.values()), max_target_per_class)
 
     gen = SyntheticDataGenerator(method='rule_based')
-    new_maps = list(wafer_maps)
-    new_labels = list(labels)
-
+    total_synthetic = 0
+    deficits = {}
     for cls_id, count in sorted(counts.items()):
         deficit = target_per_class - count
-        if deficit <= 0:
-            continue
-        synthetic = gen.generate(deficit, cls_id, size)
-        new_maps.extend(synthetic)
-        new_labels.extend([cls_id] * deficit)
+        if deficit > 0:
+            deficits[cls_id] = deficit
+            total_synthetic += deficit
 
-    return np.array(new_maps, dtype=np.float32), np.array(new_labels)
+    n_orig = len(labels)
+    out_maps = np.empty((n_orig + total_synthetic, size, size), dtype=np.float32)
+    out_labels = np.empty(n_orig + total_synthetic, dtype=labels.dtype if hasattr(labels, 'dtype') else np.int64)
+
+    for i, m in enumerate(wafer_maps):
+        out_maps[i] = m
+    out_labels[:n_orig] = labels
+
+    offset = n_orig
+    for cls_id, deficit in deficits.items():
+        synthetic = gen.generate(deficit, cls_id, size)
+        out_maps[offset:offset + deficit] = synthetic
+        out_labels[offset:offset + deficit] = cls_id
+        offset += deficit
+
+    return out_maps, out_labels
 
 
 class SyntheticDataGenerator:
