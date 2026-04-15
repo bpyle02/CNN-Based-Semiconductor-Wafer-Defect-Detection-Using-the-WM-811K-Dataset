@@ -202,6 +202,123 @@ class CosineClassifier(nn.Module):
         return self.temperature * F.linear(features_norm, weight_norm)
 
 
+class CostSensitiveCE(nn.Module):
+    """Cross-entropy with a per-class-pair misclassification cost matrix.
+
+    The cost matrix ``cost[true, pred]`` specifies the penalty for predicting
+    class ``pred`` when the true class is ``true``. The default (identity on
+    diagonal, 1 elsewhere) recovers vanilla cross-entropy. Off-diagonal
+    entries can be raised to express domain-specific priorities, e.g. a
+    missed Near-full pattern on a wafer is far costlier than confusing two
+    visually similar edge-localized patterns.
+
+    Formally, for softmax probabilities p_k(x) and true label y,
+        L(x, y) = - sum_k cost[y, k] * log p_k(x)
+    when reduction='mean' we average over the batch. This matches the
+    cost-sensitive CE of Elkan (2001), "The Foundations of Cost-Sensitive
+    Learning", and the "cost-weighted cross-entropy" used in imbalanced
+    manufacturing defect classification.
+
+    Args:
+        cost_matrix: (C, C) tensor. Entry (i, j) is the cost of predicting
+            j when truth is i. Diagonal entries are typically 0 or 1;
+            off-diagonals are >= 1 to penalize misclassifications.
+        class_weights: Optional (C,) tensor multiplied onto per-sample loss
+            based on the true class (for prior re-weighting, e.g. inverse
+            frequency). Orthogonal to the cost matrix.
+        reduction: 'mean' | 'sum' | 'none'.
+    """
+
+    def __init__(
+        self,
+        cost_matrix: torch.Tensor,
+        class_weights: Optional[torch.Tensor] = None,
+        reduction: str = "mean",
+    ) -> None:
+        super().__init__()
+        if cost_matrix.ndim != 2 or cost_matrix.size(0) != cost_matrix.size(1):
+            raise ValueError(
+                f"cost_matrix must be square (C, C); got shape {tuple(cost_matrix.shape)}"
+            )
+        if (cost_matrix < 0).any():
+            raise ValueError("cost_matrix entries must be non-negative")
+        if reduction not in {"mean", "sum", "none"}:
+            raise ValueError(f"reduction must be mean|sum|none, got {reduction!r}")
+
+        self.register_buffer("cost_matrix", cost_matrix.float().clone().detach())
+        if class_weights is not None:
+            self.register_buffer(
+                "class_weights", class_weights.float().clone().detach()
+            )
+        else:
+            self.class_weights = None
+        self.reduction = reduction
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        log_probs = F.log_softmax(logits, dim=1)          # (B, C)
+        row_costs = self.cost_matrix[targets]             # (B, C) cost[y_i, :]
+        # Per-sample cost-weighted cross-entropy: sum_k cost[y, k] * -log p_k
+        per_sample = -(row_costs * log_probs).sum(dim=1)  # (B,)
+
+        if self.class_weights is not None:
+            per_sample = per_sample * self.class_weights[targets]
+
+        if self.reduction == "mean":
+            return per_sample.mean()
+        if self.reduction == "sum":
+            return per_sample.sum()
+        return per_sample
+
+
+def build_cost_matrix_wm811k(
+    class_names,
+    near_full_missed: float = 10.0,
+    rare_missed: float = 5.0,
+    edge_confusion: float = 0.5,
+    default: float = 1.0,
+) -> torch.Tensor:
+    """Construct the defensible WM-811K cost matrix used by cost_sensitive.yaml.
+
+    Convention: cost[true, pred]. Diagonal (correct) = 0. Off-diagonal rules
+    are applied in the order below; later rules override earlier ones.
+
+    1. All off-diagonals default to ``default`` (=1).
+    2. Rows for Near-full and rare classes (Donut, Random) assign
+       ``near_full_missed`` / ``rare_missed`` to their off-diagonal entries
+       (missing these is catastrophic / high-impact).
+    3. Pairwise confusion within {Loc, Edge-Loc, Edge-Ring} is soft-penalized
+       at ``edge_confusion`` < 1 (patterns look similar, penalize less).
+    """
+    n = len(class_names)
+    cost = torch.full((n, n), float(default))
+    idx = {name: i for i, name in enumerate(class_names)}
+
+    # Diagonal: no cost for correct classification.
+    for i in range(n):
+        cost[i, i] = 0.0
+
+    # Rare / catastrophic misses.
+    for cls_name, weight in (
+        ("Near-full", near_full_missed),
+        ("Donut", rare_missed),
+        ("Random", rare_missed),
+    ):
+        if cls_name in idx:
+            row = idx[cls_name]
+            for j in range(n):
+                if j != row:
+                    cost[row, j] = float(weight)
+
+    # Soft confusion within edge-localized family.
+    edge_family = [idx[n_] for n_ in ("Loc", "Edge-Loc", "Edge-Ring") if n_ in idx]
+    for i in edge_family:
+        for j in edge_family:
+            if i != j:
+                cost[i, j] = float(edge_confusion)
+
+    return cost
+
+
 def build_classification_loss(
     loss_name: str = "CrossEntropyLoss",
     *,
@@ -214,6 +331,7 @@ def build_classification_loss(
     logit_adjustment_tau: float = 1.0,
     tversky_alpha: float = 0.3,
     tversky_beta: float = 0.7,
+    cost_matrix: Optional[torch.Tensor] = None,
 ) -> nn.Module:
     """Create a classification loss function from normalized config values."""
     if loss_name == "FocalLoss":
@@ -243,6 +361,17 @@ def build_classification_loss(
         return LogitAdjustedLoss(
             class_frequencies=class_frequencies,
             tau=logit_adjustment_tau,
+            reduction=reduction,
+        )
+
+    if loss_name == "CostSensitiveCE":
+        if cost_matrix is None:
+            raise ValueError(
+                "CostSensitiveCE requires cost_matrix to be provided"
+            )
+        return CostSensitiveCE(
+            cost_matrix=cost_matrix,
+            class_weights=class_weights,
             reduction=reduction,
         )
 

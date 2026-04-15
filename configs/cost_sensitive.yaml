@@ -1,0 +1,48 @@
+# Cost-sensitive training overlay for WM-811K.
+#
+# Uses CostSensitiveCE (see src/training/losses.py). The cost matrix is
+# defensible for semiconductor manufacturing:
+#
+#   * Near-full missed = 10x: a missed Near-full wafer is a catastrophic
+#     yield event; the whole wafer is likely scrap.
+#   * Donut / Random missed = 5x: rare, structurally distinct failure modes
+#     whose misdetection is high-impact and hard to recover via retest.
+#   * Loc / Edge-Loc / Edge-Ring confusion among themselves = 0.5x: these
+#     classes share visually similar edge-localized defect patterns;
+#     confusion between them is clinically lower-severity and the model
+#     should not be punished as heavily for mixing them up.
+#   * All other off-diagonals = 1x (standard CE weight).
+#   * Diagonal = 0 (no cost for correct classification).
+#
+# KNOWN_CLASSES order (from src/data/dataset.py):
+#   0: Center      1: Donut       2: Edge-Loc
+#   3: Edge-Ring   4: Loc         5: Near-full
+#   6: Random      7: Scratch     8: none
+#
+# Apply via:  python train.py --config configs/base.yaml --config configs/cost_sensitive.yaml
+# Or:        python train.py --cost-sensitive   (uses tunable knobs below)
+
+training:
+  loss:
+    type: "CostSensitiveCE"
+    weighted: false                 # cost matrix handles re-weighting
+    # The tunable knobs below are consumed by
+    # src.training.losses.build_cost_matrix_wm811k when cost_matrix is null.
+    cost_near_full_missed: 10.0
+    cost_rare_missed: 5.0
+    cost_edge_confusion: 0.5
+    # Explicit 9x9 matrix (overrides the knobs above if set to a list).
+    # Rows = true class, columns = predicted class.
+    cost_matrix:
+      # pred:  Ctr  Don  E-L  E-R  Loc  N-F  Rnd  Scr  non
+      -      [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]   # Center
+      -      [5.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]   # Donut
+      -      [1.0, 1.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0]   # Edge-Loc
+      -      [1.0, 1.0, 0.5, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0]   # Edge-Ring
+      -      [1.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 1.0, 1.0]   # Loc
+      -      [10.0, 10.0, 10.0, 10.0, 10.0, 0.0, 10.0, 10.0, 10.0]  # Near-full
+      -      [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0, 5.0, 5.0]   # Random
+      -      [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0]   # Scratch
+      -      [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]   # none
+  drw_epoch: 0
+  balanced_sampling: false

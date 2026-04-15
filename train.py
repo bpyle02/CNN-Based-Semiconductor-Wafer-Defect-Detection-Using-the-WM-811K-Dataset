@@ -65,6 +65,7 @@ from src.models.swin import get_swin_tiny
 from src.analysis import evaluate_model, calibrate_and_evaluate
 from src.mlops import MLFlowLogger, WandBLogger
 from src.training.losses import build_classification_loss
+from src.utils.reproducibility import compute_manifest
 
 
 from src.data.dataset import KNOWN_CLASSES
@@ -528,6 +529,8 @@ class TrainingPipeline:
         loss_name = loss_cfg.type if loss_cfg else "CrossEntropyLoss"
         if self.training_cfg and self.training_cfg.use_focal_loss:
             loss_name = "FocalLoss"
+        if getattr(args, "cost_sensitive", False):
+            loss_name = "CostSensitiveCE"
 
         configured_class_weights = None
         if loss_cfg and loss_cfg.class_weights:
@@ -547,12 +550,34 @@ class TrainingPipeline:
         elif loss_cfg is None or loss_cfg.weighted:
             criterion_weights = configured_class_weights if configured_class_weights is not None else loss_weights
 
+        cost_matrix_tensor = None
+        if loss_name == "CostSensitiveCE":
+            from src.training.losses import build_cost_matrix_wm811k
+            if loss_cfg is not None and loss_cfg.cost_matrix is not None:
+                provided = torch.tensor(
+                    loss_cfg.cost_matrix, dtype=torch.float32, device=device
+                )
+                if provided.shape != (len(class_names), len(class_names)):
+                    raise ValueError(
+                        f"loss.cost_matrix must be {len(class_names)}x{len(class_names)}, "
+                        f"got {tuple(provided.shape)}"
+                    )
+                cost_matrix_tensor = provided
+            else:
+                cost_matrix_tensor = build_cost_matrix_wm811k(
+                    class_names,
+                    near_full_missed=(loss_cfg.cost_near_full_missed if loss_cfg else 10.0),
+                    rare_missed=(loss_cfg.cost_rare_missed if loss_cfg else 5.0),
+                    edge_confusion=(loss_cfg.cost_edge_confusion if loss_cfg else 0.5),
+                ).to(device)
+
         self.criterion = build_classification_loss(
             loss_name,
             class_weights=criterion_weights,
             label_smoothing=(loss_cfg.label_smoothing if loss_cfg else 0.0),
             focal_gamma=(loss_cfg.focal_gamma if loss_cfg else 2.0),
             reduction=(loss_cfg.reduction if loss_cfg else "mean"),
+            cost_matrix=cost_matrix_tensor,
         )
         logger.info("Using loss function: %s", loss_name)
 
@@ -981,6 +1006,19 @@ class TrainingPipeline:
             except (json.JSONDecodeError, OSError):
                 merged = {}
         merged.update(self.results)
+
+        # Embed reproducibility manifest (hashes of data/config/code + env).
+        # Always overwrites the prior run's manifest so the file reflects the
+        # state at the time of the most-recent train.py invocation.
+        try:
+            cfg_path = getattr(self.args, "config", None) or "config.yaml"
+            merged["reproducibility"] = compute_manifest(
+                data_path=self.args.data_path,
+                config_path=cfg_path,
+            )
+        except Exception as exc:  # pragma: no cover — manifest must never kill a run
+            logger.warning("Reproducibility manifest failed: %s", exc)
+
         with open(metrics_path, 'w') as f:
             json.dump(merged, f, indent=2)
         logger.info(f"\nMetrics saved to {metrics_path} ({len(merged)} model(s) total)")
@@ -1008,6 +1046,8 @@ def main():
     parser.add_argument('--balanced-sampling', action='store_true', help='Enable class-balanced batch sampling')
     parser.add_argument('--distributed', action='store_true', help='Enable DataParallel multi-GPU')
     parser.add_argument('--uncertainty', action='store_true', help='Run MC Dropout uncertainty estimation after training')
+    parser.add_argument('--cost-sensitive', action='store_true',
+                        help='Use CostSensitiveCE loss with WM-811K cost matrix (overrides loss.type)')
     parser.add_argument('--pretrained-checkpoint', type=Path, default=None, help='Load pretrained backbone (e.g. from SimCLR)')
     parser.add_argument('--wandb', action='store_true', help='Enable Weights & Biases logging')
     parser.add_argument('--mlflow', action='store_true', help='Enable MLflow logging')

@@ -289,6 +289,10 @@ class LossConfig(StrictConfigModel):
     tversky_alpha: float = Field(default=0.3, ge=0.0, le=1.0)
     tversky_beta: float = Field(default=0.7, ge=0.0, le=1.0)
     logit_adjustment_tau: float = Field(default=1.0, gt=0.0)
+    cost_matrix: Optional[List[List[float]]] = None
+    cost_near_full_missed: float = Field(default=10.0, ge=0.0)
+    cost_rare_missed: float = Field(default=5.0, ge=0.0)
+    cost_edge_confusion: float = Field(default=0.5, ge=0.0)
 
     @field_validator("type")
     @classmethod
@@ -300,6 +304,7 @@ class LossConfig(StrictConfigModel):
             "DiceLoss",
             "TverskyLoss",
             "LogitAdjustedLoss",
+            "CostSensitiveCE",
         }
         if normalized not in allowed:
             allowed_display = ", ".join(sorted(allowed))
