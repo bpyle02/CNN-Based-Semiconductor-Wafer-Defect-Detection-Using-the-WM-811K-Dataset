@@ -1,0 +1,16 @@
+{
+  "id": "brandonpyle/wm811k-wafer-defect-quickstart",
+  "id_no": null,
+  "title": "WM-811K Wafer Defect Quickstart",
+  "code_file": "docs/kaggle_quickstart.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "false",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": ["brandonpyle/wm-811k-wafer-map"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
