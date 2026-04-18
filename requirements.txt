@@ -14,12 +14,12 @@ seaborn
 # Image processing
 Pillow
 opencv-python
-skimage
+scikit-image
  
 # Jupyter support (optional, for notebooks)
 jupyter
 ipykernel
  
-# Utilities
-tqdm
-scipy
+# Advanced ML libraries
+albumentations
+captum

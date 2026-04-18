@@ -1,0 +1,43 @@
+==================== Training Hybrid Model: resnet18 ====================
+
+--- Dataset Info ---
+Dataset Shape: (811457, 7)
+Dataset Memory Usage: 671.85 MB
+
+Labeled wafers: 172,950
+Using device: mps
+
+Epoch 1/10: 100%|██████████| 489/489 [01:13, 6.65it/s, loss=0.0655]
+Validation Accuracy: 91.48% (New best model saved!)
+
+Epoch 2/10: 100%|██████████| 489/489 [00:34, 14.20it/s, loss=0.1397]
+Validation Accuracy: 85.00%
+
+Epoch 3/10: 100%|██████████| 489/489 [00:34, 14.23it/s, loss=0.1958]
+Validation Accuracy: 87.08%
+
+Epoch 4/10: 100%|██████████| 489/489 [00:34, 14.36it/s, loss=0.0468]
+Validation Accuracy: 94.72% (New best model saved!)
+
+Epoch 5/10: 100%|██████████| 489/489 [00:34, 14.38it/s, loss=0.0535]
+Validation Accuracy: 89.16%
+
+Epoch 6/10: 100%|██████████| 489/489 [00:34, 14.28it/s, loss=0.0883]
+Validation Accuracy: 91.38%
+
+Epoch 7/10: 100%|██████████| 489/489 [00:34, 14.32it/s, loss=0.0863]
+Validation Accuracy: 93.40%
+
+Epoch 8/10: 100%|██████████| 489/489 [00:34, 14.28it/s, loss=0.0787]
+Validation Accuracy: 96.07% (New best model saved!)
+
+Epoch 9/10: 100%|██████████| 489/489 [00:34, 14.34it/s, loss=0.0304]
+Validation Accuracy: 94.93%
+
+Epoch 10/10: 100%|██████████| 489/489 [00:34, 14.30it/s, loss=0.0339]
+Validation Accuracy: 95.41%
+
+--- Final Hybrid Model Test ---
+Hybrid Test Accuracy: 95.96%
+Mean Average Precision (mAP): 0.9457
+Macro AUC-ROC: 0.9971

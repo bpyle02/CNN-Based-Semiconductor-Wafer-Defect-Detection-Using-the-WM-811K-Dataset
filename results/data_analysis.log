@@ -1,0 +1,33 @@
+
+--- Dataset Info ---
+Dataset Shape: (811457, 7)
+Dataset Columns: ['waferMap', 'dieSize', 'lotName', 'waferIndex', 'trianTestLabel', 'failureType', 'failureClass']
+Dataset Memory Usage: 671.85 MB
+
+                                            waferMap  ...  failureClass
+0  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+1  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+2  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+3  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+4  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+
+[5 rows x 7 columns]
+
+--- Failure Class Distribution (Before Preprocessing) ---
+failureClass
+unknown      638507
+none         147431
+Edge-Ring      9680
+Edge-Loc       5189
+Center         4294
+Loc            3593
+Scratch        1193
+Random          866
+Donut           555
+Near-full       149
+
+--- Data Quality Checks ---
+Failure classes: ['none', 'Loc', 'unknown', 'Edge-Loc', 'Center', 'Edge-Ring', 'Scratch', 'Random', 'Near-full', 'Donut']
+Total wafers: 811,457
+Distribution plot saved to REDACTED_PATH
+Gallery plot saved to REDACTED_PATH

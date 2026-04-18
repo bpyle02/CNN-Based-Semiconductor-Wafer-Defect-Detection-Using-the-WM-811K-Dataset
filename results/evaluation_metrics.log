@@ -1,0 +1,61 @@
+
+--- Dataset Info ---
+Dataset Shape: (811457, 7)
+Dataset Columns: ['waferMap', 'dieSize', 'lotName', 'waferIndex', 'trianTestLabel', 'failureType', 'failureClass']
+Dataset Memory Usage: 671.85 MB
+
+                                            waferMap  ...  failureClass
+0  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+1  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+2  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+3  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+4  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...  ...          none
+
+[5 rows x 7 columns]
+
+--- Failure Class Distribution (Before Preprocessing) ---
+failureClass
+unknown      638507
+none         147431
+Edge-Ring      9680
+Edge-Loc       5189
+Center         4294
+Loc            3593
+Scratch        1193
+Random          866
+Donut           555
+Near-full       149
+
+--- Data Quality Checks ---
+Failure classes: ['none', 'Loc', 'unknown', 'Edge-Loc', 'Center', 'Edge-Ring', 'Scratch', 'Random', 'Near-full', 'Donut']
+Total wafers: 811,457
+Labeled wafers: 172,950
+  Preprocessed 25,000 / 172,950 maps...
+  Preprocessed 50,000 / 172,950 maps...
+  Preprocessed 75,000 / 172,950 maps...
+  Preprocessed 100,000 / 172,950 maps...
+  Preprocessed 125,000 / 172,950 maps...
+  Preprocessed 150,000 / 172,950 maps...
+
+--- Extracting Geometric Features ---
+
+==================================================
+INDUSTRIAL PERFORMANCE METRICS
+==================================================
+Overall Macro AUC-ROC: 0.9971
+Overall Macro Average Precision (mAP): 0.9457
+--------------------------------------------------
+Center     | AUC: 0.9993 | AP: 0.9830
+Donut      | AUC: 0.9999 | AP: 0.9620
+Edge-Loc   | AUC: 0.9957 | AP: 0.9119
+Edge-Ring  | AUC: 0.9999 | AP: 0.9987
+Loc        | AUC: 0.9891 | AP: 0.8402
+Near-full  | AUC: 1.0000 | AP: 0.9941
+Random     | AUC: 0.9990 | AP: 0.9577
+Scratch    | AUC: 0.9933 | AP: 0.8636
+none       | AUC: 0.9979 | AP: 0.9996
+==================================================
+Bountiful confusion matrix saved.
+
+--- Generating Master Explanation Gallery (Captum) ---
+Master gallery saved to src/analysis/master_explanation_gallery.png

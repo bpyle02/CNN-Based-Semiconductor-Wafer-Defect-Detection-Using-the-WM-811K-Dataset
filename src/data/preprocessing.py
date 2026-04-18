@@ -3,26 +3,47 @@
 #  This file manages the preprocessing of the dataset.
 # ======================================================================================
 
-from dataset import load_dataset
+from src.data.dataset import load_dataset
 import torch
 from torch.utils.data import Dataset
 import numpy as np
 from skimage.transform import resize
-import torchvision.transforms as transforms
+from skimage.measure import label, regionprops
+from scipy.ndimage import median_filter
+import albumentations as A
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
 
 KNOWN_CLASSES = ['Center', 'Donut', 'Edge-Loc', 'Edge-Ring', 'Loc', 'Near-full', 'Random', 'Scratch', 'none']
 TARGET_SIZE = (96, 96)
 
+def extract_geometric_features(wm):
+    """
+    Extracts geometric features from a wafer map to help classify thin defects like scratches.
+    """
+    mask = (wm == 2).astype(np.uint8)
+    labeled_mask = label(mask)
+    regions = regionprops(labeled_mask)
+    
+    if not regions:
+        return np.zeros(6, dtype=np.float32)
+    
+    largest_region = max(regions, key=lambda r: r.area)
+    features = [
+        largest_region.area,
+        largest_region.eccentricity,
+        largest_region.orientation,
+        largest_region.solidity,
+        largest_region.extent,
+        largest_region.perimeter
+    ]
+    return np.array(features, dtype=np.float32)
+
 class WaferMapDataset(Dataset):
-    """
-        This is the class for the WM-811K wafer map dataset.
-        
-        Expects resized and normalized wafer maps.
-        Stacks into 3 channels for pretrained model compatibility.
-    """
-    def __init__(self, preprocessed_maps, labels, transform=None):
+    def __init__(self, preprocessed_maps, labels, geometric_features=None, transform=None):
         self.maps = preprocessed_maps
         self.labels = labels
+        self.geometric_features = geometric_features
         self.transform = transform
     
     def __len__(self):
@@ -31,69 +52,80 @@ class WaferMapDataset(Dataset):
     def __getitem__(self, idx):
         wm = self.maps[idx]
         
-        # Stack to 3 channels  -> (3, H, W)
-        img = np.stack([wm] * 3, axis=0)
-        img = torch.tensor(img, dtype=torch.float32)
+        # Albumentations expects HWC format, but we have HW
+        # We'll treat it as a single channel image first
+        img = np.stack([wm] * 3, axis=-1) # (H, W, 3)
         
         if self.transform:
-            img = self.transform(img)
+            augmented = self.transform(image=img)
+            img = augmented['image']
+        
+        # Convert to (C, H, W) for PyTorch
+        img = torch.tensor(img, dtype=torch.float32).permute(2, 0, 1)
         
         label = torch.tensor(self.labels[idx], dtype=torch.long)
+        
+        if self.geometric_features is not None:
+            geom = torch.tensor(self.geometric_features[idx], dtype=torch.float32)
+            return (img, geom), label
+            
         return img, label
 
 def preprocess_wafer_maps(wafer_maps, target_size=TARGET_SIZE):
-    """
-        Resizes all wafer maps to a uniform size and convert to float32.
-    """
     preprocessed = []
     for i, wm in enumerate(wafer_maps):
-        arr = wm.astype(np.float32)
-        arr = resize(arr, target_size, anti_aliasing=True,
-                     preserve_range=True).astype(np.float32)
-        arr = arr / 2.0  # Normalise to [0, 1]
+        wm_float = wm.astype(np.float32)
+        filtered = median_filter(wm_float, size=3)
+        arr = 0.7 * filtered + 0.3 * wm_float
+        arr = resize(arr, target_size, anti_aliasing=True, preserve_range=True).astype(np.float32)
+        arr = arr / 2.0  
         preprocessed.append(arr)
         if (i + 1) % 25000 == 0:
             print(f"  Preprocessed {i+1:,} / {len(wafer_maps):,} maps...")
     return preprocessed
 
+def encode_labels(labels):
+    le = LabelEncoder()
+    le.fit(KNOWN_CLASSES)
+    return le.transform(labels), le
+
 def preprocess_data():
     data = load_dataset()
-
     labeled_data_only = data['failureClass'].isin(KNOWN_CLASSES)
     data_subset = data[labeled_data_only].reset_index(drop=True)
 
-    print(f"Labeled wafers: {len(data_subset):,}  (out of {len(data):,} total)")
-    print(f"Dropped: {len(data) - len(data_subset):,} unlabeled / unknown wafers")
+    print(f"Labeled wafers: {len(data_subset):,}")
 
-    class_dist = data_subset['failureClass'].value_counts()
+    wafer_maps = data_subset['waferMap'].values
+    preprocessed_maps = preprocess_wafer_maps(wafer_maps)
+    
+    print("\n--- Extracting Geometric Features ---")
+    geometric_features = [extract_geometric_features(wm) for wm in wafer_maps]
+    geometric_features = np.array(geometric_features, dtype=np.float32)
+    
+    geom_mean = geometric_features.mean(axis=0)
+    geom_std = geometric_features.std(axis=0) + 1e-6
+    geometric_features = (geometric_features - geom_mean) / geom_std
 
-    print("\n--- Failure Class Distribution (After Preprocessing) ---")
-    print(class_dist.to_string())
+    labels, label_encoder = encode_labels(data_subset['failureClass'])
+    train_transform = get_train_transforms()
 
-    majority = class_dist.max()
-    minority = class_dist.min()
+    return preprocessed_maps, labels, label_encoder, train_transform, geometric_features
 
-    print("\n--- Imbalance Check ---")
-    print(f"Imbalance ratio (majority / minority): {majority / minority:.1f}x")
-
-    train_transform = image_transform()
-
-    return data_subset, train_transform
-
-def image_transform():
-    # Data augmentation transforms
-    train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomRotation(degrees=15),
-        transforms.RandomAffine(degrees=0, translate=(0.05, 0.05)),
+def get_train_transforms():
+    """
+    Industry standard augmentations using Albumentations.
+    Includes ElasticTransform and GridDistortion which are great for simulating 
+    physical defect variations.
+    """
+    return A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.OneOf([
+            A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
+            A.GridDistortion(p=0.5),
+            A.OpticalDistortion(distort_limit=1, shift_limit=0.5, p=0.5),
+        ], p=0.3),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
     ])
-
-    print("\n--- Image Transform Info ---")
-    print(f"Target image size: {TARGET_SIZE}")
-    print(f"Channels: 3 (replicated grayscale)")
-    print(f"Normalization: pixel / 2.0  ->  [0, 1]")
-    print(f"Train augmentations: HFlip, VFlip, Rotation(+/-15), Translate(5%)")
-    print(f"Resize strategy: All maps resized ONCE upfront (not per-batch)")
-
-    return train_transform

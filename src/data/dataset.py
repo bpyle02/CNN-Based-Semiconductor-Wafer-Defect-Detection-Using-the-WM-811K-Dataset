@@ -45,7 +45,7 @@ def extract_failure_label(failure_label):
             if failure_label.size > 0:
                 val = failure_label.flatten()[0]
                 if isinstance(val, (str, np.str_, bytes)):
-                    return val.decode('latin1').strip if isinstance(val, bytes) else str(val)
+                    return val.decode('latin1').strip() if isinstance(val, bytes) else str(val)
         if isinstance(failure_label, list) and len(failure_label) > 0:
             inner = failure_label[0]
             if isinstance(inner, (list, np.ndarray)) and len(inner) > 0:
