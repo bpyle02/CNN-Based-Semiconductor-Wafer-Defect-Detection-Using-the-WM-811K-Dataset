@@ -1,0 +1,4 @@
+model,Accuracy,Macro F1,Weighted F1,Macro AUC,Training Time (s),Training Time (min)
+Baseline CNN,0.943239,0.922569,0.946266,0.998194,3862.8,64.38
+ResNet18,0.955384,0.940293,0.957266,0.998521,5218.3,86.97
+Proposed WaferMetaNet,0.978163,0.966891,0.977934,0.99742,4039.4,67.32
